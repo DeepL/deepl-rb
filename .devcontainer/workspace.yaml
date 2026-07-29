@@ -3,7 +3,7 @@ kind: CoderWorkspace
 spec:
     deployments:
         - shortName: 'deepl-rb-dev'
-          gitRepositoryHttpUrl: 'https://git.deepl.dev/deepl/backend/oss-client-libs/deepl-ruby.git'
+          gitRepositoryHttpUrl: 'https://gitlab.com/deepl-org/deepl/backend/oss-client-libs/deepl-ruby.git'
           containerImage: 'harbor.deepl.dev/olympus/devcontainers/base-ubuntu'
           shellSessionStartingDir: '/workspaces/deepl-rb'
           resources:
