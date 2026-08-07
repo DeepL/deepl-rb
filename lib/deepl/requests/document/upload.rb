@@ -49,8 +49,57 @@ module DeepL
           ]
           filename_param = filename || File.basename(input_file_path)
           form_data.push(['filename', filename_param]) unless filename_param.nil?
-          add_supported_options_to_form(form_data)
+          add_extra_options_to_form(form_data)
           form_data
+        end
+
+        def add_extra_options_to_form(form_data)
+          add_supported_options_to_form(form_data)
+          add_glossary_ids_to_form(form_data)
+          add_style_rule_to_form(form_data)
+          add_translation_memory_to_form(form_data)
+          add_translation_memory_threshold_to_form(form_data)
+        end
+
+        # Validates and serializes the `glossary_ids` option (see
+        # `DeepL::Requests::Base#build_glossary_ids_param`) and appends it to the form data as a
+        # comma-separated `glossary_ids` field. Requires `source_lang`, cannot be combined with
+        # the singular `glossary_id` option, and allows at most 5 IDs.
+        def add_glossary_ids_to_form(form_data)
+          glossary_ids = build_glossary_ids_param(source_lang)
+          form_data.push(['glossary_ids', glossary_ids.join(',')]) unless glossary_ids.nil?
+        end
+
+        # Serializes the `style_rule` option and appends it to the form data as a `style_id`
+        # field. Mirrors text translation: accepts either a style rule ID string or a
+        # `DeepL::Resources::StyleRule` object.
+        def add_style_rule_to_form(form_data)
+          return unless option?(:style_rule)
+
+          rule = delete_option(:style_rule)
+          style_id = rule.is_a?(DeepL::Resources::StyleRule) ? rule.style_id : rule
+          form_data.push(['style_id', style_id.to_s])
+        end
+
+        # Serializes the `translation_memory` option and appends it to the form data as a
+        # `translation_memory_id` field. Mirrors text translation: the `translation_memory`
+        # option accepts either a translation memory ID string or a
+        # `DeepL::Resources::TranslationMemory` object.
+        def add_translation_memory_to_form(form_data)
+          return unless option?(:translation_memory)
+
+          tm = delete_option(:translation_memory)
+          tm_id = tm.is_a?(DeepL::Resources::TranslationMemory) ? tm.translation_memory_id : tm
+          form_data.push(['translation_memory_id', tm_id.to_s])
+        end
+
+        # Serializes the `translation_memory_threshold` option (integer 0-100) and appends it to
+        # the form data as a `translation_memory_threshold` field, mirroring text translation.
+        def add_translation_memory_threshold_to_form(form_data)
+          return unless option?(:translation_memory_threshold)
+
+          threshold = delete_option(:translation_memory_threshold)
+          form_data.push(['translation_memory_threshold', threshold.to_s])
         end
 
         def add_supported_options_to_form(form_data)

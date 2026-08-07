@@ -39,7 +39,7 @@ module DeepL
         tweak_parameters!
       end
 
-      def request # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+      def request # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
         text_arrayified = text.is_a?(Array) ? text : [text]
         payload = { text: text_arrayified, source_lang: source_lang, target_lang: target_lang }
 
@@ -64,6 +64,9 @@ module DeepL
         if option?(:translation_memory_threshold)
           payload[:translation_memory_threshold] = delete_option(:translation_memory_threshold)
         end
+
+        glossary_ids = build_glossary_ids_param(source_lang)
+        payload[:glossary_ids] = glossary_ids unless glossary_ids.nil?
 
         build_texts(*execute_request_with_retries(post_request(payload)))
       end

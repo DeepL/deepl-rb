@@ -190,6 +190,61 @@ describe DeepL::Requests::Translate do
       end
     end
 
+    context 'when using `glossary_ids` options' do
+      it 'works with a nil value' do
+        request = described_class.new(api, nil, nil, nil, glossary_ids: nil)
+        expect(request.options[:glossary_ids]).to be_nil
+      end
+
+      it 'works with an array of strings' do
+        request = described_class.new(api, nil, nil, nil, glossary_ids: %w[id1 id2])
+        expect(request.options[:glossary_ids]).to eq(%w[id1 id2])
+      end
+    end
+
+    context 'when building the `glossary_ids` request parameter' do
+      def glossary_ids_param(source_lang, options)
+        described_class.new(api, text, source_lang, target_lang, options)
+                       .send(:build_glossary_ids_param, source_lang)
+      end
+
+      it 'returns nil when `glossary_ids` is not provided' do
+        expect(glossary_ids_param('EN', {})).to be_nil
+      end
+
+      it 'returns nil when `glossary_ids` is nil' do
+        expect(glossary_ids_param('EN', { glossary_ids: nil })).to be_nil
+      end
+
+      it 'returns nil when `glossary_ids` is an empty array' do
+        expect(glossary_ids_param('EN', { glossary_ids: [] })).to be_nil
+      end
+
+      it 'resolves an array of IDs to an array of strings' do
+        expect(glossary_ids_param('EN', { glossary_ids: %w[id1 id2 id3] })).to eq(%w[id1 id2 id3])
+      end
+
+      it 'resolves glossary objects to their IDs' do
+        glossary = DeepL::Resources::Glossary.new({ 'glossary_id' => 'obj_id' }, nil, nil)
+        expect(glossary_ids_param('EN', { glossary_ids: [glossary, 'id2'] })).to eq(%w[obj_id id2])
+      end
+
+      it 'raises when `source_lang` is not set' do
+        expect { glossary_ids_param(nil, { glossary_ids: %w[id1] }) }
+          .to raise_error(ArgumentError, /requires `source_lang`/)
+      end
+
+      it 'raises when combined with the singular `glossary_id` option' do
+        expect { glossary_ids_param('EN', { glossary_id: 'single', glossary_ids: %w[id1] }) }
+          .to raise_error(ArgumentError, /cannot be used together with the `glossary_id`/)
+      end
+
+      it 'raises when more than 5 IDs are provided' do
+        expect { glossary_ids_param('EN', { glossary_ids: %w[id1 id2 id3 id4 id5 id6] }) }
+          .to raise_error(ArgumentError, /maximum of 5 glossary IDs/)
+      end
+    end
+
     context 'when using `formality` options' do
       it 'works with a nil values' do
         request = described_class.new(api, nil, nil, nil, formality: nil)

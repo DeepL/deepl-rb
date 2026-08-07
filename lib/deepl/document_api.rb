@@ -25,7 +25,17 @@ module DeepL
     # @param [String, nil] filename The filename of the file, including its extension. Used to open
     #                               the different kinds of documents (PDFs, etc). If nil, will use
     #                               the filename of +input_file_path+.
-    # @param [Hash] options Additional (body) options for the upload.
+    # @param [Hash] options Additional (body) options for the upload. Notable glossary options:
+    #                       +:glossary_id+ (a single glossary ID) or +:glossary_ids+ (an array of
+    #                       up to 5 glossary IDs, as strings or `DeepL::Resources::Glossary`
+    #                       objects). +:glossary_ids+ requires +source_lang+ to be set, cannot be
+    #                       combined with +:glossary_id+, and raises `ArgumentError` if these rules
+    #                       are violated or more than 5 IDs are provided. Notable style/translation
+    #                       memory options (mirroring text translation): +:style_rule+ (a style rule
+    #                       ID string or a `DeepL::Resources::StyleRule` object),
+    #                       +:translation_memory+ (a translation memory ID string or a
+    #                       `DeepL::Resources::TranslationMemory` object), and
+    #                       +:translation_memory_threshold+ (integer 0-100, recommended minimum 75).
     # @param [Hash] additional_headers Additional HTTP headers for the upload.
     # @return [DeepL::Resources::DocumentHandle] Document handle for the uploaded document.
 

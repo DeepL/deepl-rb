@@ -6,6 +6,9 @@
 module DeepL
   module Requests
     class Base # rubocop:disable Metrics/ClassLength
+      # Maximum number of glossaries that may be provided via the +glossary_ids+ option.
+      MAX_GLOSSARY_IDS = 5
+
       attr_reader :api, :response, :options
 
       def initialize(api, options = {}, additional_headers = {})
@@ -170,6 +173,49 @@ module DeepL
         return if response.is_a?(Net::HTTPSuccess)
 
         raise Utils::ExceptionBuilder.new(response).build
+      end
+
+      # Validates the +glossary_ids+ option and resolves it to an array of glossary ID strings.
+      #
+      # The +glossary_ids+ option accepts an array of up to `MAX_GLOSSARY_IDS` glossary
+      # identifiers. Each entry may be a glossary ID string or a
+      # `DeepL::Resources::Glossary` object. It:
+      # * requires +source_lang+ to be set,
+      # * cannot be combined with the singular +glossary_id+ option,
+      # * allows at most `MAX_GLOSSARY_IDS` identifiers.
+      #
+      # The API expects +glossary_ids+ as an array (a JSON array in the JSON translate body).
+      # Callers sending multipart/form-data (e.g. document upload) should join the returned
+      # array into a comma-separated string.
+      #
+      # @param [String, nil] source_lang The source language for the request.
+      # @return [Array<String>, nil] The list of glossary IDs, or nil if the +glossary_ids+
+      #                              option was not provided.
+      # @raise [ArgumentError] If any of the validation rules above are violated.
+      def build_glossary_ids_param(source_lang)
+        return nil unless option?(:glossary_ids)
+
+        ids = Array(delete_option(:glossary_ids))
+        return nil if ids.empty?
+
+        validate_glossary_ids!(ids, source_lang)
+        ids.map do |glossary|
+          glossary.is_a?(DeepL::Resources::Glossary) ? glossary.id : glossary.to_s
+        end
+      end
+
+      def validate_glossary_ids!(ids, source_lang)
+        if option?(:glossary_id)
+          raise ArgumentError,
+                'The `glossary_ids` option cannot be used together with the `glossary_id` option'
+        end
+        if source_lang.nil?
+          raise ArgumentError, 'The `glossary_ids` option requires `source_lang` to be set'
+        end
+        return unless ids.size > MAX_GLOSSARY_IDS
+
+        raise ArgumentError,
+              "A maximum of #{MAX_GLOSSARY_IDS} glossary IDs may be provided via `glossary_ids`"
       end
 
       def path

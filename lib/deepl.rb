@@ -100,6 +100,22 @@ module DeepL
     Requests::Languages.new(api, options).request
   end
 
+  ##
+  # Translates +text+ from +source_lang+ into +target_lang+.
+  #
+  # @param [String, Array<String>] text Text(s) to translate.
+  # @param [String, nil] source_lang Source language. `nil` enables automatic detection.
+  # @param [String] target_lang Target language.
+  # @param [Hash] options Additional (body) options for the translation. Notable options:
+  #   * +:glossary_id+ - A single glossary ID (string) to use for the translation. Requires
+  #     +source_lang+ to be set. Cannot be combined with +:glossary_ids+.
+  #   * +:glossary_ids+ - An array of up to 5 glossary IDs (strings or
+  #     `DeepL::Resources::Glossary` objects) to use for the translation. Glossaries are applied
+  #     in order (first match wins). Requires +source_lang+ to be set. Cannot be combined with
+  #     +:glossary_id+. Raises `ArgumentError` if these rules are violated or more than 5 IDs are
+  #     provided.
+  # @param [Hash] additional_headers Additional HTTP headers for the translation.
+  # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] Translated text resource(s).
   def translate(text, source_lang, target_lang, options = {}, additional_headers = {})
     configure if @configuration.nil?
     Requests::Translate.new(api, text, source_lang, target_lang, options,

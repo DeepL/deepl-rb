@@ -76,6 +76,25 @@ describe 'DeepL.translate' do # rubocop:disable RSpec/DescribeClass
       end
     end
 
+    it 'translates using multiple glossaries via glossary_ids' do # rubocop:disable RSpec/ExampleLength
+      with_managed_glossary(name: 'Translate Glossary IDs 1', source_lang: 'en', target_lang: 'de',
+                            entries: [%w[Hello Hallo]]) do |glossary1|
+        with_managed_glossary(name: 'Translate Glossary IDs 2', source_lang: 'en',
+                              target_lang: 'de', entries: [%w[World Welt]]) do |glossary2|
+          # Newly created glossaries can lag behind (eventual consistency), so
+          # ensure they are resolvable before translating and tolerate a
+          # transient "not found" on the translate call itself.
+          wait_until_glossaries_ready(glossary1, glossary2)
+          result = translate_retrying_missing_glossary(
+            'Hello', 'EN', 'DE', { glossary_ids: [glossary1.id, glossary2.id] }
+          )
+
+          expect(result).to be_a(DeepL::Resources::Text)
+          expect(result.text).not_to be_empty
+        end
+      end
+    end
+
     %w[quality_optimized latency_optimized prefer_quality_optimized].each do |model_type|
       it "returns model_type_used for #{model_type}" do
         result = DeepL.translate(text, 'EN', 'DE', { model_type: model_type })

@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added support for using multiple glossaries in text and document translation
+  via the `glossary_ids` option (up to 5 glossary IDs) in `translate` and
+  document upload.
+- Added support for using a style rule in document translation via the
+  `style_id` option (the `style_rule` option) in document upload.
+- Added support for using a translation memory in document translation via the
+  `translation_memory_id` option (the `translation_memory` and
+  `translation_memory_threshold` options) in document upload.
+
 ### Changed
 - Reworked the test suite to run against the `deepl-mock` server with OpenAPI
   request and response validation enabled in CI, replacing recorded VCR

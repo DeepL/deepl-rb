@@ -267,6 +267,25 @@ puts translation.text
 # => Ojalá tuviéramos un auto.
 ```
 
+To use more than one glossary at once, specify the `glossary_ids` option with an
+array of up to 5 glossary IDs (as strings or `DeepL::Resources::Glossary`
+objects) instead of `glossary_id`. This works for both text and document
+translation. `glossary_ids` requires `source_lang` to be set, cannot be combined
+with `glossary_id`, and raises `ArgumentError` if these rules are violated or
+more than 5 IDs are provided:
+
+```rb
+# Text translation with multiple glossaries
+translation = DeepL.translate 'Hello World', 'EN', 'ES',
+                              glossary_ids: ['aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e',
+                                             'bb59d8g1-1e13-524f-9b17-e6ccg1db8b7f']
+
+# Document translation with multiple glossaries
+handle = DeepL.document.upload 'my_document.docx', 'EN', 'ES', 'my_document.docx',
+                              glossary_ids: ['aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e',
+                                             'bb59d8g1-1e13-524f-9b17-e6ccg1db8b7f']
+```
+
 To list all the glossaries available, use the `glossaries.list` method:
 
 ```rb
@@ -457,6 +476,15 @@ style_rules = DeepL.style_rules.list
 translation = DeepL.translate 'Hello World', 'EN', 'ES', style_rule: style_rules.first
 ```
 
+The same `style_rule` option can be passed to document translation via
+`DeepL.document.upload` (or `DeepL.document.translate_document`), accepting either
+a style rule ID string or a `StyleRule` object:
+
+```rb
+handle = DeepL.document.upload 'my_document.docx', 'EN', 'ES', 'my_document.docx',
+                              style_rule: 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4'
+```
+
 ### Translation Memories
 
 Translation memories allow you to store and reuse previously created translations.
@@ -508,6 +536,17 @@ translation = DeepL.translate 'Hello, world!', 'EN', 'DE',
 translation_memories = DeepL.translation_memories.list
 translation = DeepL.translate 'Hello, world!', 'EN', 'DE',
                               translation_memory: translation_memories.first
+```
+
+The same `translation_memory` and `translation_memory_threshold` options can be
+passed to document translation via `DeepL.document.upload` (or
+`DeepL.document.translate_document`). The `translation_memory` option accepts
+either a translation memory ID string or a `TranslationMemory` object:
+
+```rb
+handle = DeepL.document.upload 'my_document.docx', 'EN', 'DE', 'my_document.docx',
+                              translation_memory: 'YOUR_TM_ID',
+                              translation_memory_threshold: 80
 ```
 
 ### Monitor usage
