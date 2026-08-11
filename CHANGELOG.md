@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for using a translation memory in document translation via the
   `translation_memory_id` option (the `translation_memory` and
   `translation_memory_threshold` options) in document upload.
+- Added support for translation memory management via `DeepL.translation_memories`:
+  `find()`, `segments()`, `destroy()`, `create_import()`, `upload_file()`,
+  `create_export()`, `find_job()`, `wait_until_job_done()`, `download_export()`,
+  and the convenience methods `import_from_filepath()` and `export_to_filepath()`.
+  Every method taking a translation memory accepts a string ID or a
+  `TranslationMemory` object. `wait_until_job_done()`, `import_from_filepath()`
+  and `export_to_filepath()` accept an optional `timeout_s` to stop waiting for
+  a job that does not finish. Please refer to the README for usage instructions.
+- Added the `creation_time` and `updated_time` attributes to `TranslationMemory`.
 
 ### Changed
 - Reworked the test suite to run against the `deepl-mock` server with OpenAPI

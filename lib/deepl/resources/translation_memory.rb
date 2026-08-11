@@ -6,7 +6,8 @@
 module DeepL
   module Resources
     class TranslationMemory < Base
-      attr_reader :translation_memory_id, :name, :source_language, :target_languages, :segment_count
+      attr_reader :translation_memory_id, :name, :source_language, :target_languages,
+                  :segment_count, :creation_time, :updated_time
 
       def initialize(translation_memory, *args)
         super(*args)
@@ -15,6 +16,8 @@ module DeepL
         @source_language = translation_memory['source_language']
         @target_languages = translation_memory['target_languages'] || []
         @segment_count = translation_memory['segment_count'] || 0
+        @creation_time = Utils::TimeParser.parse_optional_time(translation_memory['creation_time'])
+        @updated_time = Utils::TimeParser.parse_optional_time(translation_memory['updated_time'])
       end
 
       def to_s

@@ -148,6 +148,14 @@ module IntegrationTestUtils # rubocop:disable Metrics/ModuleLength
       'mock-server-session' => SecureRandom.uuid }
   end
 
+  # Makes a translation memory import or export job report its non-terminal status, such as
+  # `awaiting_input` for an uploaded import, for the given number of status queries before it
+  # completes. Without it a job completes on the first query.
+  def tm_job_processing_polls_header(poll_count)
+    { 'mock-server-session-tm-job-processing-polls' => poll_count.to_s,
+      'mock-server-session' => SecureRandom.uuid }
+  end
+
   def expect_proxy_header(response_count)
     { 'mock-server-session-expect-proxy' => response_count.to_s,
       'mock-server-session' => SecureRandom.uuid }

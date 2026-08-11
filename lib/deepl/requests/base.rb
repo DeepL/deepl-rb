@@ -88,7 +88,7 @@ module DeepL
         api.configuration.logger&.info("Request to the DeepL API: #{self}")
         api.configuration.logger&.debug("Request details: #{details}")
         loop do
-          resp = api.http_client.request(req)
+          resp = http_client.request(req)
           validate_response!(resp)
           return [req, resp]
         rescue DeepL::Exceptions::Error => e
@@ -98,7 +98,7 @@ module DeepL
             api.configuration.logger&.info("Encountered a retryable exception: #{e.message}")
           end
           api.configuration.logger&.info("Starting retry #{@backoff_timer.num_retries + 1} for " \
-                                         "request #{request} after sleeping for " \
+                                         "request #{self} after sleeping for " \
                                          "#{format('%.2f', @backoff_timer.time_until_deadline)}")
           files_to_reset.each(&:rewind)
           @backoff_timer.sleep_until_deadline
@@ -109,7 +109,7 @@ module DeepL
             api.configuration.logger&.info("Encountered a retryable exception: #{e.message}")
           end
           api.configuration.logger&.info("Starting retry #{@backoff_timer.num_retries + 1} for " \
-                                         "request #{request} after sleeping for " \
+                                         "request #{self} after sleeping for " \
                                          "#{format('%.2f', @backoff_timer.time_until_deadline)}")
           files_to_reset.each(&:rewind)
           @backoff_timer.sleep_until_deadline
@@ -233,6 +233,12 @@ module DeepL
 
       def host
         api.configuration.host
+      end
+
+      # Subclasses that talk to a host other than the DeepL API, such as a pre-signed storage
+      # URL, override this to request through their own connection.
+      def http_client
+        api.http_client
       end
 
       def query_params

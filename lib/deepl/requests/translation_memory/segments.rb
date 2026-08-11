@@ -6,15 +6,18 @@
 module DeepL
   module Requests
     module TranslationMemory
-      class List < Base
-        SUPPORTED_OPTIONS = %w[page page_size].freeze
+      class Segments < Base
+        SUPPORTED_OPTIONS = %w[page_size page_cursor filter_text filter_case_sensitive].freeze
 
-        def initialize(api, options = {})
-          super
+        attr_reader :translation_memory_id
+
+        def initialize(api, translation_memory_id, options = {})
+          super(api, options)
+          @translation_memory_id = translation_memory_id
         end
 
         def request
-          build_translation_memory_list(*execute_request_with_retries(get_request))
+          build_segments(*execute_request_with_retries(get_request))
         end
 
         def to_s
@@ -23,11 +26,9 @@ module DeepL
 
         private
 
-        def build_translation_memory_list(request, response)
+        def build_segments(request, response)
           data = JSON.parse(response.body)
-          data['translation_memories'].map do |tm|
-            Resources::TranslationMemory.new(tm, request, response)
-          end
+          Resources::TranslationMemorySegments.new(data, request, response)
         end
 
         def query_params
@@ -37,7 +38,7 @@ module DeepL
         end
 
         def path
-          'translation_memories'
+          "translation_memories/#{translation_memory_id}/segments"
         end
       end
     end

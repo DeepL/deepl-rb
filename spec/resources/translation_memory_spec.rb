@@ -12,7 +12,9 @@ describe DeepL::Resources::TranslationMemory do
                           'name' => 'Legal',
                           'source_language' => 'en',
                           'target_languages' => %w[es de],
-                          'segment_count' => 3542
+                          'segment_count' => 3542,
+                          'creation_time' => '2026-01-01T00:00:00Z',
+                          'updated_time' => '2026-01-02T00:00:00Z'
                         }, nil, nil)
   end
 
@@ -29,6 +31,21 @@ describe DeepL::Resources::TranslationMemory do
         expect(translation_memory.source_language).to eq('en')
         expect(translation_memory.target_languages).to eq(%w[es de])
         expect(translation_memory.segment_count).to eq(3542)
+        expect(translation_memory.creation_time).to eq(Time.parse('2026-01-01T00:00:00Z'))
+        expect(translation_memory.updated_time).to eq(Time.parse('2026-01-02T00:00:00Z'))
+      end
+    end
+
+    context 'when the optional timestamps are missing' do
+      subject(:translation_memory) do
+        described_class.new({ 'translation_memory_id' => 'tm-1', 'name' => 'Legal' }, nil, nil)
+      end
+
+      it 'leaves the timestamps nil and defaults the collections' do
+        expect(translation_memory.creation_time).to be_nil
+        expect(translation_memory.updated_time).to be_nil
+        expect(translation_memory.target_languages).to eq([])
+        expect(translation_memory.segment_count).to eq(0)
       end
     end
   end
