@@ -101,7 +101,7 @@ module DeepL
 
     def translate_document(input_file, output_file, source_lang, target_lang, # rubocop:disable Metrics/MethodLength,Metrics/ParameterLists
                            filename = nil, options = {}, additional_headers = {})
-      raise IOError 'File already exists at output path' if File.exist?(output_file)
+      raise IOError.new('File already exists at output path') if File.exist?(output_file)
 
       begin
         handle = upload(input_file, source_lang, target_lang, filename, options,
