@@ -5,7 +5,7 @@
 
 require 'spec_helper'
 
-# rubocop:disable RSpec/StubbedMock
+# rubocop:disable-next RSpec/StubbedMock
 describe DeepL do # rubocop:disable RSpec/SpecFilePathFormat
   subject(:deepl) { described_class.dup }
 
@@ -259,4 +259,3 @@ describe DeepL do # rubocop:disable RSpec/SpecFilePathFormat
     end
   end
 end
-# rubocop:enable RSpec/StubbedMock
