@@ -23,14 +23,30 @@ module DeepL
 
         def build_language_pair_list(request, response)
           data = JSON.parse(response.body)
-          data['supported_languages'].map do |language_pair|
-            Resources::LanguagePair.new(language_pair['source_lang'], language_pair['target_lang'],
-                                        request, response)
+          sources = langs_where(data, 'usable_as_source')
+          targets = langs_where(data, 'usable_as_target')
+
+          sources.product(targets).each_with_object([]) do |(source, target), pairs|
+            next if source == target
+
+            pairs << Resources::LanguagePair.new(source, target, request, response)
           end
         end
 
+        def langs_where(data, usable_key)
+          data.select { |language| language[usable_key] }.map { |language| language['lang'] }
+        end
+
+        def uri
+          @uri ||= URI("#{host}/v3/#{path}?resource=glossary")
+        end
+
+        def get_request # rubocop:disable Naming/AccessorMethodName
+          Net::HTTP::Get.new(uri.request_uri, add_json_content_type(headers))
+        end
+
         def path
-          'glossary-language-pairs'
+          'languages'
         end
       end
     end

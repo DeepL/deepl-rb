@@ -16,10 +16,10 @@ describe 'DeepL.languages error paths' do # rubocop:disable RSpec/DescribeClass
     end
   end
 
-  describe 'bad request errors' do
-    it 'raises BadRequest for an unsupported languages type' do
+  describe 'invalid arguments' do
+    it 'raises ArgumentError for an unsupported languages type' do
       expect { DeepL.languages(type: :invalid) }
-        .to raise_error(DeepL::Exceptions::BadRequest)
+        .to raise_error(ArgumentError, /Unsupported `type` option/)
     end
   end
 end

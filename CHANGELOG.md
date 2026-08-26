@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`
+  endpoint instead of the deprecated `GET /v2/languages` and `GET /v2/glossary-language-pairs`
+  endpoints. Public method signatures and return types are unchanged. An unsupported `type`
+  option passed to `DeepL.languages` now raises `ArgumentError` instead of
+  `DeepL::Exceptions::BadRequest`, since the value is now validated client-side.
 
 ## [3.9.0] - 2026-08-11
 ### Added

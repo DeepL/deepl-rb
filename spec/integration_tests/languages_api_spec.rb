@@ -5,7 +5,7 @@
 
 require 'spec_helper'
 
-# Covers GET /v2/languages; the SDK has no v3 languages endpoint.
+# Covers GET /v3/languages?resource=translate_text.
 describe 'DeepL.languages' do # rubocop:disable RSpec/DescribeClass
   describe 'source languages' do
     it 'returns a non-empty array of Language resources with common codes' do
