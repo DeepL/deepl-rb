@@ -35,7 +35,7 @@ module DeepL
         data = JSON.parse(response.body)
         usable_key = target? ? 'usable_as_target' : 'usable_as_source'
         data.select { |language| language[usable_key] }.map do |language|
-          supports_formality = target? ? language['features'].key?('formality') : nil
+          supports_formality = target? ? language.fetch('features', {}).to_h.key?('formality') : nil
           Resources::Language.new(language['lang'].upcase, language['name'], supports_formality,
                                   request, response)
         end
