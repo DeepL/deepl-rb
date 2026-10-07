@@ -182,5 +182,8 @@ gem push:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
   script:
+    # The committed gemspec keeps a hardcoded s.files list. Regenerate it from
+    # git ls-files; the version comes from lib/version.rb, written at release.
+    - bundle exec rake gemspec
     - gem build deepl-rb.gemspec
     - GEM_HOST_API_KEY="$RUBYGEM_PUBLISH_API_KEY" gem push "deepl-rb-${CI_COMMIT_TAG#v}.gem"
