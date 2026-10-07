@@ -103,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `extra_body_parameters` option to text and document translation methods to pass arbitrary parameters in the request body. This can be used to access beta features or override built-in parameters (such as `target_lang`, `source_lang`, etc.).
 - Added `rephrase` functionality to the top-level `DeepL` module for convenience.
-  * Thanks to [341bms](https://github.com/341bms) in [#14](https://github.com/DeepLcom/deepl-rb/issues/14) for the report!
+  * Thanks to [341bms](https://github.com/341bms) in [#14](https://github.com/DeepL/deepl-rb/issues/14) for the report!
 
 ## [3.2.0] - 2025-01-15
 ### Added
@@ -155,20 +155,20 @@ The change in major version is only due to the change in maintainership, there i
 ### Fixed
 - Make RequestEntityTooLarge error message more clear
 
-[Unreleased]: https://github.com/DeepLcom/deepl-rb/compare/v3.9.0...HEAD
-[3.9.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.8.0...v3.9.0
-[3.8.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.7.0...v3.8.0
-[3.7.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.6.1...v3.7.0
-[3.6.1]: https://github.com/DeepLcom/deepl-rb/compare/v3.6.0...v3.6.1
-[3.6.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.5.1...v3.6.0
-[3.5.1]: https://github.com/DeepLcom/deepl-rb/compare/v3.5.0...v3.5.1
-[3.5.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.4.1...v3.5.0
-[3.4.1]: https://github.com/DeepLcom/deepl-rb/compare/v3.4.0...v3.4.1
-[3.4.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.3.0...v3.4.0
-[3.3.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.2.0...v3.3.0
-[3.2.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.1.0...v3.2.0
-[3.1.0]: https://github.com/DeepLcom/deepl-rb/compare/v3.0.2...v3.1.0
-[3.0.2]: https://github.com/DeepLcom/deepl-rb/compare/v3.0.1...v3.0.2
-[3.0.1]: https://github.com/DeepLcom/deepl-rb/compare/v3.0.0...v3.0.1
-[3.0.0]: https://github.com/DeepLcom/deepl-rb/compare/v2.5.3...v3.0.0
-[2.5.3]: https://github.com/DeepLcom/deepl-rb/releases/tag/v2.5.3
+[Unreleased]: https://github.com/DeepL/deepl-rb/compare/v3.9.0...HEAD
+[3.9.0]: https://github.com/DeepL/deepl-rb/compare/v3.8.0...v3.9.0
+[3.8.0]: https://github.com/DeepL/deepl-rb/compare/v3.7.0...v3.8.0
+[3.7.0]: https://github.com/DeepL/deepl-rb/compare/v3.6.1...v3.7.0
+[3.6.1]: https://github.com/DeepL/deepl-rb/compare/v3.6.0...v3.6.1
+[3.6.0]: https://github.com/DeepL/deepl-rb/compare/v3.5.1...v3.6.0
+[3.5.1]: https://github.com/DeepL/deepl-rb/compare/v3.5.0...v3.5.1
+[3.5.0]: https://github.com/DeepL/deepl-rb/compare/v3.4.1...v3.5.0
+[3.4.1]: https://github.com/DeepL/deepl-rb/compare/v3.4.0...v3.4.1
+[3.4.0]: https://github.com/DeepL/deepl-rb/compare/v3.3.0...v3.4.0
+[3.3.0]: https://github.com/DeepL/deepl-rb/compare/v3.2.0...v3.3.0
+[3.2.0]: https://github.com/DeepL/deepl-rb/compare/v3.1.0...v3.2.0
+[3.1.0]: https://github.com/DeepL/deepl-rb/compare/v3.0.2...v3.1.0
+[3.0.2]: https://github.com/DeepL/deepl-rb/compare/v3.0.1...v3.0.2
+[3.0.1]: https://github.com/DeepL/deepl-rb/compare/v3.0.0...v3.0.1
+[3.0.0]: https://github.com/DeepL/deepl-rb/compare/v2.5.3...v3.0.0
+[2.5.3]: https://github.com/DeepL/deepl-rb/releases/tag/v2.5.3
