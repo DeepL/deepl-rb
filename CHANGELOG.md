@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added support for multilingual glossaries via the v3 glossary API.
+  `DeepL.multilingual_glossaries` exposes `create`, `create_with_csv`, `find`,
+  `list`, `entries`, `destroy`, `destroy_dictionary`, `replace_dictionary`,
+  `replace_dictionary_with_csv`, `update_name`, `update_dictionary`, and
+  `update_dictionary_with_csv`. Please refer to the README for usage
+  instructions.
+
 ### Changed
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`
   endpoint instead of the deprecated `GET /v2/languages` and `GET /v2/glossary-language-pairs`

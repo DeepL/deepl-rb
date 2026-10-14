@@ -31,6 +31,16 @@ require_relative 'deepl/requests/glossary/entries'
 require_relative 'deepl/requests/glossary/find'
 require_relative 'deepl/requests/glossary/language_pairs'
 require_relative 'deepl/requests/glossary/list'
+require_relative 'deepl/requests/multilingual_glossary/entries_serializer'
+require_relative 'deepl/requests/multilingual_glossary/create'
+require_relative 'deepl/requests/multilingual_glossary/destroy'
+require_relative 'deepl/requests/multilingual_glossary/destroy_dictionary'
+require_relative 'deepl/requests/multilingual_glossary/entries'
+require_relative 'deepl/requests/multilingual_glossary/find'
+require_relative 'deepl/requests/multilingual_glossary/list'
+require_relative 'deepl/requests/multilingual_glossary/replace_dictionary'
+require_relative 'deepl/requests/multilingual_glossary/update_dictionary'
+require_relative 'deepl/requests/multilingual_glossary/update_name'
 require_relative 'deepl/requests/style_rule/list'
 require_relative 'deepl/requests/style_rule/create'
 require_relative 'deepl/requests/style_rule/find'
@@ -62,6 +72,7 @@ require_relative 'deepl/resources/base'
 require_relative 'deepl/resources/document_handle'
 require_relative 'deepl/resources/document_translation_status'
 require_relative 'deepl/resources/glossary'
+require_relative 'deepl/resources/multilingual_glossary'
 require_relative 'deepl/resources/style_rule'
 require_relative 'deepl/resources/translation_memory'
 require_relative 'deepl/resources/translation_memory_segments'
@@ -98,6 +109,7 @@ require_relative 'deepl/api'
 require_relative 'deepl/configuration'
 require_relative 'deepl/document_api'
 require_relative 'deepl/glossary_api'
+require_relative 'deepl/multilingual_glossary_api'
 require_relative 'deepl/style_rule_api'
 require_relative 'deepl/translation_memory_api'
 
@@ -145,6 +157,11 @@ module DeepL
   def glossaries(options = {})
     configure if @configuration.nil?
     GlossaryApi.new(api, options)
+  end
+
+  def multilingual_glossaries(options = {})
+    configure if @configuration.nil?
+    MultilingualGlossaryApi.new(api, options)
   end
 
   def style_rules(options = {})

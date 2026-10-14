@@ -343,6 +343,87 @@ puts language_pairs.first.target_lang
 # => de
 ```
 
+### Multilingual glossaries
+
+Multilingual glossaries (v3) let you group multiple language-pair dictionaries
+under a single glossary. They are accessed through
+`DeepL.multilingual_glossaries`.
+
+To create a multilingual glossary, pass a name and an array of dictionaries.
+Each dictionary contains its source language, target language, and entries
+(either as an array of source/target pairs or as a TSV string):
+
+```rb
+dictionaries = [
+  {
+    source_lang: 'EN',
+    target_lang: 'DE',
+    entries: [['Hello', 'Hallo'], ['World', 'Welt']]
+  },
+  {
+    source_lang: 'EN',
+    target_lang: 'FR',
+    entries: [['Hello', 'Bonjour']]
+  }
+]
+glossary = DeepL.multilingual_glossaries.create 'My Glossary', dictionaries
+
+puts glossary.class
+# => DeepL::Resources::MultilingualGlossary
+puts glossary.id
+# => 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+puts glossary.dictionaries.first.entry_count
+# => 2
+```
+
+To create a multilingual glossary from CSV content, use `create_with_csv`:
+
+```rb
+csv_content = File.read('entries.csv')
+glossary = DeepL.multilingual_glossaries.create_with_csv(
+  'My Glossary', 'EN', 'DE', csv_content
+)
+```
+
+List or fetch multilingual glossaries with `list` and `find`:
+
+```rb
+glossaries = DeepL.multilingual_glossaries.list
+glossary = DeepL.multilingual_glossaries.find 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+```
+
+To fetch the entries for a specific language pair, use `entries`:
+
+```rb
+dictionaries = DeepL.multilingual_glossaries.entries(
+  'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e', 'EN', 'DE'
+)
+puts dictionaries.first.entries
+# => "Hello\tHallo\nWorld\tWelt\n"
+```
+
+To update the glossary name, use `update_name`. To update or add a dictionary
+for a language pair, use `update_dictionary` (or
+`update_dictionary_with_csv`). To replace the entries of an existing dictionary,
+use `replace_dictionary` (or `replace_dictionary_with_csv`):
+
+```rb
+DeepL.multilingual_glossaries.update_name(glossary.id, 'Renamed Glossary')
+DeepL.multilingual_glossaries.update_dictionary(
+  glossary.id, 'EN', 'FR', [['Hello', 'Bonjour'], ['World', 'Monde']]
+)
+DeepL.multilingual_glossaries.replace_dictionary(
+  glossary.id, 'EN', 'DE', [['Hello', 'Hallo'], ['car', 'Auto']]
+)
+```
+
+To delete an entire multilingual glossary or just one of its dictionaries:
+
+```rb
+DeepL.multilingual_glossaries.destroy_dictionary(glossary.id, 'EN', 'FR')
+DeepL.multilingual_glossaries.destroy(glossary.id)
+```
+
 ### Style Rules
 
 Style rules allow you to customize your translations using a managed, shared list
