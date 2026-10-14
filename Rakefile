@@ -34,7 +34,6 @@ Juwelier::Tasks.new do |gem|
     'homepage_uri' => 'https://github.com/DeepLcom/deepl-rb'
   }
   gem.files.exclude '.bumpversion.toml'
-  gem.files.exclude '.devcontainer/**/*'
   gem.files.exclude '.github'
   gem.files.exclude '.circleci'
   gem.files.exclude 'catalog-info.yaml'
