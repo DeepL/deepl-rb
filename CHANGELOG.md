@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `replace_dictionary_with_csv`, `update_name`, `update_dictionary`, and
   `update_dictionary_with_csv`. Please refer to the README for usage
   instructions.
+- Added `DeepL.correct(text, target_lang = nil)` to correct grammar and spelling via
+  `POST /v2/write/correct`. It accepts a string or an array of strings and returns a
+  `DeepL::Resources::Text` or an array of them, respectively.
 
 ### Changed
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`

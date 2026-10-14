@@ -66,6 +66,7 @@ require_relative 'deepl/requests/languages'
 require_relative 'deepl/requests/translate'
 require_relative 'deepl/requests/usage'
 require_relative 'deepl/requests/rephrase'
+require_relative 'deepl/requests/correct'
 
 # -- Responses and resources
 require_relative 'deepl/resources/base'
@@ -179,6 +180,11 @@ module DeepL
     configure if @configuration.nil?
     Requests::Rephrase.new(api, text, target_lang, writing_style, tone, options,
                            additional_headers).request
+  end
+
+  def correct(text, target_lang = nil, options = {}, additional_headers = {})
+    configure if @configuration.nil?
+    Requests::Correct.new(api, text, target_lang, options, additional_headers).request
   end
 
   def usage(options = {})
