@@ -230,6 +230,20 @@ puts rephrased_text.text
 # => 'You'll get to enjoy new, rephrased text!'
 ```
 
+### Correct Text
+
+To fix grammar, spelling and punctuation, use the `correct` method. It accepts a
+string or an array of strings, plus an optional target language:
+
+```ruby
+corrected = DeepL.correct 'I has a apple.', 'en-US'
+puts corrected.text
+# => 'It has an apple.'
+```
+
+A string returns a `DeepL::Resources::Text`; an array returns an array of them (also for an
+array with one element). Empty text raises `ArgumentError`.
+
 ### Glossaries
 
 To create a glossary, use the `glossaries.create` method. The glossary `entries` argument should be an array of text pairs. Each pair includes the source and the target translations.
@@ -843,7 +857,7 @@ The `extra_body_parameters` option allows you to pass arbitrary parameters in th
 
 ### Sending additional HTTP headers
 
-You can pass additional HTTP headers to `translate`, `rephrase`, and the
+You can pass additional HTTP headers to `translate`, `rephrase`, `correct`, and the
 `document` methods. For example, to send the `X-DeepL-Reporting-Tag` header
 for usage reporting (see the [cookbook entry](https://developers.deepl.com/docs/learning-how-tos/cookbook/sending-custom-reporting-tags-from-client-libraries)):
 
@@ -851,6 +865,7 @@ for usage reporting (see the [cookbook entry](https://developers.deepl.com/docs/
 additional_headers = { 'X-DeepL-Reporting-Tag' => 'my-tag' }
 translation = DeepL.translate 'Hello, world!', 'EN', 'DE', {}, additional_headers
 rephrased = DeepL.rephrase 'Hello, world!', 'EN', nil, nil, {}, additional_headers
+corrected = DeepL.correct 'Hello, world!', 'EN', {}, additional_headers
 ```
 
 ### Handle exceptions
