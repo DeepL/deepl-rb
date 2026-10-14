@@ -229,6 +229,13 @@ describe DeepL::Requests::Translate do
         expect(glossary_ids_param('EN', { glossary_ids: [glossary, 'id2'] })).to eq(%w[obj_id id2])
       end
 
+      it 'resolves multilingual glossary objects to their IDs' do
+        glossary = DeepL::Resources::MultilingualGlossary.new(
+          { 'glossary_id' => 'ml_id', 'name' => 'n' }, nil, nil
+        )
+        expect(glossary_ids_param('EN', { glossary_ids: [glossary, 'id2'] })).to eq(%w[ml_id id2])
+      end
+
       it 'raises when `source_lang` is not set' do
         expect { glossary_ids_param(nil, { glossary_ids: %w[id1] }) }
           .to raise_error(ArgumentError, /requires `source_lang`/)

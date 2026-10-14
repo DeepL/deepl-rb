@@ -95,6 +95,34 @@ describe 'DeepL.translate' do # rubocop:disable RSpec/DescribeClass
       end
     end
 
+    it 'translates using a multilingual glossary object via glossary_ids', :real_server_only do # rubocop:disable RSpec/ExampleLength
+      glossary = DeepL.multilingual_glossaries.create(
+        'Translate Multilingual Glossary',
+        [{ source_lang: 'en', target_lang: 'de', entries: [%w[car Kraftfahrzeug]] }]
+      )
+      begin
+        # A fresh glossary may be found before it is applied (eventual consistency),
+        # so poll briefly for the glossary term instead of asserting on the first answer.
+        result = nil
+        ManagedGlossary::GLOSSARY_RETRY_ATTEMPTS.times do
+          result = translate_retrying_missing_glossary(
+            'I drive a car.', 'EN', 'DE', { glossary_ids: [glossary] }
+          )
+          break if result.text.include?('Kraftfahrzeug')
+
+          sleep(ManagedGlossary::GLOSSARY_RETRY_DELAY)
+        end
+
+        expect(result.text).to include('Kraftfahrzeug')
+      ensure
+        begin
+          DeepL.multilingual_glossaries.destroy(glossary.id)
+        rescue StandardError
+          nil
+        end
+      end
+    end
+
     %w[quality_optimized latency_optimized prefer_quality_optimized].each do |model_type|
       it "returns model_type_used for #{model_type}" do
         result = DeepL.translate(text, 'EN', 'DE', { model_type: model_type })

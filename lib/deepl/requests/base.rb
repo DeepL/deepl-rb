@@ -178,8 +178,8 @@ module DeepL
       # Validates the +glossary_ids+ option and resolves it to an array of glossary ID strings.
       #
       # The +glossary_ids+ option accepts an array of up to `MAX_GLOSSARY_IDS` glossary
-      # identifiers. Each entry may be a glossary ID string or a
-      # `DeepL::Resources::Glossary` object. It:
+      # identifiers. Each entry may be a glossary ID string, a
+      # `DeepL::Resources::Glossary` or a `DeepL::Resources::MultilingualGlossary` object. It:
       # * requires +source_lang+ to be set,
       # * cannot be combined with the singular +glossary_id+ option,
       # * allows at most `MAX_GLOSSARY_IDS` identifiers.
@@ -199,9 +199,14 @@ module DeepL
         return nil if ids.empty?
 
         validate_glossary_ids!(ids, source_lang)
-        ids.map do |glossary|
-          glossary.is_a?(DeepL::Resources::Glossary) ? glossary.id : glossary.to_s
-        end
+        ids.map { |glossary| glossary_id_string(glossary) }
+      end
+
+      def glossary_id_string(glossary)
+        return glossary.id if glossary.is_a?(DeepL::Resources::Glossary)
+        return glossary.id if glossary.is_a?(DeepL::Resources::MultilingualGlossary)
+
+        glossary.to_s
       end
 
       def validate_glossary_ids!(ids, source_lang)

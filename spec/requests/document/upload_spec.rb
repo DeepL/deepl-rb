@@ -106,6 +106,14 @@ describe DeepL::Requests::Document::Upload do
         expect(form_value(form_data, 'glossary_ids')).to eq('gid-obj,gid-str')
       end
 
+      it 'appends `glossary_ids` from MultilingualGlossary objects using their IDs' do
+        glossary = DeepL::Resources::MultilingualGlossary.new(
+          { 'glossary_id' => 'gid-ml', 'name' => 'n' }, nil, nil
+        )
+        options[:glossary_ids] = [glossary]
+        expect(form_value(form_data, 'glossary_ids')).to eq('gid-ml')
+      end
+
       it 'raises when combined with the singular `glossary_id` option' do
         options[:glossary_id] = 'single'
         options[:glossary_ids] = %w[gid1]
