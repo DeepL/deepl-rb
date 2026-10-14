@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoints. Public method signatures and return types are unchanged. An unsupported `type`
   option passed to `DeepL.languages` now raises `ArgumentError` instead of
   `DeepL::Exceptions::BadRequest`, since the value is now validated client-side.
+- Language lists returned by `DeepL.languages` and `DeepL.glossaries.language_pairs` may now
+  include additional languages that the v2 endpoints did not list.
 
 ## [3.9.0] - 2026-08-11
 ### Added
