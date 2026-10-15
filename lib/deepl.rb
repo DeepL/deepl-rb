@@ -63,6 +63,8 @@ require_relative 'deepl/requests/translation_memory/create_export'
 require_relative 'deepl/requests/translation_memory/find_job'
 require_relative 'deepl/requests/translation_memory/download_export'
 require_relative 'deepl/requests/languages'
+require_relative 'deepl/requests/languages_for_resource'
+require_relative 'deepl/requests/language_resources'
 require_relative 'deepl/requests/translate'
 require_relative 'deepl/requests/usage'
 require_relative 'deepl/requests/rephrase'
@@ -82,6 +84,8 @@ require_relative 'deepl/resources/translation_memory_export'
 require_relative 'deepl/resources/translation_memory_job'
 require_relative 'deepl/resources/language'
 require_relative 'deepl/resources/language_pair'
+require_relative 'deepl/resources/language_resource'
+require_relative 'deepl/resources/language_support'
 require_relative 'deepl/resources/text'
 require_relative 'deepl/resources/usage'
 
@@ -126,6 +130,33 @@ module DeepL
 
   def languages(options = {})
     Requests::Languages.new(api, options).request
+  end
+
+  ##
+  # Retrieves the languages supported by the given resource, each with its per-feature support.
+  #
+  # @param [String, Symbol] resource Resource to query, for example +'translate_text'+,
+  #   +'translate_document'+, +'glossary'+, +'voice'+, +'write'+, +'style_rules'+ or
+  #   +'translation_memory'+.
+  # @param [Hash] options Additional options:
+  #   * +:include+ - A value or an array of values (+'beta'+, +'external'+) to also return beta
+  #     languages and features or features relying on third-party providers. By default only
+  #     stable languages and features are returned.
+  # @return [Array<DeepL::Resources::LanguageSupport>] The supported languages.
+  # @raise [ArgumentError] If +resource+ is empty.
+  def languages_for_resource(resource, options = {})
+    configure if @configuration.nil?
+    Requests::LanguagesForResource.new(api, resource, options).request
+  end
+
+  ##
+  # Retrieves the resources supported by the DeepL API with their features, and whether each
+  # feature requires support from the source and/or target language.
+  #
+  # @return [Array<DeepL::Resources::LanguageResource>] One entry per resource.
+  def language_resources(options = {})
+    configure if @configuration.nil?
+    Requests::LanguageResources.new(api, options).request
   end
 
   ##

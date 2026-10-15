@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DeepL.correct(text, target_lang = nil)` to correct grammar and spelling via
   `POST /v2/write/correct`. It accepts a string or an array of strings and returns a
   `DeepL::Resources::Text` or an array of them, respectively.
+- Added `DeepL.languages_for_resource` (`GET /v3/languages`), which returns the
+  languages supported by a given resource as `DeepL::Resources::LanguageSupport`
+  objects with source/target usability, status and per-feature support. The
+  `include` option (`beta`, `external`) also returns beta or third-party-backed
+  languages and features.
+- Added `DeepL.language_resources` (`GET /v3/languages/resources`), which returns
+  each resource and its features as `DeepL::Resources::LanguageResource` objects,
+  including whether a feature needs source and/or target language support.
 
 ### Changed
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`

@@ -82,6 +82,38 @@ All languages are also defined on the
 Note that target languages may include the `supports_formality` flag, which may be checked
 using the `DeepL::Resources::Language#supports_formality?`.
 
+#### Languages per resource
+
+`DeepL.languages_for_resource` returns the languages supported by a given API resource
+(`translate_text`, `translate_document`, `glossary`, `voice`, `write`, `style_rules` or
+`translation_memory`), with source/target usability and per-feature support. Pass
+`include: ['beta']` and/or `'external'` to also list beta languages and features or features that
+rely on third-party providers:
+
+```rb
+languages = DeepL.languages_for_resource('translate_text', include: ['beta'])
+
+german = languages.find { |language| language.code == 'de' }
+puts german.usable_as_target?
+# => true
+puts german.supports?(:formality)
+# => true
+puts german.features['formality'].status
+# => "stable"
+```
+
+`DeepL.language_resources` lists every resource with its features, and whether a feature must be
+supported by the source language, the target language, or both:
+
+```rb
+translate_text = DeepL.language_resources.find { |resource| resource.resource == 'translate_text' }
+formality = translate_text.features['formality']
+puts formality.needs_source_support?
+# => false
+puts formality.needs_target_support?
+# => true
+```
+
 ### Translate
 
 To translate a simple text, use the `translate` method:
