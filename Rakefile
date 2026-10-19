@@ -50,9 +50,19 @@ require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 
 RuboCop::RakeTask.new
-RSpec::Core::RakeTask.new(:spec)
 
-desc 'Run all tests.'
+namespace :spec do
+  desc 'Run the offline specs: no network, no key.'
+  RSpec::Core::RakeTask.new(:offline) { |task| task.pattern = 'spec/offline/**/*_spec.rb' }
+
+  desc 'Run the real-API specs: needs DEEPL_AUTH_KEY, sends real requests.'
+  RSpec::Core::RakeTask.new(:real_api) { |task| task.pattern = 'spec/real_api/**/*_spec.rb' }
+end
+
+desc 'Run the offline specs.'
+task spec: 'spec:offline'
+
+desc 'Run the offline specs and rubocop.'
 task :test do
   Rake::Task['spec'].invoke
   Rake::Task['rubocop'].invoke

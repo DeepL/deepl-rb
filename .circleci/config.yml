@@ -14,7 +14,7 @@ jobs:
     # Run rspec
     - type: shell
       command: |
-        bundle exec rspec $(circleci tests glob "spec/**/*_spec.rb" |
+        bundle exec rspec $(circleci tests glob "spec/offline/**/*_spec.rb" |
                             circleci tests split --split-by=timings)
 
     # Run rubocop

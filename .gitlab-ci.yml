@@ -119,55 +119,65 @@ semgrep-sast:
 
 # stage: test ----------------------
 
-.test_base:
-    stage: test
-    extends: .test
-    variables:
-        VALIDATE_REQUESTS_FOR_DEEPL_MOCK: '1'
-        VALIDATE_RESPONSES_FOR_DEEPL_MOCK: '1'
-    parallel:
-        matrix:
-          - DOCKER_IMAGE: 'ruby:2.7'
-          - DOCKER_IMAGE: 'ruby:3.2'
-          - DOCKER_IMAGE: 'ruby:3.3'
-          - DOCKER_IMAGE: 'ruby:2.7'
-            USE_MOCK_SERVER: "use mock server"
-          - DOCKER_IMAGE: 'ruby:3.2'
-            USE_MOCK_SERVER: "use mock server"
-          - DOCKER_IMAGE: 'ruby:3.3'
-            USE_MOCK_SERVER: "use mock server"
-    image:
-      name: ${DOCKER_IMAGE}
-      entrypoint: ['/builds/deepl/backend/oss-client-libs/deepl-ruby']
-    script:
-      - >
-        if [[ ! -z "${USE_MOCK_SERVER}" ]]; then
-          echo "Using mock server"
-          export DEEPL_SERVER_URL=http://deepl-mock:3000
-          export DEEPL_MOCK_SERVER_PORT=3000
-          export DEEPL_PROXY_URL=http://deepl-mock:3001
-          export DEEPL_MOCK_PROXY_SERVER_PORT=3001
-        fi
-      - bundle exec rake test
-      - bundle exec rspec --format RspecJunitFormatter --out rspec.xml
-    artifacts:
-        reports:
-            coverage_report:
-                coverage_format: cobertura
-                path: coverage/coverage.xml
-            junit:
-                - rspec.xml
-        when: always
+.test_offline_base:
+  stage: test
+  parallel:
+    matrix:
+      - DOCKER_IMAGE: 'ruby:2.7'
+      - DOCKER_IMAGE: 'ruby:3.2'
+      - DOCKER_IMAGE: 'ruby:3.3'
+  image:
+    name: ${DOCKER_IMAGE}
+    entrypoint: ['/builds/deepl/backend/oss-client-libs/deepl-ruby']
+  script:
+    - bundle exec rspec spec/offline --format progress --format RspecJunitFormatter --out rspec.xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/coverage.xml
+      junit:
+        - rspec.xml
+    when: always
 
-test_scheduled:
-  extends: .test_base
+test_offline_scheduled:
+  extends: .test_offline_base
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   retry: 2
 
-test_manual:
+test_offline_manual:
+  extends: .test_offline_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+
+# Every endpoint once against the real API; no retry, as a retry repeats every request.
+.test_real_api_base:
   stage: test
-  extends: .test_base
+  extends: .test
+  # Replaces the deepl-mock service of .test
+  services: []
+  image:
+    name: ruby:3.3
+    entrypoint: ['/builds/deepl/backend/oss-client-libs/deepl-ruby']
+  script:
+    - bundle exec rspec spec/real_api --format progress --format RspecJunitFormatter --out rspec.xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/coverage.xml
+      junit:
+        - rspec.xml
+    when: always
+
+test_real_api_scheduled:
+  extends: .test_real_api_base
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+test_real_api_manual:
+  extends: .test_real_api_base
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
