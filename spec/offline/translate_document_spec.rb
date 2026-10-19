@@ -3,6 +3,7 @@
 # license that can be found in the LICENSE file.
 # frozen_string_literal: true
 
+require 'open3'
 require_relative 'offline_helper'
 
 describe DeepL::DocumentApi do
@@ -126,6 +127,23 @@ describe DeepL::DocumentApi do
       expect { documents.translate_document(input, output, 'EN', 'DE') }
         .to raise_error(IOError, 'File already exists at output path')
       expect(File.read(output)).to eq('keep me')
+    end
+
+    it 'raises DocumentTranslationError for an unreadable input without other libraries loaded' do
+      script = <<~RUBY
+        DeepL.configure { |config| config.auth_key = 'k' }
+        begin
+          DeepL.document.translate_document('/nonexistent/in.txt', '/nonexistent/out.txt', 'EN', 'DE')
+        rescue StandardError => e
+          puts e.class
+        end
+      RUBY
+      lib = File.expand_path('../../lib', __dir__)
+
+      output, = Open3.capture2e({ 'PATH' => ENV.fetch('PATH') }, RbConfig.ruby, '-I', lib, '-r',
+                                'deepl', '-e', script, unsetenv_others: true)
+
+      expect(output.strip).to eq('DeepL::Exceptions::DocumentTranslationError')
     end
 
     it 'raises DocumentTranslationError with the API message when the translation fails' do

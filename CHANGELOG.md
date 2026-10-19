@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL.with_session` left its HTTP client, including the proxy, in place after the block, so
   every later call went through a closed client and the proxy. It now restores the previous
   client when the block ends or raises.
+- A failed `translate_document` raised `NameError` instead of
+  `DeepL::Exceptions::DocumentTranslationError` when nothing else had loaded `fileutils`. The
+  library now requires it.
 
 ## [3.9.0] - 2026-08-11
 ### Added

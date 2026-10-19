@@ -4,6 +4,7 @@
 # frozen_string_literal: true
 
 # -- Dependencies
+require 'fileutils'
 require 'json'
 require 'net/http'
 
