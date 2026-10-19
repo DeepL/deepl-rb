@@ -227,8 +227,8 @@ module DeepL
     @http_client
   end
 
-  def with_session(client_options = HTTPClientOptions.new()) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength,Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
-    raise ArgumentError 'This method requires a block to be passed in which contains the actual API calls, see README for example usage.' unless block_given? # rubocop:disable Layout/LineLength
+  def with_session(client_options = HTTPClientOptions.new) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength,Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
+    raise ArgumentError, 'This method requires a block to be passed in which contains the actual API calls, see README for example usage.' unless block_given? # rubocop:disable Layout/LineLength
 
     has_proxy = client_options.proxy.key?('proxy_addr') and client_options.proxy.key?('proxy_port')
     begin

@@ -8,7 +8,7 @@ module DeepL
     attr_reader :proxy, :send_platform_info, :enable_ssl_verification, :cert_path, :open_timeout,
                 :read_timeout, :write_timeout, :ssl_timeout
 
-    def initialize(proxy, cert_path, enable_ssl_verification: true, open_timeout: nil, # rubocop:disable Metrics/ParameterLists
+    def initialize(proxy = {}, cert_path = nil, enable_ssl_verification: true, open_timeout: nil, # rubocop:disable Metrics/ParameterLists
                    read_timeout: nil, write_timeout: nil, ssl_timeout: nil)
       @proxy = proxy
       @enable_ssl_verification = enable_ssl_verification

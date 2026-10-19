@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   most `max_network_retries` times, like 429 and 500 replies, and then raised.
 - `DeepL.document.translate_document` raised `NoMethodError` instead of `IOError` when the output
   file already exists. It now raises `IOError` and leaves the file untouched.
+- `DeepL.with_session` without client options raised `ArgumentError`, and without a block raised
+  `NoMethodError`. It now runs with default options and raises `ArgumentError` without a block.
+  `HTTPClientOptions.new` now defaults `proxy` to `{}` and `cert_path` to `nil`, so the README
+  example `HTTPClientOptions.new({ 'proxy_addr' => ..., 'proxy_port' => ... })` works.
 
 ## [3.9.0] - 2026-08-11
 ### Added

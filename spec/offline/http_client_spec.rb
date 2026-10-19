@@ -67,6 +67,20 @@ describe 'DeepL HTTP client' do
     end
   end
 
+  describe '.with_session' do
+    it 'runs the block without client options' do
+      stub = stub_usage(usage_reply)
+
+      DeepL.with_session { DeepL.usage }
+
+      expect(stub).to have_been_requested.once
+    end
+
+    it 'raises ArgumentError without a block' do
+      expect { DeepL.with_session }.to raise_error(ArgumentError, /requires a block/)
+    end
+  end
+
   describe 'logging' do
     let(:log) { StringIO.new }
 
