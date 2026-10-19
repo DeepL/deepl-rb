@@ -1,0 +1,84 @@
+# Copyright 2026 DeepL SE (https://www.deepl.com)
+# Use of this source code is governed by an MIT
+# license that can be found in the LICENSE file.
+# frozen_string_literal: true
+
+require_relative 'offline_helper'
+
+describe DeepL::GlossaryApi do
+  let(:glossaries) { DeepL.glossaries }
+  let(:glossary_json) do
+    { glossary_id: 'g-1', name: 'terms', ready: true, source_lang: 'en', target_lang: 'de',
+      creation_time: '2026-01-02T03:04:05.678Z', entry_count: 2 }
+  end
+
+  describe '#create' do
+    it 'sends the entries of an array as TSV' do
+      stub_request(:post, url('/v2/glossaries')).with(
+        body: { name: 'terms', source_lang: 'EN', target_lang: 'DE',
+                entries: "Apple\tApfel\nBanana\tBanane\n", entries_format: 'tsv' },
+        headers: json_headers
+      ).to_return(reply(glossary_json, 201))
+
+      glossaries.create('terms', 'EN', 'DE', [%w[Apple Apfel], %w[Banana Banane]])
+    end
+
+    it 'sends a string of entries and the entries format as given' do
+      stub_request(:post, url('/v2/glossaries')).with(
+        body: { name: 'terms', source_lang: 'EN', target_lang: 'DE', entries: "Apple,Apfel\n",
+                entries_format: 'csv' }
+      ).to_return(reply(glossary_json, 201))
+
+      glossaries.create('terms', 'EN', 'DE', "Apple,Apfel\n", entries_format: 'csv')
+    end
+
+    it 'parses the glossary' do
+      stub_request(:post, url('/v2/glossaries')).to_return(reply(glossary_json, 201))
+
+      glossary = glossaries.create('terms', 'EN', 'DE', [%w[a b]])
+
+      expect([glossary.id, glossary.name, glossary.ready, glossary.source_lang,
+              glossary.target_lang, glossary.creation_time, glossary.entry_count])
+        .to eq(['g-1', 'terms', true, 'en', 'de', '2026-01-02T03:04:05.678Z', 2])
+    end
+  end
+
+  describe '#find' do
+    it 'sends a GET with an empty JSON body and parses the glossary' do
+      stub_request(:get, url('/v2/glossaries/g-1')).with(body: '{}', headers: json_headers)
+                                                   .to_return(reply(glossary_json))
+
+      expect(glossaries.find('g-1').id).to eq('g-1')
+    end
+  end
+
+  describe '#list' do
+    it 'parses every glossary' do
+      second = glossary_json.merge(glossary_id: 'g-2')
+      stub_request(:get, url('/v2/glossaries'))
+        .with(body: '{}', headers: json_headers)
+        .to_return(reply(glossaries: [glossary_json, second]))
+
+      expect(glossaries.list.map(&:id)).to eq(%w[g-1 g-2])
+    end
+  end
+
+  describe '#entries' do
+    it 'parses the TSV reply into pairs' do
+      stub_request(:get, url('/v2/glossaries/g-1/entries'))
+        .with(body: '{}', headers: json_headers)
+        .to_return(status: 200, body: "Apple\tApfel\nBanana\tBanane")
+
+      expect(glossaries.entries('g-1')).to eq([%w[Apple Apfel], %w[Banana Banane]])
+    end
+  end
+
+  describe '#destroy' do
+    it 'sends a DELETE with an empty JSON body and returns the ID' do
+      stub_request(:delete, url('/v2/glossaries/g-1')).with(body: '{}', headers: json_headers)
+                                                      .to_return(status: 204)
+
+      expect(glossaries.destroy('g-1')).to eq('g-1')
+    end
+  end
+end

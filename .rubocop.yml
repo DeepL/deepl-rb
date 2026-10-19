@@ -25,6 +25,21 @@ RSpec/ExampleLength:
   Max: 10
   CountAsOne: ['heredoc']
 
+# The suites are named after the SDK resource or operation, not after one class.
+RSpec/DescribeClass:
+  inherit_mode:
+    merge:
+      - Exclude
+  Exclude:
+    - 'spec/offline/**/*'
+    - 'spec/real_api/**/*'
+
+# The expectation of an offline example is the declared request: offline_helper.rb fails every
+# example whose declared request the SDK did not send.
+RSpec/NoExpectationExample:
+  Exclude:
+    - 'spec/offline/**/*'
+
 RSpec/MessageSpies:
   EnforcedStyle: 'receive'
 
@@ -41,8 +56,14 @@ RSpec/SpecFilePathSuffix:
   Enabled: false
 
 RSpec/SpecFilePathFormat:
+  inherit_mode:
+    merge:
+      - Exclude
   CustomTransform:
     DeepL: ''
+  Exclude:
+    - 'spec/offline/**/*'
+    - 'spec/real_api/**/*'
 
 Style/Documentation:
   Enabled: false

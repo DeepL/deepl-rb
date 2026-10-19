@@ -4,7 +4,7 @@
 # frozen_string_literal: true
 
 require 'logger'
-require 'spec_helper'
+require_relative 'offline_helper'
 
 describe DeepL::Configuration do
   subject(:config) { described_class.new(attributes) }
@@ -45,6 +45,23 @@ describe DeepL::Configuration do
         expect(config.max_doc_status_queries).to eq(attributes[:max_doc_status_queries])
         expect(config.max_network_retries).to eq(attributes[:max_network_retries])
         expect(config.version).to eq(attributes[:version])
+      end
+    end
+
+    context 'when the environment provides the key and the server URL' do
+      before do
+        ENV['DEEPL_AUTH_KEY'] = 'env-key'
+        ENV['DEEPL_SERVER_URL'] = 'https://api.example.test'
+      end
+
+      it 'uses the environment values' do
+        expect(config.auth_key).to eq('env-key')
+        expect(config.host).to eq('https://api.example.test')
+      end
+
+      it 'prefers the given attributes' do
+        config = described_class.new(auth_key: 'given', host: 'https://given.example.test')
+        expect([config.auth_key, config.host]).to eq(%w[given https://given.example.test])
       end
     end
 

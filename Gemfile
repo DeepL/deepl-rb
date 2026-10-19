@@ -19,4 +19,5 @@ group :test do
   gem 'rubocop-rspec'
   gem 'simplecov'
   gem 'simplecov-cobertura'
+  gem 'webmock', '~> 3.34'
 end

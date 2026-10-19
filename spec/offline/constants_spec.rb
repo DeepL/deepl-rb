@@ -3,7 +3,7 @@
 # license that can be found in the LICENSE.md file.
 # frozen_string_literal: true
 
-require 'spec_helper'
+require_relative 'offline_helper'
 
 describe 'DeepL::Constants' do
   describe DeepL::Constants::Tone do
