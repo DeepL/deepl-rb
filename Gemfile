@@ -20,4 +20,5 @@ group :test do
   gem 'simplecov'
   gem 'simplecov-cobertura'
   gem 'webmock', '~> 3.34'
+  gem 'webrick'
 end

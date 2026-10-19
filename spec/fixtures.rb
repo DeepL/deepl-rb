@@ -9,16 +9,10 @@ require 'tmpdir'
 module Fixtures
   EXAMPLE_TMX = <<~TMX
     <?xml version="1.0" encoding="UTF-8"?>
-    <tmx version="1.4">
-      <header creationtool="deepl-rb-spec" srclang="de" segtype="sentence"
-              adminlang="en" datatype="plaintext" o-tmf="TMX"/>
-      <body>
-        <tu>
-          <tuv xml:lang="de"><seg>Quelltext Nummer 0</seg></tuv>
-          <tuv xml:lang="en"><seg>Source text number 0</seg></tuv>
-        </tu>
-      </body>
-    </tmx>
+    <tmx version="1.4"><header creationtool="deepl-rb-spec" creationtoolversion="1"
+      segtype="sentence" o-tmf="plain" adminlang="en" srclang="en" datatype="plaintext"/>
+    <body><tu><tuv xml:lang="en"><seg>Segment number 1</seg></tuv>
+    <tuv xml:lang="de"><seg>Segment Nummer 1</seg></tuv></tu></body></tmx>
   TMX
 
   # Every byte value, to check that downloads are written unchanged.

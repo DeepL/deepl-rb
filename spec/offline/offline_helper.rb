@@ -3,6 +3,10 @@
 # license that can be found in the LICENSE file.
 # frozen_string_literal: true
 
+if defined?(RealApiHelper)
+  raise 'spec/offline and spec/real_api cannot run in one process: WebMock blocks the network'
+end
+
 require_relative '../spec_helper'
 require_relative '../fixtures'
 require 'webmock/rspec'

@@ -21,9 +21,12 @@ Metrics/ParameterLists:
 Layout/LineLength:
   Max: 100
 
+# A real-API example is one flow per resource: each step is one real request.
 RSpec/ExampleLength:
   Max: 10
   CountAsOne: ['heredoc']
+  Exclude:
+    - 'spec/real_api/**/*'
 
 # The suites are named after the SDK resource or operation, not after one class.
 RSpec/DescribeClass:
@@ -45,6 +48,8 @@ RSpec/MessageSpies:
 
 RSpec/MultipleExpectations:
   Max: 8
+  Exclude:
+    - 'spec/real_api/**/*'
 
 RSpec/MultipleMemoizedHelpers:
   Max: 7
