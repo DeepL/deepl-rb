@@ -177,6 +177,23 @@ describe DeepL::TranslationMemoryApi do
         .to eq(['j-1', 'import', 'completed', true, false, 'tm-1', 'memory', 2])
     end
 
+    {
+      'awaiting_input' => [false, true, false],
+      'processing' => [false, false, false],
+      'completed' => [true, false, false],
+      'downloaded' => [true, false, false],
+      'failed' => [true, false, true],
+      'expired' => [true, false, true]
+    }.each do |status, flags|
+      it "parses the #{status} status as finished, awaiting input, error: #{flags.inspect}" do
+        stub_job(reply(job_json(status)))
+
+        job = memories.find_job('j-1')
+
+        expect([job.finished?, job.awaiting_input?, job.error?]).to eq(flags)
+      end
+    end
+
     it 'rejects an empty job ID without sending a request' do
       expect { memories.find_job('') }.to raise_error(DeepL::Exceptions::Error, /must not be empty/)
     end

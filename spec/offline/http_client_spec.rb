@@ -105,6 +105,7 @@ describe 'DeepL HTTP client' do
 
       expect(DeepL.api.http_client).to equal(previous)
       expect(DeepL.api.http_client.proxy_address).to be_nil
+      expect(DeepL.http_client).to be_nil
     end
 
     it 'restores the previous client when the block raises' do

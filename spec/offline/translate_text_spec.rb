@@ -161,6 +161,13 @@ describe 'DeepL.translate' do
   end
 
   describe 'extra_body_parameters' do
+    it 'keeps the type of each value' do
+      extra = { flag: true, off: false, count: 42, label: 'x', list: [1, 'a'], nested: { a: 1 } }
+      expect_body({ text: ['a'], source_lang: nil, target_lang: 'DE' }.merge(extra))
+
+      DeepL.translate('a', nil, 'DE', extra_body_parameters: extra)
+    end
+
     it 'adds new parameters and overrides built-in ones' do
       expect_body(text: ['a'], source_lang: nil, target_lang: 'FR', beta_feature: 'on')
       DeepL.translate('a', nil, 'DE', extra_body_parameters: { target_lang: 'FR',

@@ -41,6 +41,33 @@ describe DeepL::DocumentApi do
       expect([result.document_id, result.document_key]).to eq(%w[doc-1 key-1])
     end
 
+    it 'accepts a glossary, style rule, translation memory and extra parameters' do # rubocop:disable RSpec/ExampleLength
+      input, = create_text_document(temp_dir)
+      stub = stub_upload.to_return(upload_reply)
+      rule = DeepL::Resources::StyleRule.new({ 'style_id' => 's-1' }, nil, nil)
+      memory = DeepL::Resources::TranslationMemory.new({ 'translation_memory_id' => 'tm-1' },
+                                                       nil, nil)
+
+      documents.upload(input, 'EN', 'DE', 'name.txt', formality: 'more', output_format: 'txt',
+                                                      glossary_ids: %w[g-1 g-2], style_rule: rule,
+                                                      translation_memory: memory,
+                                                      translation_memory_threshold: 90,
+                                                      extra_body_parameters: { beta: true })
+
+      expect(stub).to have_been_requested.once
+    end
+
+    it 'raises ArgumentError for invalid glossary_ids without sending a request' do
+      input, = create_text_document(temp_dir)
+
+      expect { documents.upload(input, nil, 'DE', nil, glossary_ids: ['g-1']) }
+        .to raise_error(ArgumentError, /requires `source_lang`/)
+      expect { documents.upload(input, 'EN', 'DE', nil, glossary_ids: ['g-1'], glossary_id: 'g') }
+        .to raise_error(ArgumentError, /cannot be used together/)
+      expect { documents.upload(input, 'EN', 'DE', nil, glossary_ids: %w[1 2 3 4 5 6]) }
+        .to raise_error(ArgumentError, /maximum of 5/)
+    end
+
     it 'retries after a 429 reply' do
       input, = create_text_document(temp_dir)
       stub = stub_upload.to_return(reply({}, 429), upload_reply)
