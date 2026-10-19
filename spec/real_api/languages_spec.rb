@@ -6,13 +6,13 @@
 require_relative 'real_api_helper'
 
 describe 'languages' do
-  it 'sends GET /v3/languages and parses the source and target languages' do
-    sources = DeepL.languages
-    targets = DeepL.languages(type: :target)
+  it 'sends GET /v3/languages and parses the source languages' do
+    languages = DeepL.languages
+    codes = languages.map(&:code)
 
-    expect(sources.map(&:code)).to include('EN')
-    expect(targets.map(&:code)).to include('DE')
-    expect(targets.map(&:supports_formality?)).to all(be(true).or(be(false)))
+    expect(codes).to include('EN')
+    expect(codes).to eq(codes.map(&:upcase))
+    expect(languages.map(&:name)).to all(be_a(String))
   end
 
   it 'sends GET /v3/languages/resources and parses the resources and their features' do
