@@ -34,11 +34,15 @@ module DeepL
       end
 
       def option(name)
-        options[name.to_s] || options[name.to_sym]
+        return options[name.to_s] if options.key?(name.to_s)
+
+        options[name.to_sym]
       end
 
       def delete_option(name)
-        options.delete(name.to_s) || options.delete(name.to_sym)
+        return options.delete(name.to_s) if options.key?(name.to_s)
+
+        options.delete(name.to_sym)
       end
 
       def set_option(name, value)

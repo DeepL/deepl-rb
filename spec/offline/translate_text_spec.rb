@@ -77,6 +77,11 @@ describe 'DeepL.translate' do
       end
     end
 
+    it 'converts split_sentences false given with a string key' do
+      expect_body(text: ['a'], source_lang: nil, target_lang: 'DE', split_sentences: '0')
+      DeepL.translate('a', nil, 'DE', 'split_sentences' => false)
+    end
+
     { '1' => true, '0' => false, true => true }.each do |value, sent|
       %i[preserve_formatting outline_detection].each do |option|
         it "sends #{option} #{value.inspect} as #{sent.inspect}" do

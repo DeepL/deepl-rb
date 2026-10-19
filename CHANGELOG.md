@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A failed `translate_document` raised `NameError` instead of
   `DeepL::Exceptions::DocumentTranslationError` when nothing else had loaded `fileutils`. The
   library now requires it.
+- An option set to `false` with a string key (for example `'split_sentences' => false`) was read as
+  unset, so its conversion was skipped and `false` was sent instead of the API value `'0'`.
 
 ## [3.9.0] - 2026-08-11
 ### Added
