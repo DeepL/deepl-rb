@@ -120,7 +120,7 @@ describe DeepL::Configuration do
   describe '#validate!' do
     let(:auth_message) { 'auth_key not provided' }
 
-    context 'when providing a valid auth key' do
+    context 'when the auth key is empty' do
       let(:attributes) { { auth_key: '' } }
 
       it 'raises an error' do
@@ -128,7 +128,7 @@ describe DeepL::Configuration do
       end
     end
 
-    context 'when providing an invalid auth key' do
+    context 'when the auth key is set' do
       let(:attributes) { { auth_key: 'not-empty' } }
 
       it 'does not raise an error' do
