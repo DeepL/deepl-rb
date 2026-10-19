@@ -44,6 +44,13 @@ describe 'DeepL HTTP client' do
       expect(stub).to have_been_requested.twice
     end
 
+    it 'raises the network error after max_network_retries retries' do
+      stub = stub_request(:get, url('/v2/usage')).to_timeout
+
+      expect { DeepL.usage }.to raise_error(Net::OpenTimeout)
+      expect(stub).to have_been_requested.times(3)
+    end
+
     it 'raises LimitExceeded after max_network_retries retries' do
       stub = stub_usage(reply({}, 429))
 

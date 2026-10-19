@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Language lists returned by `DeepL.languages` and `DeepL.glossaries.language_pairs` may now
   include additional languages that the v2 endpoints did not list.
 
+### Fixed
+- Network errors (timeouts, `SocketError`) were retried without limit. They are now retried at
+  most `max_network_retries` times, like 429 and 500 replies, and then raised.
+
 ## [3.9.0] - 2026-08-11
 ### Added
 - Added support for using multiple glossaries in text and document translation

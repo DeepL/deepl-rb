@@ -94,27 +94,25 @@ module DeepL
         rescue DeepL::Exceptions::Error => e
           raise e unless should_retry?(resp, e, @backoff_timer.num_retries)
 
-          unless e.nil?
-            api.configuration.logger&.info("Encountered a retryable exception: #{e.message}")
-          end
-          api.configuration.logger&.info("Starting retry #{@backoff_timer.num_retries + 1} for " \
-                                         "request #{self} after sleeping for " \
-                                         "#{format('%.2f', @backoff_timer.time_until_deadline)}")
-          files_to_reset.each(&:rewind)
-          @backoff_timer.sleep_until_deadline
+          wait_before_retry(e, files_to_reset)
           next
         rescue Net::HTTPBadResponse, Net::HTTPServerError, Net::HTTPFatalError, Timeout::Error,
                SocketError => e
-          unless e.nil?
-            api.configuration.logger&.info("Encountered a retryable exception: #{e.message}")
-          end
-          api.configuration.logger&.info("Starting retry #{@backoff_timer.num_retries + 1} for " \
-                                         "request #{self} after sleeping for " \
-                                         "#{format('%.2f', @backoff_timer.time_until_deadline)}")
-          files_to_reset.each(&:rewind)
-          @backoff_timer.sleep_until_deadline
+          raise e if @backoff_timer.num_retries >= api.configuration.max_network_retries
+
+          wait_before_retry(e, files_to_reset)
           next
         end
+      end
+
+      def wait_before_retry(error, files_to_reset)
+        logger = api.configuration.logger
+        logger&.info("Encountered a retryable exception: #{error.message}")
+        logger&.info("Starting retry #{@backoff_timer.num_retries + 1} for " \
+                     "request #{self} after sleeping for " \
+                     "#{format('%.2f', @backoff_timer.time_until_deadline)}")
+        files_to_reset.each(&:rewind)
+        @backoff_timer.sleep_until_deadline
       end
 
       def should_retry?(response, exception, num_retries)
