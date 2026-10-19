@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Exceptions::BadRequest`, since the value is now validated client-side.
 - Language lists returned by `DeepL.languages` and `DeepL.glossaries.language_pairs` may now
   include additional languages that the v2 endpoints did not list.
+- Reworked the test suite so that it no longer needs the `deepl-mock` server. The offline specs
+  assert the exact outgoing requests with WebMock, and one real-API spec per resource calls each
+  endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Fixed
 - Network errors (timeouts, `SocketError`) were retried without limit. They are now retried at

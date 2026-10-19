@@ -1055,7 +1055,24 @@ cd deepl-rb
 bundle install
 ```
 
-To run tests (rspec and rubocop), use
+There are two suites of specs, which must run in separate processes:
+
+- `spec/offline` tests options, validation, errors, retries and polling against intercepted
+  requests (WebMock). It needs no key and no network:
+
+  ```
+  bundle exec rspec spec/offline
+  ```
+
+- `spec/real_api` sends every endpoint once to the real API. Set `DEEPL_AUTH_KEY` to a test key,
+  and `DEEPL_SERVER_URL` if the key is not for the default server. The specs create resources
+  named `sdktest-ruby-...` and delete them again:
+
+  ```
+  DEEPL_AUTH_KEY=... bundle exec rspec spec/real_api
+  ```
+
+To run the offline specs and rubocop, use
 
 ```
 bundle exec rake test
