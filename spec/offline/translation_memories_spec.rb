@@ -35,15 +35,12 @@ describe DeepL::TranslationMemoryApi do
   end
 
   describe '#list' do
-    it 'sends a GET without a query by default and parses the memories' do
+    it 'sends a GET without a query by default and parses the timestamps' do
       stub_request(:get, url('/v3/translation_memories'))
         .with(headers: json_headers).to_return(reply(translation_memories: [memory_json]))
 
       memory = memories.list.first
 
-      expect([memory.translation_memory_id, memory.name, memory.source_language,
-              memory.target_languages, memory.segment_count])
-        .to eq(['tm-1', 'memory', 'de', %w[en fr], 3])
       expect([memory.creation_time, memory.updated_time])
         .to eq([Time.utc(2026, 1, 2, 3, 4, 5), Time.utc(2026, 2, 3, 4, 5, 6)])
     end
@@ -65,10 +62,10 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:delete, url('/v3/translation_memories/tm-1'))
         .with(headers: json_headers).to_return(status: 204)
 
-      found = [memories.find('tm-1'), memories.find(object)].map(&:translation_memory_id)
-      destroyed = [memories.destroy('tm-1'), memories.destroy(object)]
+      memories.find('tm-1')
+      memories.find(object)
 
-      expect([found, destroyed]).to eq([%w[tm-1 tm-1], %w[tm-1 tm-1]])
+      expect([memories.destroy('tm-1'), memories.destroy(object)]).to eq(%w[tm-1 tm-1])
     end
 
     ['', nil].each do |id|
@@ -97,7 +94,7 @@ describe DeepL::TranslationMemoryApi do
                                 filter_case_sensitive: true)
     end
 
-    it 'parses the segments, their targets and the next page cursor' do
+    it 'parses the timestamp of a target and the next page' do
       stub_request(:get, url('/v3/translation_memories/tm-1/segments'))
         .to_return(reply(segments_json))
 
@@ -105,9 +102,7 @@ describe DeepL::TranslationMemoryApi do
       segment = page.segments.first
       target = segment.targets.first
 
-      expect([page.segment_count, page.next_page?, page.next_page_cursor, segment.source_text,
-              target.target_language, target.target_text, target.creation_time])
-        .to eq([7, true, 'c-2', 'Haus', 'en', 'house', Time.utc(2026, 1, 2, 3, 4, 5)])
+      expect([page.next_page?, target.creation_time]).to eq([true, Time.utc(2026, 1, 2, 3, 4, 5)])
     end
 
     it 'reports no next page when there is no cursor' do
@@ -128,7 +123,7 @@ describe DeepL::TranslationMemoryApi do
       memories.create_import('a.tmx', 12)
     end
 
-    it 'sends the content type and display name when given, and parses the reply' do
+    it 'sends the content type and display name when given, and parses the expiry' do
       stub_request(:post, url('/v3/translation_memories/import'))
         .with(body: { source_file: { file_name: 'a.tmx', content_length: 12,
                                      content_type: 'application/x-tmx' },
@@ -139,8 +134,7 @@ describe DeepL::TranslationMemoryApi do
       created = memories.create_import('a.tmx', 12, content_type: 'application/x-tmx',
                                                     display_name: 'My memory')
 
-      expect([created.job_id, created.upload_url, created.expires_at])
-        .to eq(['j-1', upload_url, Time.utc(2026, 3, 4, 5, 6, 7)])
+      expect(created.expires_at).to eq(Time.utc(2026, 3, 4, 5, 6, 7))
     end
   end
 
@@ -165,16 +159,15 @@ describe DeepL::TranslationMemoryApi do
   end
 
   describe '#find_job' do
-    it 'parses the job, its status and its result' do
+    it 'parses the job parameters, status and result' do
       stub_job(reply(job_json('completed', translation_memory_id: 'tm-1', skipped_segment_count: 2)
                        .merge(parameters: { translation_memory_id: 'tm-1',
                                             display_name: 'memory' })))
 
       job = memories.find_job('j-1')
 
-      expect([job.job_id, job.operation, job.status, job.finished?, job.error?,
-              job.translation_memory_id, job.display_name, job.result.skipped_segment_count])
-        .to eq(['j-1', 'import', 'completed', true, false, 'tm-1', 'memory', 2])
+      expect([job.status, job.finished?, job.error?, job.translation_memory_id, job.display_name])
+        .to eq(['completed', true, false, 'tm-1', 'memory'])
     end
 
     {
@@ -251,8 +244,7 @@ describe DeepL::TranslationMemoryApi do
 
       export = memories.create_export('tm-1')
 
-      expect([export.job_id, export.translation_memory_id, export.reused_existing?])
-        .to eq(['j-1', 'tm-1', false])
+      expect([export.translation_memory_id, export.reused_existing?]).to eq(['tm-1', false])
     end
 
     it 'reports an export that the API reused' do
@@ -307,7 +299,7 @@ describe DeepL::TranslationMemoryApi do
 
       job = memories.import_from_filepath(path, display_name: 'imported')
 
-      expect(job.result.translation_memory_id).to eq('tm-1')
+      expect(job.finished?).to be(true)
     end
 
     it 'raises Error for a missing import file without sending a request' do

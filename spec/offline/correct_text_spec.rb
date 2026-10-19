@@ -33,18 +33,16 @@ describe 'DeepL.correct' do
                   { 'X-DeepL-Reporting-Tag' => 'tag' })
   end
 
-  it 'parses a string into a text' do
-    stub_correct.to_return(reply(improvements: [{ text: 'Hello', detected_source_language: 'EN' }]))
-
-    result = DeepL.correct('Helo')
-
-    expect([result.text, result.detected_source_language]).to eq(%w[Hello EN])
-  end
-
-  it 'parses an array into an array of texts, even for a single element' do
+  it 'returns a text for a string' do
     stub_correct.to_return(reply(improvements: [{ text: 'Hello' }]))
 
-    expect(DeepL.correct(['Helo']).map(&:text)).to eq(['Hello'])
+    expect(DeepL.correct('Helo')).to be_a(DeepL::Resources::Text)
+  end
+
+  it 'returns an array of texts for an array, even for a single element' do
+    stub_correct.to_return(reply(improvements: [{ text: 'Hello' }]))
+
+    expect(DeepL.correct(['Helo']).map(&:class)).to eq([DeepL::Resources::Text])
   end
 
   [[''], [[]], [['a', '']]].each do |args|

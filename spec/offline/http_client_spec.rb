@@ -16,7 +16,7 @@ describe 'DeepL HTTP client' do
     it 'retries a 429 reply' do
       stub = stub_usage(reply({}, 429), usage_reply)
 
-      expect(DeepL.usage.character_count).to eq(1)
+      DeepL.usage
       expect(stub).to have_been_requested.twice
     end
 

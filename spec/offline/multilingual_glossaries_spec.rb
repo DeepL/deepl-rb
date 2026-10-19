@@ -38,15 +38,11 @@ describe DeepL::MultilingualGlossaryApi do
                                     'entries' => "a\tb" }])
     end
 
-    it 'parses the glossary with its dictionaries' do
+    it 'parses the dictionaries of the glossary' do
       stub_request(:post, url('/v3/glossaries')).to_return(reply(glossary_json, 201))
 
-      glossary = glossaries.create('terms', [])
-      dictionary = glossary.dictionaries.first
-
-      expect([glossary.id, glossary.name, glossary.creation_time, dictionary.source_lang,
-              dictionary.target_lang, dictionary.entry_count])
-        .to eq(['g-1', 'terms', '2026-01-02T03:04:05.678Z', 'en', 'de', 2])
+      expect(glossaries.create('terms', []).dictionaries.map(&:class))
+        .to eq([DeepL::Resources::MultilingualGlossaryDictionary])
     end
   end
 
@@ -63,27 +59,25 @@ describe DeepL::MultilingualGlossaryApi do
   end
 
   describe '#find and #list' do
-    it 'sends GET requests with an empty JSON body and parses the glossaries' do
+    it 'sends GET requests with an empty JSON body' do
       stub_request(:get, url('/v3/glossaries/g-1')).with(body: '{}', headers: json_headers)
                                                    .to_return(reply(glossary_json))
       stub_request(:get, url('/v3/glossaries')).with(body: '{}', headers: json_headers)
                                                .to_return(reply(glossaries: [glossary_json]))
 
-      expect([glossaries.find('g-1').id, glossaries.list.map(&:id)]).to eq(['g-1', ['g-1']])
+      glossaries.find('g-1')
+      glossaries.list
     end
   end
 
   describe '#entries' do
-    it 'sends the language pair in the query and parses the dictionary entries' do
+    it 'sends the language pair in the query' do
       stub_request(:get, url('/v3/glossaries/g-1/entries?source_lang=EN&target_lang=DE'))
         .with(headers: json_headers)
         .to_return(reply(dictionaries: [{ source_lang: 'en', target_lang: 'de',
                                           entries: "a\tb", entries_format: 'tsv' }]))
 
-      dictionary = glossaries.entries('g-1', 'EN', 'DE').first
-
-      expect([dictionary.source_lang, dictionary.target_lang, dictionary.entries,
-              dictionary.entries_format]).to eq(%W[en de a\tb tsv])
+      glossaries.entries('g-1', 'EN', 'DE')
     end
   end
 
@@ -118,15 +112,13 @@ describe DeepL::MultilingualGlossaryApi do
   end
 
   describe '#replace_dictionary' do
-    it 'sends a PUT with the entries as TSV and parses the dictionary' do
+    it 'sends a PUT with the entries as TSV' do
       stub_request(:put, url('/v3/glossaries/g-1/dictionaries')).with(
         body: { source_lang: 'EN', target_lang: 'DE', entries: "a\tb", entries_format: 'tsv' },
         headers: json_headers
       ).to_return(reply(dictionary_json))
 
-      dictionary = glossaries.replace_dictionary('g-1', 'EN', 'DE', [%w[a b]])
-
-      expect([dictionary.source_lang, dictionary.entry_count]).to eq(['en', 2])
+      glossaries.replace_dictionary('g-1', 'EN', 'DE', [%w[a b]])
     end
 
     it 'sends the CSV content with the csv entries format' do

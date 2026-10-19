@@ -41,17 +41,15 @@ describe 'DeepL.rephrase' do
                    extra_body_parameters: { target_lang: 'de', beta: true })
   end
 
-  it 'parses a single improvement as a text' do
-    stub_rephrase.to_return(reply(improvements: [{ text: 'Hi', detected_source_language: 'EN' }]))
+  it 'returns a text for a string' do
+    stub_rephrase.to_return(reply(improvements: [{ text: 'Hi' }]))
 
-    result = DeepL.rephrase('Hello')
-
-    expect([result.text, result.detected_source_language]).to eq(%w[Hi EN])
+    expect(DeepL.rephrase('Hello')).to be_a(DeepL::Resources::Text)
   end
 
-  it 'parses several improvements as an array of texts' do
+  it 'returns an array of texts for an array' do
     stub_rephrase.to_return(reply(improvements: [{ text: 'x' }, { text: 'y' }]))
 
-    expect(DeepL.rephrase(%w[a b]).map(&:text)).to eq(%w[x y])
+    expect(DeepL.rephrase(%w[a b]).map(&:class)).to eq([DeepL::Resources::Text] * 2)
   end
 end

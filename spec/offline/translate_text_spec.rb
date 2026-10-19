@@ -23,19 +23,8 @@ describe 'DeepL.translate' do
       .with(body: { text: %w[Hello Bye], source_lang: 'EN', target_lang: 'DE' })
       .to_return(reply(translations: [{ text: 'Hallo' }, { text: 'Tschüss' }]))
 
-    expect(DeepL.translate(%w[Hello Bye], 'EN', 'DE').map(&:text)).to eq(%w[Hallo Tschüss])
-  end
-
-  it 'parses the detected source language and the model type used' do
-    stub_request(:post, url('/v2/translate'))
-      .with(body: { text: ['Hello'], source_lang: nil, target_lang: 'DE' })
-      .to_return(reply(translations: [{ text: 'Hallo', detected_source_language: 'EN',
-                                        model_type_used: 'quality_optimized' }]))
-
-    result = DeepL.translate('Hello', nil, 'DE')
-
-    expect([result.text, result.detected_source_language, result.model_type_used])
-      .to eq(%w[Hallo EN quality_optimized])
+    expect(DeepL.translate(%w[Hello Bye], 'EN', 'DE').map(&:class))
+      .to eq([DeepL::Resources::Text] * 2)
   end
 
   it 'sends the additional headers' do

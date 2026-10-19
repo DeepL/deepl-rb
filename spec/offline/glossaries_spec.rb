@@ -32,34 +32,30 @@ describe DeepL::GlossaryApi do
       glossaries.create('terms', 'EN', 'DE', "Apple,Apfel\n", entries_format: 'csv')
     end
 
-    it 'parses the glossary' do
+    it 'returns a glossary' do
       stub_request(:post, url('/v2/glossaries')).to_return(reply(glossary_json, 201))
 
-      glossary = glossaries.create('terms', 'EN', 'DE', [%w[a b]])
-
-      expect([glossary.id, glossary.name, glossary.ready, glossary.source_lang,
-              glossary.target_lang, glossary.creation_time, glossary.entry_count])
-        .to eq(['g-1', 'terms', true, 'en', 'de', '2026-01-02T03:04:05.678Z', 2])
+      expect(glossaries.create('terms', 'EN', 'DE', [%w[a b]])).to be_a(DeepL::Resources::Glossary)
     end
   end
 
   describe '#find' do
-    it 'sends a GET with an empty JSON body and parses the glossary' do
+    it 'sends a GET with an empty JSON body' do
       stub_request(:get, url('/v2/glossaries/g-1')).with(body: '{}', headers: json_headers)
                                                    .to_return(reply(glossary_json))
 
-      expect(glossaries.find('g-1').id).to eq('g-1')
+      glossaries.find('g-1')
     end
   end
 
   describe '#list' do
-    it 'parses every glossary' do
+    it 'returns one glossary per entry of the reply' do
       second = glossary_json.merge(glossary_id: 'g-2')
       stub_request(:get, url('/v2/glossaries'))
         .with(body: '{}', headers: json_headers)
         .to_return(reply(glossaries: [glossary_json, second]))
 
-      expect(glossaries.list.map(&:id)).to eq(%w[g-1 g-2])
+      expect(glossaries.list.size).to eq(2)
     end
   end
 

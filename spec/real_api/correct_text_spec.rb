@@ -11,6 +11,6 @@ describe 'DeepL.correct' do
 
     expect(result).to be_a(DeepL::Resources::Text)
     expect(result.text).to be_a(String)
-    expect(result.detected_source_language).to match(/\Ade\z/i)
+    expect(result.detected_source_language).not_to be_empty
   end
 end

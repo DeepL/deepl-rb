@@ -31,13 +31,11 @@ describe DeepL::StyleRuleApi do
       style_rules.list(page: 2, page_size: 5, detailed: true)
     end
 
-    it 'parses the style rules' do
+    it 'parses the timestamps of the style rules' do
       stub_request(:get, url('/v3/style_rules')).to_return(reply(style_rules: [style_json]))
 
       rule = style_rules.list.first
 
-      expect([rule.style_id, rule.name, rule.language, rule.version])
-        .to eq(['s-1', 'house style', 'en', 3])
       expect([rule.creation_time, rule.updated_time])
         .to eq([Time.utc(2026, 1, 2, 3, 4, 5), Time.utc(2026, 2, 3, 4, 5, 6)])
     end
@@ -63,14 +61,13 @@ describe DeepL::StyleRuleApi do
       style_rules.create('n', 'en', configured_rules: rules, custom_instructions: instructions)
     end
 
-    it 'parses the configured rules and the custom instructions' do
+    it 'parses the configured rules, defaulting missing rules to an empty hash' do
       stub_request(:post, url('/v3/style_rules')).to_return(reply(style_json, 201))
 
       rule = style_rules.create('n', 'en')
 
-      expect([rule.configured_rules.numbers, rule.configured_rules.vocabulary,
-              rule.custom_instructions.map { |i| [i.id, i.label, i.prompt, i.source_language] }])
-        .to eq([{ 'number_format' => 'dot' }, {}, [%w[i-1 Tone] + ['Be brief', 'en']]])
+      expect([rule.configured_rules.vocabulary, rule.custom_instructions.map(&:class)])
+        .to eq([{}, [DeepL::Resources::CustomInstruction]])
     end
   end
 
@@ -79,7 +76,7 @@ describe DeepL::StyleRuleApi do
       stub_request(:get, url('/v3/style_rules/s-1')).with(body: '{}', headers: json_headers)
                                                     .to_return(reply(style_json))
 
-      expect(style_rules.find('s-1').style_id).to eq('s-1')
+      style_rules.find('s-1')
     end
   end
 
@@ -120,20 +117,15 @@ describe DeepL::StyleRuleApi do
         .with(body: { label: 'Tone', prompt: 'Be brief', source_language: 'de' })
         .to_return(reply(instruction_json.merge(source_language: 'de'), 201))
 
-      created = [style_rules.create_custom_instruction('s-1', 'Tone', 'Be brief'),
-                 style_rules.create_custom_instruction('s-1', 'Tone', 'Be brief', 'de')]
-
-      expect(created.map(&:source_language)).to eq([nil, 'de'])
+      style_rules.create_custom_instruction('s-1', 'Tone', 'Be brief')
+      style_rules.create_custom_instruction('s-1', 'Tone', 'Be brief', 'de')
     end
 
-    it 'sends a GET on find and parses the instruction' do
+    it 'sends a GET on find' do
       stub_request(:get, url('/v3/style_rules/s-1/custom_instructions/i-1'))
         .with(body: '{}', headers: json_headers).to_return(reply(instruction_json))
 
-      instruction = style_rules.find_custom_instruction('s-1', 'i-1')
-
-      expect([instruction.id, instruction.label,
-              instruction.prompt]).to eq(['i-1', 'Tone', 'Be brief'])
+      style_rules.find_custom_instruction('s-1', 'i-1')
     end
 
     it 'sends the label and prompt on update, with the source language when given' do

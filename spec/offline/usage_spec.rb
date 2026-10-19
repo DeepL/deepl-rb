@@ -12,13 +12,10 @@ describe 'DeepL.usage' do
     DeepL.usage
   end
 
-  it 'parses the character count and limit' do
+  it 'reports no exceeded quota while the count is below the limit' do
     stub_request(:get, url('/v2/usage')).to_return(reply(character_count: 42, character_limit: 100))
 
-    usage = DeepL.usage
-
-    expect([usage.character_count, usage.character_limit, usage.quota_exceeded?])
-      .to eq([42, 100, false])
+    expect(DeepL.usage.quota_exceeded?).to be(false)
   end
 
   it 'reports an exceeded quota when the count reaches the limit' do

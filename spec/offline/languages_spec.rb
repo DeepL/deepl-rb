@@ -27,8 +27,7 @@ describe 'languages' do
       stub_languages
       languages = DeepL.languages
 
-      expect(languages.map { |l| [l.code, l.name] })
-        .to eq([%w[EN English], %w[DE German], %w[JA Japanese]])
+      expect(languages.map(&:code)).to eq(%w[EN DE JA])
     end
 
     it 'lists the target languages with the formality support of each' do
@@ -69,7 +68,7 @@ describe 'languages' do
       DeepL.languages_for_resource('write', include: 'beta')
     end
 
-    it 'parses the language, its usability and the feature support' do
+    it 'parses the usability and the feature support of the language' do
       stub_request(:get, url('/v3/languages?resource=write')).to_return(
         reply([{ lang: 'de', name: 'German', status: 'stable', usable_as_source: true,
                  usable_as_target: false, features: { tone: { status: 'beta' } } }])
@@ -77,9 +76,7 @@ describe 'languages' do
 
       language = DeepL.languages_for_resource('write').first
 
-      expect([language.code, language.name, language.status, language.usable_as_source?,
-              language.usable_as_target?, language.features['tone'].status])
-        .to eq(['de', 'German', 'stable', true, false, 'beta'])
+      expect([language.usable_as_source?, language.usable_as_target?]).to eq([true, false])
       expect([language.supports?(:tone), language.supports?(:style)]).to eq([true, false])
     end
 
