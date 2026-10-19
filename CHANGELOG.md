@@ -42,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NoMethodError`. It now runs with default options and raises `ArgumentError` without a block.
   `HTTPClientOptions.new` now defaults `proxy` to `{}` and `cert_path` to `nil`, so the README
   example `HTTPClientOptions.new({ 'proxy_addr' => ..., 'proxy_port' => ... })` works.
+- `DeepL.with_session` left its HTTP client, including the proxy, in place after the block, so
+  every later call went through a closed client and the proxy. It now restores the previous
+  client when the block ends or raises.
 
 ## [3.9.0] - 2026-08-11
 ### Added

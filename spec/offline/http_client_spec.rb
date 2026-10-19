@@ -79,6 +79,40 @@ describe 'DeepL HTTP client' do
     it 'raises ArgumentError without a block' do
       expect { DeepL.with_session }.to raise_error(ArgumentError, /requires a block/)
     end
+
+    it 'applies the proxy and the timeouts to the client inside the block' do
+      options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test',
+                                               'proxy_port' => 8080 },
+                                             nil, open_timeout: 3, read_timeout: 4)
+      stub_usage(usage_reply)
+
+      client = DeepL.with_session(options) do
+        DeepL.usage
+        DeepL.api.http_client
+      end
+
+      expect([client.proxy_address, client.proxy_port, client.open_timeout, client.read_timeout])
+        .to eq(['proxy.example.test', 8080, 3, 4])
+    end
+
+    it 'restores the previous client when the block ends' do
+      previous = DeepL.api.http_client
+      options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test',
+                                               'proxy_port' => 8080 })
+      stub_usage(usage_reply)
+
+      DeepL.with_session(options) { DeepL.usage }
+
+      expect(DeepL.api.http_client).to equal(previous)
+      expect(DeepL.api.http_client.proxy_address).to be_nil
+    end
+
+    it 'restores the previous client when the block raises' do
+      previous = DeepL.api.http_client
+
+      expect { DeepL.with_session { raise 'boom' } }.to raise_error('boom')
+      expect(DeepL.api.http_client).to equal(previous)
+    end
   end
 
   describe 'logging' do

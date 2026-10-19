@@ -231,6 +231,8 @@ module DeepL
     raise ArgumentError, 'This method requires a block to be passed in which contains the actual API calls, see README for example usage.' unless block_given? # rubocop:disable Layout/LineLength
 
     has_proxy = client_options.proxy.key?('proxy_addr') and client_options.proxy.key?('proxy_port')
+    previous_api_client = api.http_client
+    previous_http_client = @http_client
     begin
       uri = URI(configuration.host)
       http = Net::HTTP.new(uri.host, uri.port, has_proxy ? client_options.proxy['proxy_addr'] : nil,
@@ -246,6 +248,8 @@ module DeepL
       api.update_http_client(http)
       yield
     ensure
+      api.update_http_client(previous_api_client)
+      @http_client = previous_http_client
       http.finish
     end
   end
