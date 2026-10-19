@@ -119,6 +119,15 @@ describe DeepL::DocumentApi do
       expect(File.read(output)).to eq('Protonenstrahl')
     end
 
+    it 'raises IOError and keeps the file when the output file already exists' do
+      input, output = create_text_document(temp_dir)
+      File.write(output, 'keep me')
+
+      expect { documents.translate_document(input, output, 'EN', 'DE') }
+        .to raise_error(IOError, 'File already exists at output path')
+      expect(File.read(output)).to eq('keep me')
+    end
+
     it 'raises DocumentTranslationError with the API message when the translation fails' do
       input, output = create_text_document(temp_dir)
       stub_upload.to_return(upload_reply)
