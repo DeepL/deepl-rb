@@ -21,6 +21,44 @@ describe DeepL::DocumentApi do
     )
   end
 
+  # Net::HTTP writes multipart parts straight to the socket, so WebMock sees no request body.
+  # The form fields are read from the argument of `set_form` instead.
+  def capture_forms
+    forms = []
+    allow(Net::HTTP::Post).to receive(:new).and_wrap_original do |original, *args|
+      original.call(*args).tap do |request|
+        allow(request).to receive(:set_form).and_wrap_original do |set_form, form, *rest|
+          forms << form
+          set_form.call(form, *rest)
+        end
+      end
+    end
+    forms
+  end
+
+  # Uploads a text document with the given options and returns the form that was sent.
+  def sent_form(filename = nil, **options)
+    input, = create_text_document(temp_dir)
+    stub_upload.to_return(upload_reply)
+    forms = capture_forms
+    documents.upload(input, 'EN', 'DE', filename, **options)
+    forms.first
+  end
+
+  def resource_options
+    resources = DeepL::Resources
+    memory = resources::TranslationMemory.new({ 'translation_memory_id' => 'tm-obj' }, nil, nil)
+    glossary = resources::Glossary.new({ 'glossary_id' => 'g-obj' }, nil, nil)
+    multilingual = resources::MultilingualGlossary.new({ 'glossary_id' => 'g-ml', 'name' => 'n' },
+                                                       nil, nil)
+    { style_rule: resources::StyleRule.new({ 'style_id' => 's-obj' }, nil, nil),
+      translation_memory: memory, glossary_ids: [glossary, multilingual, 'g-str'] }
+  end
+
+  def form_fields(form)
+    form.reject { |name, _| name == 'file' }.to_h
+  end
+
   def stub_status(*statuses)
     stub_request(:post, url('/v2/document/doc-1')).with(body: document_key_body,
                                                         headers: json_headers)
@@ -32,27 +70,43 @@ describe DeepL::DocumentApi do
   end
 
   describe '#upload' do
-    it 'sends a multipart POST with the credentials' do
+    it 'sends a multipart POST with the credentials and the file, languages and filename' do
       input, = create_text_document(temp_dir)
-      stub_upload.to_return(upload_reply)
 
-      documents.upload(input, 'EN', 'DE')
+      form = sent_form
+
+      expect(form.assoc('file').last.path).to eq(input)
+      expect(form_fields(form)).to eq('source_lang' => 'EN', 'target_lang' => 'DE',
+                                      'filename' => 'example_document.txt')
     end
 
-    it 'accepts a glossary, style rule, translation memory and extra parameters' do # rubocop:disable RSpec/ExampleLength
-      input, = create_text_document(temp_dir)
-      stub = stub_upload.to_return(upload_reply)
-      rule = DeepL::Resources::StyleRule.new({ 'style_id' => 's-1' }, nil, nil)
-      memory = DeepL::Resources::TranslationMemory.new({ 'translation_memory_id' => 'tm-1' },
-                                                       nil, nil)
+    it 'sends every option as its own field, serializing IDs, the threshold and glossary_ids' do
+      form = sent_form('name.txt', formality: 'more', output_format: 'txt',
+                                   glossary_ids: %w[g-1 g-2], style_rule: 's-1',
+                                   translation_memory: 'tm-1', translation_memory_threshold: 80)
 
-      documents.upload(input, 'EN', 'DE', 'name.txt', formality: 'more', output_format: 'txt',
-                                                      glossary_ids: %w[g-1 g-2], style_rule: rule,
-                                                      translation_memory: memory,
-                                                      translation_memory_threshold: 90,
-                                                      extra_body_parameters: { beta: true })
+      expect(form_fields(form)).to eq(
+        'source_lang' => 'EN', 'target_lang' => 'DE', 'filename' => 'name.txt',
+        'formality' => 'more', 'output_format' => 'txt', 'glossary_ids' => 'g-1,g-2',
+        'style_id' => 's-1', 'translation_memory_id' => 'tm-1',
+        'translation_memory_threshold' => '80'
+      )
+    end
 
-      expect(stub).to have_been_requested.once
+    it 'takes the IDs of style rule, translation memory and glossary objects' do
+      form = sent_form(**resource_options)
+
+      expect(form_fields(form)).to include(
+        'style_id' => 's-obj', 'translation_memory_id' => 'tm-obj',
+        'glossary_ids' => 'g-obj,g-ml,g-str'
+      )
+    end
+
+    it 'lets extra_body_parameters add a field and override an existing one' do
+      form = sent_form(formality: 'more', extra_body_parameters: { formality: 'less', beta: true })
+
+      expect(form.count { |name, _| name == 'formality' }).to eq(1)
+      expect(form_fields(form)).to include('formality' => 'less', 'beta' => 'true')
     end
 
     it 'raises ArgumentError for invalid glossary_ids without sending a request' do
