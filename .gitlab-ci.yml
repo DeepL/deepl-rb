@@ -155,8 +155,6 @@ test_offline_manual:
 .test_real_api_base:
   stage: test
   extends: .test
-  # Replaces the deepl-mock service of .test
-  services: []
   image:
     name: ruby:3.3
     entrypoint: ['/builds/deepl/backend/oss-client-libs/deepl-ruby']
