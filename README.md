@@ -859,6 +859,34 @@ puts usage.character_limit
 # => 1250000
 ```
 
+For API Pro users, the response also contains this API key's usage, speech usage, the billing
+period and a per-product breakdown. These fields are `nil` when the response does not contain
+them (e.g. for API Free users):
+
+```rb
+usage = DeepL.usage
+
+# Characters used by the whole account vs. by this API key
+puts "account: #{usage.character_count} / #{usage.character_limit}"
+# => account: 5947223 / 1000000000000
+puts "this key: #{usage.api_key_character_count} / #{usage.api_key_character_limit}"
+# => this key: 636 / 1000000000000
+
+puts usage.speech_to_text_minutes_count   # => 30
+puts usage.speech_to_text_minutes_limit   # => 600
+puts usage.speech_to_speech_minutes_count # => 12
+puts usage.speech_to_speech_minutes_limit # => 600
+puts usage.start_time                     # => 2025-05-13 09:18:42 UTC (Time)
+puts usage.end_time                       # => 2025-06-13 09:18:42 UTC (Time)
+
+usage.products&.each do |product|
+  # product_type and billing_unit are plain strings, e.g. 'translate' and 'characters'
+  puts "#{product.product_type}: key #{product.api_key_unit_count}, " \
+       "account #{product.account_unit_count} #{product.billing_unit}"
+end
+# => translate: key 636, account 5941580 characters
+```
+
 ### Translate documents
 
 To translate a document, use the `document.translate_document` method. Example:
