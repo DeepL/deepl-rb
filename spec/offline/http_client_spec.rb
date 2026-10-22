@@ -156,6 +156,16 @@ describe 'DeepL HTTP client' do
 
         expect_key_redacted
       end
+
+      it 'redacts an Authorization header given with another casing' do
+        stub_request(:post, url('/v2/translate'))
+          .to_return(reply(translations: [{ text: 'Hallo' }]))
+
+        other = { 'authorization' => 'DeepL-Auth-Key sdktest-other-key' }
+        DeepL.translate('Hello', nil, 'DE', {}, other)
+
+        expect(log.string).not_to include('sdktest-other-key')
+      end
     end
   end
 end

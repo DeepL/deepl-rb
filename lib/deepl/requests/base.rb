@@ -258,9 +258,9 @@ module DeepL
       end
 
       def loggable_headers
-        return headers unless headers.key?('Authorization')
-
-        headers.merge('Authorization' => 'DeepL-Auth-Key [REDACTED]')
+        headers.to_h do |name, value|
+          name.to_s.casecmp?('authorization') ? [name, 'DeepL-Auth-Key [REDACTED]'] : [name, value]
+        end
       end
 
       def add_json_content_type(headers_to_add_to)
