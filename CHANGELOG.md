@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DeepL.language_resources` (`GET /v3/languages/resources`), which returns
   each resource and its features as `DeepL::Resources::LanguageResource` objects,
   including whether a feature needs source and/or target language support.
+- Added the `enable_watermark` option to `DeepL.document.upload` and
+  `DeepL.document.translate_document`. When `true`, the API adds a "Translated by DeepL"
+  watermark to `docx` and `pdf` output. Previously the option was silently dropped.
 
 ### Changed
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`

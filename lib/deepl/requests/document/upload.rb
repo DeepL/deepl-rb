@@ -9,7 +9,7 @@ module DeepL
       class Upload < Base
         attr_reader :input_file_path, :source_lang, :target_lang, :filename
 
-        SUPPORTED_OPTIONS = %w[formality glossary_id output_format].freeze
+        SUPPORTED_OPTIONS = %w[formality glossary_id output_format enable_watermark].freeze
 
         def initialize(api, input_file_path, source_lang, target_lang, filename = nil, # rubocop:disable Metrics/ParameterLists
                        options = {}, additional_headers = {})
@@ -105,7 +105,7 @@ module DeepL
         def add_supported_options_to_form(form_data)
           SUPPORTED_OPTIONS.each do |option_name|
             option_value = option(option_name)
-            form_data.push([option_name, option_value]) unless option_value.nil?
+            form_data.push([option_name, option_value.to_s]) unless option_value.nil?
           end
         end
 

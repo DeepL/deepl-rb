@@ -885,6 +885,23 @@ options = {
 doc_handle = DeepL.document.upload('/path/to/spanish_document.pdf', 'ES', 'EN', nil, options)
 ```
 
+Document translation options include:
+
+- `formality`: same as for text translation.
+- `glossary_id` / `glossary_ids`: see the glossary sections above.
+- `output_format`: file extension of the desired output format, e.g. `'pdf'` to translate
+  a `docx` into a PDF.
+- `enable_watermark`: `true` adds a "Translated by DeepL" watermark to the translated
+  document. The API supports it only for `docx` and `pdf` output and ignores it for other
+  formats. When not set, the parameter is not sent.
+- `style_rule`, `translation_memory`, `translation_memory_threshold`: see the style rules
+  and translation memory sections above.
+
+```rb
+DeepL.document.translate_document('/path/to/document.docx', '/path/to/translated.pdf', 'EN', 'DE',
+                                  nil, output_format: 'pdf', enable_watermark: true)
+```
+
 The `extra_body_parameters` option allows you to pass arbitrary parameters in the request body. This can be used to access beta features by adding new parameters, or to override built-in parameters (such as `target_lang`, `source_lang`, etc.) for testing purposes.
 
 ### Sending additional HTTP headers

@@ -93,6 +93,17 @@ describe DeepL::DocumentApi do
       )
     end
 
+    it 'sends enable_watermark as true or false, combined with output_format' do
+      expect(form_fields(sent_form(enable_watermark: true, output_format: 'pdf')))
+        .to include('enable_watermark' => 'true', 'output_format' => 'pdf')
+      expect(form_fields(sent_form(enable_watermark: false)))
+        .to include('enable_watermark' => 'false')
+    end
+
+    it 'does not send enable_watermark when it is not set' do
+      expect(form_fields(sent_form)).not_to have_key('enable_watermark')
+    end
+
     it 'takes the IDs of style rule, translation memory and glossary objects' do
       form = sent_form(**resource_options)
 
@@ -195,6 +206,18 @@ describe DeepL::DocumentApi do
       documents.translate_document(input, output, 'EN', 'DE')
 
       expect(File.read(output)).to eq('Protonenstrahl')
+    end
+
+    it 'passes enable_watermark on to the upload' do
+      input, output = create_text_document(temp_dir)
+      stub_upload.to_return(upload_reply)
+      stub_status(status_reply('done'))
+      stub_request(:post, url('/v2/document/doc-1/result')).to_return(status: 200, body: 'x')
+      forms = capture_forms
+
+      documents.translate_document(input, output, 'EN', 'DE', nil, enable_watermark: true)
+
+      expect(form_fields(forms.first)).to include('enable_watermark' => 'true')
     end
 
     it 'raises IOError and keeps the file when the output file already exists' do

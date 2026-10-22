@@ -37,6 +37,8 @@ module DeepL
     #                       +:translation_memory+ (a translation memory ID string or a
     #                       `DeepL::Resources::TranslationMemory` object), and
     #                       +:translation_memory_threshold+ (integer 0-100, recommended minimum 75).
+    #                       +:enable_watermark+ (boolean) adds a "Translated by DeepL" watermark;
+    #                       the API applies it to +docx+ and +pdf+ output only.
     # @param [Hash] additional_headers Additional HTTP headers for the upload.
     # @return [DeepL::Resources::DocumentHandle] Document handle for the uploaded document.
 
