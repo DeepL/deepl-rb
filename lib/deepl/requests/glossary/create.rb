@@ -27,7 +27,7 @@ module DeepL
         end
 
         def details
-          "HTTP Headers: #{headers}\nPayload #{{
+          "HTTP Headers: #{loggable_headers}\nPayload #{{
             name: name, source_lang: source_lang, target_lang: target_lang, entries: entries_to_tsv,
             entries_format: entries_format
           }}"

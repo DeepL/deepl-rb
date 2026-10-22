@@ -72,8 +72,8 @@ module DeepL
       end
 
       def details
-        "HTTP Headers: #{headers}\nPayload #{{ text: text, source_lang: source_lang,
-                                               target_lang: target_lang }}"
+        "HTTP Headers: #{loggable_headers}\nPayload #{{ text: text, source_lang: source_lang,
+                                                        target_lang: target_lang }}"
       end
 
       def to_s

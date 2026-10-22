@@ -22,7 +22,7 @@ module DeepL
         end
 
         def details
-          "HTTP Headers: #{headers}\nPayload #{{ document_key: document_key }}"
+          "HTTP Headers: #{loggable_headers}\nPayload #{{ document_key: document_key }}"
         end
 
         def to_s

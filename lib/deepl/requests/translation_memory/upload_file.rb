@@ -22,7 +22,7 @@ module DeepL
         end
 
         def details
-          "HTTP Headers: #{headers}\nPayload #{file_content.bytesize} byte(s)"
+          "HTTP Headers: #{loggable_headers}\nPayload #{file_content.bytesize} byte(s)"
         end
 
         def to_s

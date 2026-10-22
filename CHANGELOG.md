@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Fixed
+- Debug logging no longer includes the auth key in the logged request headers.
 - Network errors (timeouts, `SocketError`) were retried without limit. They are now retried at
   most `max_network_retries` times, like 429 and 500 replies, and then raised.
 - `DeepL.document.translate_document` raised `NoMethodError` instead of `IOError` when the output

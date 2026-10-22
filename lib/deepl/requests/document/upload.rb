@@ -30,7 +30,7 @@ module DeepL
         end
 
         def details
-          "HTTP Headers: #{headers}\nPayload #{[
+          "HTTP Headers: #{loggable_headers}\nPayload #{[
             ['file', "File at #{input_file_path} opened in binary mode"],
             ['source_lang', source_lang], ['target_lang', target_lang], ['filename', filename]
           ]}"

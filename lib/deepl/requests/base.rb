@@ -24,7 +24,7 @@ module DeepL
       end
 
       def details
-        "HTTP Headers #{headers}"
+        "HTTP Headers #{loggable_headers}"
       end
 
       private
@@ -255,6 +255,12 @@ module DeepL
       def headers
         { 'Authorization' => "DeepL-Auth-Key #{api.configuration.auth_key}",
           'User-Agent' => api.configuration.user_agent }.merge(@additional_headers)
+      end
+
+      def loggable_headers
+        return headers unless headers.key?('Authorization')
+
+        headers.merge('Authorization' => 'DeepL-Auth-Key [REDACTED]')
       end
 
       def add_json_content_type(headers_to_add_to)
