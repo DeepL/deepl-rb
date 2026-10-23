@@ -51,14 +51,17 @@ describe 'DeepL.usage' do
     before { stub_request(:get, url('/v2/usage')).to_return(reply(pro_body)) }
 
     it 'parses the per-key, speech and billing period fields' do
-      expect(DeepL.usage).to have_attributes(
+      usage = DeepL.usage
+
+      expect(usage).to have_attributes(
         character_count: 5_947_223, character_limit: 1_000_000_000_000,
-        api_key_character_count: 636, api_key_character_limit: 1_000_000_000_000,
-        speech_to_text_minutes_count: 30, speech_to_text_minutes_limit: 600,
-        speech_to_speech_minutes_count: 12, speech_to_speech_minutes_limit: 600,
         start_time: Time.utc(2025, 5, 13, 9, 18, 42), end_time: Time.utc(2025, 6, 13, 9, 18, 42),
         to_s: '5947223 / 1000000000000'
       )
+      expect(usage.character).to have_attributes(count: 5_947_223, limit: 1_000_000_000_000)
+      expect(usage.api_key_character).to have_attributes(count: 636, limit: 1_000_000_000_000)
+      expect([usage.speech_to_text_minutes, usage.speech_to_speech_minutes].map(&:to_s))
+        .to eq(['30 of 600', '12 of 600'])
     end
 
     it 'parses the per-product usage' do
@@ -77,11 +80,47 @@ describe 'DeepL.usage' do
                                                          character_limit: 1_250_000))
     usage = DeepL.usage
 
-    expect(usage.character_count).to eq(180_118)
-    expect(usage.character_limit).to eq(1_250_000)
+    expect(usage.character).to have_attributes(count: 180_118, limit: 1_250_000)
     expect(usage.to_s).to eq('180118 / 1250000')
     expect(usage.quota_exceeded?).to be(false)
-    DeepL::Resources::Usage::PRO_FIELDS.each { |field| expect(usage.public_send(field)).to be_nil }
+    DeepL::Resources::Usage::KEYWORD_FIELDS.each do |field|
+      expect(usage.public_send(field)).to be_nil
+    end
+  end
+
+  it 'parses the document and team document usage' do
+    stub_request(:get, url('/v2/usage')).to_return(
+      reply(character_count: 1, character_limit: 100, document_count: 5, document_limit: 5,
+            team_document_count: 2, team_document_limit: 10)
+    )
+    usage = DeepL.usage
+
+    expect(usage.document).to have_attributes(count: 5, limit: 5, limit_reached?: true)
+    expect(usage.team_document).to have_attributes(count: 2, limit: 10, limit_reached?: false)
+    expect(usage.any_limit_reached?).to be(true)
+  end
+
+  it 'does not count the API Pro usage types in any_limit_reached?' do
+    stub_request(:get, url('/v2/usage')).to_return(
+      reply(character_count: 1, character_limit: 100, api_key_character_count: 50,
+            api_key_character_limit: 50)
+    )
+    usage = DeepL.usage
+
+    expect(usage.api_key_character.limit_reached?).to be(true)
+    expect(usage.any_limit_reached?).to be(false)
+  end
+
+  it 'ignores an unparseable billing period and malformed products' do
+    stub_request(:get, url('/v2/usage')).to_return(
+      reply(character_count: 20, character_limit: 500_000, start_time: 'not a timestamp',
+            end_time: '', products: [{ product_type: 'translate' }, 'not an object'])
+    )
+    usage = DeepL.usage
+
+    expect(usage.character_count).to eq(20)
+    expect([usage.start_time, usage.end_time]).to eq([nil, nil])
+    expect(usage.products.map(&:product_type)).to eq(['translate'])
   end
 
   it 'keeps the positional constructor working' do

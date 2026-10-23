@@ -859,25 +859,36 @@ puts usage.character_limit
 # => 1250000
 ```
 
+Each usage type is also available as a `DeepL::Resources::Usage::Detail` with `count`,
+`limit` and `limit_reached?`: `character`, plus `document` and `team_document` for accounts with
+a document limit. `any_limit_reached?` checks `character`, `document` and `team_document`:
+
+```rb
+usage = DeepL.usage
+
+puts 'Translation limit reached.' if usage.any_limit_reached?
+puts "Document usage: #{usage.document}" if usage.document
+# => Document usage: 5 of 10
+```
+
 For API Pro users, the response also contains this API key's usage, speech usage, the billing
 period and a per-product breakdown. These fields are `nil` when the response does not contain
-them (e.g. for API Free users):
+them (e.g. for API Free users). `any_limit_reached?` does not consider them; call
+`limit_reached?` on them directly, e.g. `usage.api_key_character.limit_reached?`:
 
 ```rb
 usage = DeepL.usage
 
 # Characters used by the whole account vs. by this API key
-puts "account: #{usage.character_count} / #{usage.character_limit}"
-# => account: 5947223 / 1000000000000
-puts "this key: #{usage.api_key_character_count} / #{usage.api_key_character_limit}"
-# => this key: 636 / 1000000000000
+puts "account: #{usage.character}"
+# => account: 5947223 of 1000000000000
+puts "this key: #{usage.api_key_character}"
+# => this key: 636 of 1000000000000
 
-puts usage.speech_to_text_minutes_count   # => 30
-puts usage.speech_to_text_minutes_limit   # => 600
-puts usage.speech_to_speech_minutes_count # => 12
-puts usage.speech_to_speech_minutes_limit # => 600
-puts usage.start_time                     # => 2025-05-13 09:18:42 UTC (Time)
-puts usage.end_time                       # => 2025-06-13 09:18:42 UTC (Time)
+puts usage.speech_to_text_minutes   # => 30 of 600
+puts usage.speech_to_speech_minutes # => 12 of 600
+puts usage.start_time               # => 2025-05-13 09:18:42 UTC (Time)
+puts usage.end_time                 # => 2025-06-13 09:18:42 UTC (Time)
 
 usage.products&.each do |product|
   # product_type and billing_unit are plain strings, e.g. 'translate' and 'characters'

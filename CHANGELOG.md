@@ -26,12 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `enable_watermark` option to `DeepL.document.upload` and
   `DeepL.document.translate_document`. When `true`, the API adds a "Translated by DeepL"
   watermark to `docx` and `pdf` output. Previously the option was silently dropped.
-- `DeepL.usage` now exposes the fields returned for API Pro users:
-  `api_key_character_count`, `api_key_character_limit`, `speech_to_text_minutes_count`,
-  `speech_to_text_minutes_limit`, `speech_to_speech_minutes_count`,
-  `speech_to_speech_minutes_limit`, `start_time` and `end_time` (as `Time`), and `products`
-  (an array of `DeepL::Resources::UsageProduct`). They are `nil` when the response does not
-  contain them. `quota_exceeded?` and `to_s` are unchanged.
+- `DeepL.usage` now returns each usage type as a `DeepL::Resources::Usage::Detail` (`count`,
+  `limit`, `limit_reached?`), like the other DeepL client libraries: `character`, `document`,
+  `team_document`, and for API Pro users `api_key_character`, `speech_to_text_minutes` and
+  `speech_to_speech_minutes`. API Pro users also get `start_time` and `end_time` (as `Time`)
+  and `products` (an array of `DeepL::Resources::UsageProduct`). Fields missing from the
+  response are `nil`. The new `any_limit_reached?` checks the character, document and team
+  document limits, not the API Pro ones. `character_count`, `character_limit`,
+  `quota_exceeded?` and `to_s` are unchanged.
 
 ### Changed
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`

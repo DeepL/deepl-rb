@@ -6,36 +6,54 @@
 module DeepL
   module Resources
     class Usage < Base
-      COUNT_FIELDS = %i[api_key_character_count api_key_character_limit
-                        speech_to_text_minutes_count speech_to_text_minutes_limit
-                        speech_to_speech_minutes_count speech_to_speech_minutes_limit].freeze
-      PRO_FIELDS = (COUNT_FIELDS + %i[products start_time end_time]).freeze
+      ##
+      # The amount used and the maximum amount allowed for one usage type.
+      class Detail
+        attr_reader :count, :limit
 
-      attr_reader :character_count, :character_limit, *PRO_FIELDS
+        def initialize(count, limit)
+          @count = count
+          @limit = limit
+        end
+
+        def limit_reached?
+          count >= limit
+        end
+
+        def to_s
+          "#{count} of #{limit}"
+        end
+      end
+
+      DETAIL_TYPES = %i[document team_document api_key_character speech_to_text_minutes
+                        speech_to_speech_minutes].freeze
+      KEYWORD_FIELDS = (DETAIL_TYPES + %i[products start_time end_time]).freeze
+
+      attr_reader :character_count, :character_limit, :character, *KEYWORD_FIELDS
 
       ##
-      # The keyword arguments hold the fields only present for API Pro users; each one is nil
-      # when the response does not contain it.
+      # Each keyword argument is nil when the response does not contain the field.
       #
-      # @param [Integer, nil] api_key_character_count Characters used by this API key.
-      # @param [Integer, nil] api_key_character_limit Character limit of this API key.
-      # @param [Integer, nil] speech_to_text_minutes_count Speech-to-text minutes used.
-      # @param [Integer, nil] speech_to_text_minutes_limit Speech-to-text minutes limit.
-      # @param [Integer, nil] speech_to_speech_minutes_count Speech-to-speech minutes used.
-      # @param [Integer, nil] speech_to_speech_minutes_limit Speech-to-speech minutes limit.
-      # @param [Array<UsageProduct>, nil] products Per-product usage.
-      # @param [Time, nil] start_time Start of the current billing period.
-      # @param [Time, nil] end_time End of the current billing period.
+      # @param [Detail, nil] document Document usage, for accounts with a document limit.
+      # @param [Detail, nil] team_document Document usage of the whole team.
+      # @param [Detail, nil] api_key_character Character usage of this API key (API Pro).
+      # @param [Detail, nil] speech_to_text_minutes Speech-to-text usage in minutes (API Pro).
+      # @param [Detail, nil] speech_to_speech_minutes Speech-to-speech usage in minutes (API Pro).
+      # @param [Array<UsageProduct>, nil] products Per-product usage (API Pro).
+      # @param [Time, nil] start_time Start of the current billing period (API Pro).
+      # @param [Time, nil] end_time End of the current billing period (API Pro).
 
-      def initialize(character_count, character_limit, *args, **pro_fields)
+      def initialize(character_count, character_limit, *args, **fields)
         super(*args)
 
-        unknown = pro_fields.keys - PRO_FIELDS
+        unknown = fields.keys - KEYWORD_FIELDS
         raise ArgumentError, "unknown keywords: #{unknown.join(', ')}" unless unknown.empty?
 
         @character_count = character_count
         @character_limit = character_limit
-        PRO_FIELDS.each { |field| instance_variable_set("@#{field}", pro_fields[field]) }
+        @character = Detail.new(character_count, character_limit) unless
+          character_count.nil? || character_limit.nil?
+        KEYWORD_FIELDS.each { |field| instance_variable_set("@#{field}", fields[field]) }
       end
 
       def to_s
@@ -44,6 +62,14 @@ module DeepL
 
       def quota_exceeded?
         character_count >= character_limit
+      end
+
+      ##
+      # True if the character, document or team document limit has been reached. The API Pro
+      # usage types (api_key_character and the speech minutes) are not considered; call
+      # limit_reached? on them directly.
+      def any_limit_reached?
+        [character, document, team_document].compact.any?(&:limit_reached?)
       end
     end
 
