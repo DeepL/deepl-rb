@@ -52,6 +52,15 @@ require_relative 'deepl/requests/style_rule/create_custom_instruction'
 require_relative 'deepl/requests/style_rule/find_custom_instruction'
 require_relative 'deepl/requests/style_rule/update_custom_instruction'
 require_relative 'deepl/requests/style_rule/destroy_custom_instruction'
+require_relative 'deepl/requests/spoken_terms/helpers'
+require_relative 'deepl/requests/spoken_terms/create'
+require_relative 'deepl/requests/spoken_terms/list'
+require_relative 'deepl/requests/spoken_terms/find'
+require_relative 'deepl/requests/spoken_terms/update'
+require_relative 'deepl/requests/spoken_terms/entries'
+require_relative 'deepl/requests/spoken_terms/replace_term_list'
+require_relative 'deepl/requests/spoken_terms/destroy'
+require_relative 'deepl/requests/spoken_terms/destroy_term_list'
 require_relative 'deepl/requests/translation_memory/base'
 require_relative 'deepl/requests/translation_memory/storage_base'
 require_relative 'deepl/requests/translation_memory/list'
@@ -78,6 +87,7 @@ require_relative 'deepl/resources/document_translation_status'
 require_relative 'deepl/resources/glossary'
 require_relative 'deepl/resources/multilingual_glossary'
 require_relative 'deepl/resources/style_rule'
+require_relative 'deepl/resources/spoken_terms'
 require_relative 'deepl/resources/translation_memory'
 require_relative 'deepl/resources/translation_memory_segments'
 require_relative 'deepl/resources/translation_memory_import'
@@ -116,6 +126,7 @@ require_relative 'deepl/configuration'
 require_relative 'deepl/document_api'
 require_relative 'deepl/glossary_api'
 require_relative 'deepl/multilingual_glossary_api'
+require_relative 'deepl/spoken_terms_api'
 require_relative 'deepl/style_rule_api'
 require_relative 'deepl/translation_memory_api'
 
@@ -195,6 +206,15 @@ module DeepL
   def multilingual_glossaries(options = {})
     configure if @configuration.nil?
     MultilingualGlossaryApi.new(api, options)
+  end
+
+  ##
+  # Manages spoken terms collections, which improve the transcription of the given terms.
+  #
+  # @return [DeepL::SpokenTermsApi]
+  def spoken_terms(options = {})
+    configure if @configuration.nil?
+    SpokenTermsApi.new(api, options)
   end
 
   def style_rules(options = {})

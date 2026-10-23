@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added support for spoken terms collections (`/v3/spoken-terms`) via
+  `DeepL.spoken_terms`, which exposes `create`, `list`, `find`, `update`, `entries`,
+  `replace_term_list`, `destroy`, and `destroy_term_list`. Terms are passed and returned
+  as arrays of strings. Please refer to the README for usage instructions.
 - Added support for multilingual glossaries via the v3 glossary API.
   `DeepL.multilingual_glossaries` exposes `create`, `create_with_csv`, `find`,
   `list`, `entries`, `destroy`, `destroy_dictionary`, `replace_dictionary`,

@@ -470,6 +470,78 @@ DeepL.multilingual_glossaries.destroy_dictionary(glossary.id, 'EN', 'FR')
 DeepL.multilingual_glossaries.destroy(glossary.id)
 ```
 
+### Spoken terms
+
+Spoken terms collections improve the transcription of terms such as product
+names. A collection holds one list of terms per language and is managed through
+`DeepL.spoken_terms`. Every method that takes a collection ID also accepts a
+`DeepL::Resources::SpokenTerms` object. Terms are passed and returned as arrays
+of strings.
+
+To create a collection, pass a name and one `DeepL::Resources::SpokenTermsEntries`
+(or a hash with `:lang` and `:entries`) per language:
+
+```rb
+spoken_terms = DeepL.spoken_terms.create(
+  'Product names',
+  [DeepL::Resources::SpokenTermsEntries.new('en', ['DeepL', 'webhook'])]
+)
+
+puts spoken_terms.class
+# => DeepL::Resources::SpokenTerms
+puts spoken_terms.id
+# => 'a74d88fb-ed2a-4943-a664-a4512398b994'
+puts spoken_terms.creation_time.class
+# => Time
+puts spoken_terms.term_lists.first.entry_count
+# => 2
+```
+
+List all collections or fetch one with `list` and `find`:
+
+```rb
+collections = DeepL.spoken_terms.list
+spoken_terms = DeepL.spoken_terms.find 'a74d88fb-ed2a-4943-a664-a4512398b994'
+```
+
+`update` renames a collection and/or merges terms into the list of each given
+language. Arguments that are not given are not sent:
+
+```rb
+DeepL.spoken_terms.update(spoken_terms, name: 'Renamed')
+updated = DeepL.spoken_terms.update(
+  spoken_terms, term_lists: [{ lang: 'en', entries: ['authentication'] }]
+)
+puts updated.term_lists.first.entry_count
+# => 3
+```
+
+To read the terms of one language, use `entries`:
+
+```rb
+entries = DeepL.spoken_terms.entries(spoken_terms, 'en')
+puts entries.entries.inspect
+# => ["DeepL", "authentication", "webhook"]
+```
+
+`replace_term_list` replaces the terms of one language, or adds the list if the
+language is new:
+
+```rb
+term_list = DeepL.spoken_terms.replace_term_list(spoken_terms, 'en', ['API'])
+puts term_list.class
+# => DeepL::Resources::SpokenTermsList
+puts term_list.entry_count
+# => 1
+```
+
+To delete the list of one language or the entire collection:
+
+```rb
+DeepL.spoken_terms.destroy_term_list(spoken_terms, 'de')
+DeepL.spoken_terms.destroy(spoken_terms)
+```
+
 ### Style Rules
 
 Style rules allow you to customize your translations using a managed, shared list
