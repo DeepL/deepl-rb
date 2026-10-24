@@ -54,35 +54,6 @@ module RealApiHelper
     end
     false
   end
-
-  JANITOR_TTL_SECONDS = 2 * 60 * 60
-
-  # True for a resource named by any SDK's test run (sdktest-<sdk>-<yyyymmddHHMM>-...) that
-  # started more than two hours ago, so it cannot belong to a live run.
-  def self.stale_test_resource?(name, now = Time.now.utc)
-    match = /\Asdktest-[a-z]+-(\d{12})-/.match(name.to_s)
-    return false unless match
-
-    started = Time.strptime("#{match[1]}+0000", '%Y%m%d%H%M%z')
-    now - started > JANITOR_TTL_SECONDS
-  rescue ArgumentError
-    false
-  end
-
-  # Deletes test resources leaked by crashed runs. Best-effort: errors are reported and skipped.
-  def self.run_janitor
-    DeepL.spoken_terms.list.each do |collection|
-      next unless stale_test_resource?(collection.name)
-
-      begin
-        DeepL.spoken_terms.destroy(collection.id)
-      rescue DeepL::Exceptions::Error => e
-        warn "Janitor: could not delete spoken terms #{collection.id}: #{e.message}"
-      end
-    end
-  rescue StandardError => e
-    warn "Janitor: could not list spoken terms: #{e.message}"
-  end
 end
 
 # The host comes from DEEPL_SERVER_URL, which Configuration reads itself.
@@ -91,6 +62,4 @@ DeepL.configure { |config| config.auth_key = ENV.fetch('DEEPL_AUTH_KEY') }
 RSpec.configure do |config|
   config.include RealApiHelper
   config.include Fixtures
-
-  config.before(:suite) { RealApiHelper.run_janitor }
 end

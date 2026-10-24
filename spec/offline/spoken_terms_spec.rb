@@ -45,7 +45,7 @@ describe DeepL::SpokenTermsApi do
   describe '#list and #find' do
     it 'parses the collections and turns a missing term_lists into an empty list' do
       stub_request(:get, url('/v3/spoken-terms'))
-        .to_return(reply(spoken_terms: [collection_json.except(:term_lists)]))
+        .to_return(reply(spoken_terms: [collection_json.reject { |k, _| k == :term_lists }]))
       stub_request(:get, url('/v3/spoken-terms/st-1')).to_return(reply(collection_json))
 
       expect(spoken_terms.list.map(&:term_lists)).to eq([[]])
