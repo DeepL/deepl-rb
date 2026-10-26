@@ -16,7 +16,11 @@ module DeepL
         def entries_to_string(entries)
           return entries if entries.is_a?(String)
 
-          entries.map { |entry| "#{entry.first}\t#{entry.last}" }.join("\n")
+          entries.map do |entry|
+            source = Utils::TermValidator.validate!(entry.first)
+            target = Utils::TermValidator.validate!(entry.last)
+            "#{source}\t#{target}"
+          end.join("\n")
         end
       end
     end

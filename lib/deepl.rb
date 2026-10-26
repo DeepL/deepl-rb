@@ -104,6 +104,7 @@ require_relative 'deepl/resources/usage'
 require_relative 'deepl/utils/exception_builder'
 require_relative 'deepl/utils/backoff_timer'
 require_relative 'deepl/utils/time_parser'
+require_relative 'deepl/utils/term_validator'
 
 # -- Constants
 require_relative 'deepl/constants/base_constant'

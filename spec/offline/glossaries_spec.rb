@@ -39,6 +39,15 @@ describe DeepL::GlossaryApi do
     end
   end
 
+  describe '#create with invalid terms' do
+    [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]]].each do |entries|
+      it "raises ArgumentError for #{entries.inspect} and sends no request" do
+        expect { glossaries.create('terms', 'EN', 'DE', entries) }.to raise_error(ArgumentError)
+        expect(a_request(:any, /.*/)).not_to have_been_made
+      end
+    end
+  end
+
   describe '#find' do
     it 'sends a GET with an empty JSON body' do
       stub_request(:get, url('/v2/glossaries/g-1')).with(body: '{}', headers: json_headers)

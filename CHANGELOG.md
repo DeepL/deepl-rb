@@ -52,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Fixed
+- Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create` and the
+  `DeepL.multilingual_glossaries` methods) were sent unchecked, so a term with a tab or newline
+  silently corrupted the entries. Such terms now raise `ArgumentError` before any request: a
+  term must not be empty or contain C0 or C1 control characters, U+2028 or U+2029. Entries
+  given as a TSV or CSV string are still sent as given.
 - Debug logging no longer includes the auth key in the logged request headers.
 - Network errors (timeouts, `SocketError`) were retried without limit. They are now retried at
   most `max_network_retries` times, like 429 and 500 replies, and then raised.

@@ -42,7 +42,11 @@ module DeepL
         def entries_to_tsv
           return entries if entries.is_a?(String)
 
-          entries.reduce('') { |tsv, entry| "#{tsv}#{entry.first}\t#{entry.last}\n" }
+          entries.reduce('') do |tsv, entry|
+            source = Utils::TermValidator.validate!(entry.first)
+            target = Utils::TermValidator.validate!(entry.last)
+            "#{tsv}#{source}\t#{target}\n"
+          end
         end
 
         def build_glossary(request, response)

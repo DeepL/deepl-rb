@@ -46,6 +46,17 @@ describe DeepL::MultilingualGlossaryApi do
     end
   end
 
+  describe '#create with invalid terms' do
+    [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]]].each do |entries|
+      it "raises ArgumentError for #{entries.inspect} and sends no request" do
+        dictionaries = [{ source_lang: 'EN', target_lang: 'DE', entries: entries }]
+
+        expect { glossaries.create('terms', dictionaries) }.to raise_error(ArgumentError)
+        expect(a_request(:any, /.*/)).not_to have_been_made
+      end
+    end
+  end
+
   describe '#create_with_csv' do
     it 'sends the CSV content with the csv entries format' do
       stub_request(:post, url('/v3/glossaries')).with(
