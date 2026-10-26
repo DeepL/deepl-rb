@@ -479,7 +479,10 @@ names. A collection holds one list of terms per language and is managed through
 of strings.
 
 To create a collection, pass a name and one `DeepL::Resources::SpokenTermsEntries`
-(or a hash with `:lang` and `:entries`) per language:
+(or a hash with `:lang` and `:entries`) per language. Terms are checked like
+glossary terms: `create`, `update` and `replace_term_list` raise `ArgumentError`
+before sending anything if a term is empty or contains a C0 or C1 control
+character (such as a tab or newline), U+2028 or U+2029:
 
 ```rb
 spoken_terms = DeepL.spoken_terms.create(
@@ -505,10 +508,13 @@ spoken_terms = DeepL.spoken_terms.find 'a74d88fb-ed2a-4943-a664-a4512398b994'
 ```
 
 `update` renames a collection and/or merges terms into the list of each given
-language. Arguments that are not given are not sent:
+language. Arguments that are not given are not sent. Further options, such as
+`extra_body_parameters`, are given as additional keywords:
 
 ```rb
 DeepL.spoken_terms.update(spoken_terms, name: 'Renamed')
+DeepL.spoken_terms.update(spoken_terms, name: 'Renamed',
+                                        extra_body_parameters: { example_param: 'value' })
 updated = DeepL.spoken_terms.update(
   spoken_terms, term_lists: [{ lang: 'en', entries: ['authentication'] }]
 )

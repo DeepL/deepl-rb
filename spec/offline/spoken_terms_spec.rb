@@ -42,6 +42,19 @@ describe DeepL::SpokenTermsApi do
     end
   end
 
+  describe 'term check' do
+    it 'raises ArgumentError for a term with a newline and sends no request' do
+      bad = ["a\nb"]
+
+      expect { spoken_terms.create('terms', [{ lang: 'en', entries: bad }]) }
+        .to raise_error(ArgumentError)
+      expect { spoken_terms.update('st-1', term_lists: [{ lang: 'en', entries: bad }]) }
+        .to raise_error(ArgumentError)
+      expect { spoken_terms.replace_term_list('st-1', 'en', bad) }.to raise_error(ArgumentError)
+      expect(a_request(:any, /.*/)).not_to have_been_made
+    end
+  end
+
   describe '#list and #find' do
     it 'parses the collections and turns a missing term_lists into an empty list' do
       stub_request(:get, url('/v3/spoken-terms'))
@@ -63,6 +76,13 @@ describe DeepL::SpokenTermsApi do
 
       spoken_terms.update('st-1', term_lists: [{ lang: 'en', entries: ['c'] }])
       spoken_terms.update('st-1', name: 'new')
+    end
+
+    it 'sends the extra body parameters' do
+      stub_request(:patch, url('/v3/spoken-terms/st-1'))
+        .with(body: { name: 'new', beta: true }).to_return(reply(collection_json))
+
+      spoken_terms.update('st-1', name: 'new', extra_body_parameters: { beta: true })
     end
 
     it 'sends an empty object when no argument is given' do

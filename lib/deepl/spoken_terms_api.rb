@@ -19,6 +19,7 @@ module DeepL
     # @param [Array<DeepL::Resources::SpokenTermsEntries, Hash>] term_lists One entry per
     #   language. A hash needs the keys +:lang+ and +:entries+ (an array of terms).
     # @return [DeepL::Resources::SpokenTerms] The created collection.
+    # @raise [ArgumentError] If a term is empty or contains a control character.
     def create(name, term_lists, options = {})
       Requests::SpokenTerms::Create.new(@api, name, term_lists, options).request
     end
@@ -46,9 +47,12 @@ module DeepL
     # @param [String, nil] name New name.
     # @param [Array<DeepL::Resources::SpokenTermsEntries, Hash>, nil] term_lists Terms to merge
     #   into the list of each language; a new language adds a list.
+    # @raise [ArgumentError] If a term is empty or contains a control character.
+    # @param [Hash] options Additional options, such as +:extra_body_parameters+, given as
+    #   further keywords.
     # @return [DeepL::Resources::SpokenTerms] The updated collection.
-    def update(id, name: nil, term_lists: nil)
-      Requests::SpokenTerms::Update.new(@api, id, name: name, term_lists: term_lists).request
+    def update(id, name: nil, term_lists: nil, **options)
+      Requests::SpokenTerms::Update.new(@api, id, name, term_lists, options).request
     end
 
     ##
@@ -66,6 +70,7 @@ module DeepL
     # @param [String] lang Language code, for example +'en'+.
     # @param [Array<String>] entries The terms.
     # @return [DeepL::Resources::SpokenTermsList]
+    # @raise [ArgumentError] If a term is empty or contains a control character.
     def replace_term_list(id, lang, entries, options = {})
       Requests::SpokenTerms::ReplaceTermList.new(@api, id, lang, entries, options).request
     end

@@ -11,8 +11,8 @@ module DeepL
 
         attr_reader :id, :name, :term_lists
 
-        def initialize(api, id, name: nil, term_lists: nil)
-          super(api, {})
+        def initialize(api, id, name, term_lists, options = {})
+          super(api, options)
           @id = spoken_terms_id(id)
           @name = name
           @term_lists = term_lists

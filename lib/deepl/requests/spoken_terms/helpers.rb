@@ -18,7 +18,7 @@ module DeepL
         end
 
         def entries_to_string(entries)
-          entries.join("\n")
+          entries.map { |entry| Utils::TermValidator.validate!(entry) }.join("\n")
         end
 
         def entries_from_string(entries)
