@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added support for style profiles (`/v3/style_profiles`) via `DeepL.style_profiles`,
+  which exposes `create`, `list`, `find`, `update`, and `destroy`. A style profile links
+  glossaries, style rule lists and translation memories. In `create` and `update`,
+  keywords left `nil` are not sent; an empty string clears `description` or `industry`,
+  and an empty array unlinks all components of that kind. Please refer to the README for
+  usage instructions.
 - Added support for spoken terms collections (`/v3/spoken-terms`) via
   `DeepL.spoken_terms`, which exposes `create`, `list`, `find`, `update`, `entries`,
   `replace_term_list`, `destroy`, and `destroy_term_list`. Terms are passed and returned

@@ -61,6 +61,12 @@ require_relative 'deepl/requests/spoken_terms/entries'
 require_relative 'deepl/requests/spoken_terms/replace_term_list'
 require_relative 'deepl/requests/spoken_terms/destroy'
 require_relative 'deepl/requests/spoken_terms/destroy_term_list'
+require_relative 'deepl/requests/style_profile/base'
+require_relative 'deepl/requests/style_profile/list'
+require_relative 'deepl/requests/style_profile/create'
+require_relative 'deepl/requests/style_profile/find'
+require_relative 'deepl/requests/style_profile/update'
+require_relative 'deepl/requests/style_profile/destroy'
 require_relative 'deepl/requests/translation_memory/base'
 require_relative 'deepl/requests/translation_memory/storage_base'
 require_relative 'deepl/requests/translation_memory/list'
@@ -94,6 +100,7 @@ require_relative 'deepl/resources/glossary'
 require_relative 'deepl/resources/multilingual_glossary'
 require_relative 'deepl/resources/style_rule'
 require_relative 'deepl/resources/spoken_terms'
+require_relative 'deepl/resources/style_profile'
 require_relative 'deepl/resources/translation_memory'
 require_relative 'deepl/resources/translation_memory_segments'
 require_relative 'deepl/resources/translation_memory_import'
@@ -141,6 +148,7 @@ require_relative 'deepl/document_api'
 require_relative 'deepl/glossary_api'
 require_relative 'deepl/multilingual_glossary_api'
 require_relative 'deepl/spoken_terms_api'
+require_relative 'deepl/style_profile_api'
 require_relative 'deepl/style_rule_api'
 require_relative 'deepl/translation_memory_api'
 require_relative 'deepl/admin_client'
@@ -230,6 +238,15 @@ module DeepL
   def spoken_terms(options = {})
     configure if @configuration.nil?
     SpokenTermsApi.new(api, options)
+  end
+
+  ##
+  # Manages style profiles, which bundle glossaries, style rule lists and translation memories.
+  #
+  # @return [DeepL::StyleProfileApi]
+  def style_profiles(options = {})
+    configure if @configuration.nil?
+    StyleProfileApi.new(api, options)
   end
 
   def style_rules(options = {})

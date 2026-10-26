@@ -690,6 +690,82 @@ handle = DeepL.document.upload 'my_document.docx', 'EN', 'ES', 'my_document.docx
                               style_rule: 'dca2e053-8ae5-45e6-a0d2-881156e7f4e4'
 ```
 
+### Style profiles
+
+A style profile bundles glossaries, style rule lists and translation memories under one
+name. `DeepL.style_profiles` exposes `create`, `find`, `list`, `update` and `destroy`.
+`find`, `update` and `destroy` accept a style profile ID string or a
+`DeepL::Resources::StyleProfile` object.
+
+#### Creating a style profile
+
+Only the name is required. The optional keywords are `description`, `industry`,
+`glossary_ids`, `style_rule_ids`, `translation_memory_ids` (arrays of IDs) and
+`glossary_priority_order_enabled` (when `true`, the order of `glossary_ids` sets priority).
+If any of the component IDs cannot be used, the request fails and no style profile is
+created.
+
+```rb
+# Only a name
+profile = DeepL.style_profiles.create('Legal, German')
+
+# With components
+profile = DeepL.style_profiles.create(
+  'Legal, German',
+  description: 'Contract wording for the German market.',
+  industry: 'Legal',
+  glossary_ids: ['YOUR_GLOSSARY_ID'],
+  style_rule_ids: ['YOUR_STYLE_ID'],
+  translation_memory_ids: ['YOUR_TM_ID'],
+  glossary_priority_order_enabled: true
+)
+profile.class
+# => DeepL::Resources::StyleProfile
+profile.style_rule_ids
+# => ["YOUR_STYLE_ID"]
+profile.creation_time.class
+# => Time
+```
+
+`description` and `industry` are `nil` when the style profile has none.
+
+#### Retrieving and listing style profiles
+
+`list` returns an array of style profiles, one page at a time. It accepts `page`
+(0-indexed, default 0) and `page_size` (default 10; values above 100 are reduced to 100).
+
+```rb
+profile = DeepL.style_profiles.find('YOUR_STYLE_PROFILE_ID')
+
+profiles = DeepL.style_profiles.list
+profiles = DeepL.style_profiles.list(page: 1, page_size: 100)
+```
+
+#### Updating a style profile
+
+`update` takes the same keywords as `create`, plus `name`. Keywords you leave out
+(or set to `nil`) are not sent and leave the field unchanged. An empty string clears
+`description` or `industry`. A component list you send replaces the linked list in full;
+an empty array unlinks all components of that kind.
+
+```rb
+updated = DeepL.style_profiles.update(
+  'YOUR_STYLE_PROFILE_ID',
+  name: 'Legal, German (2026)',
+  industry: 'Legal',
+  description: '',    # clears the description
+  style_rule_ids: []  # unlinks all style rule lists
+)
+updated.description
+# => nil
+```
+
+#### Deleting a style profile
+
+```rb
+DeepL.style_profiles.destroy('YOUR_STYLE_PROFILE_ID')
+```
+
 ### Translation Memories
 
 Translation memories allow you to store and reuse previously created translations.
