@@ -52,6 +52,17 @@ module DeepL
                                end
         end
 
+        if option?(:style_profile)
+          profile = delete_option(:style_profile)
+          unless profile.nil?
+            payload[:style_profile_id] = if profile.is_a?(DeepL::Resources::StyleProfile)
+                                           profile.id
+                                         else
+                                           profile.to_s
+                                         end
+          end
+        end
+
         if option?(:translation_memory)
           tm = delete_option(:translation_memory)
           payload[:translation_memory_id] = if tm.is_a?(DeepL::Resources::TranslationMemory)

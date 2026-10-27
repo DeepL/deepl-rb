@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the `style_profile` option to text translation (`DeepL.translate`) and document
+  translation (`DeepL.document.upload` and `translate_document`). It takes a style profile
+  ID string or a `DeepL::Resources::StyleProfile` object and is sent as `style_profile_id`.
 - Added support for style profiles (`/v3/style_profiles`) via `DeepL.style_profiles`,
   which exposes `create`, `list`, `find`, `update`, and `destroy`. A style profile links
   glossaries, style rule lists and translation memories. In `create` and `update`,

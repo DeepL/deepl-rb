@@ -208,6 +208,9 @@ module DeepL
   #     use for the translation. Glossaries are applied in order (first match wins). Requires
   #     +source_lang+ to be set. Cannot be combined with +:glossary_id+. Raises `ArgumentError` if
   #     these rules are violated or more than 5 IDs are provided.
+  #   * +:style_rule+ - A style rule ID string or a `DeepL::Resources::StyleRule` object.
+  #   * +:style_profile+ - A style profile ID string or a `DeepL::Resources::StyleProfile`
+  #     object. Applies the profile's glossaries, style rule lists and translation memories.
   # @param [Hash] additional_headers Additional HTTP headers for the translation.
   # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] Translated text resource(s).
   def translate(text, source_lang, target_lang, options = {}, additional_headers = {})

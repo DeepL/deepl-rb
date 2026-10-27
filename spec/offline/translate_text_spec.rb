@@ -107,6 +107,27 @@ describe 'DeepL.translate' do
       DeepL.translate('a', 'EN', 'DE', style_rule: rule)
     end
 
+    it 'sends a style profile ID as style_profile_id' do
+      expect_body(base.merge(style_profile_id: 'sp-1'))
+      DeepL.translate('a', 'EN', 'DE', style_profile: 'sp-1')
+    end
+
+    it 'sends the ID of a style profile object as style_profile_id' do
+      expect_body(base.merge(style_profile_id: 'sp-2'))
+      profile = DeepL::Resources::StyleProfile.new({ 'style_profile_id' => 'sp-2' }, nil, nil)
+      DeepL.translate('a', 'EN', 'DE', style_profile: profile)
+    end
+
+    it 'sends no style_profile_id when the option is not set' do
+      expect_body(base)
+      DeepL.translate('a', 'EN', 'DE')
+    end
+
+    it 'sends no style_profile_id when the option is nil' do
+      expect_body(base)
+      DeepL.translate('a', 'EN', 'DE', style_profile: nil)
+    end
+
     it 'sends a translation memory ID with its threshold' do
       expect_body(base.merge(translation_memory_id: 'tm-1', translation_memory_threshold: 80))
       DeepL.translate('a', 'EN', 'DE', translation_memory: 'tm-1',

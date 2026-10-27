@@ -34,6 +34,8 @@ module DeepL
     #                       violated or more than 5 IDs are provided. Notable style/translation
     #                       memory options (mirroring text translation): +:style_rule+ (a style rule
     #                       ID string or a `DeepL::Resources::StyleRule` object),
+    #                       +:style_profile+ (a style profile ID string or a
+    #                       `DeepL::Resources::StyleProfile` object),
     #                       +:translation_memory+ (a translation memory ID string or a
     #                       `DeepL::Resources::TranslationMemory` object), and
     #                       +:translation_memory_threshold+ (integer 0-100, recommended minimum 75).

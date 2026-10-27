@@ -52,6 +52,7 @@ describe DeepL::DocumentApi do
     multilingual = resources::MultilingualGlossary.new({ 'glossary_id' => 'g-ml', 'name' => 'n' },
                                                        nil, nil)
     { style_rule: resources::StyleRule.new({ 'style_id' => 's-obj' }, nil, nil),
+      style_profile: resources::StyleProfile.new({ 'style_profile_id' => 'sp-obj' }, nil, nil),
       translation_memory: memory, glossary_ids: [glossary, multilingual, 'g-str'] }
   end
 
@@ -83,12 +84,13 @@ describe DeepL::DocumentApi do
     it 'sends every option as its own field, serializing IDs, the threshold and glossary_ids' do
       form = sent_form('name.txt', formality: 'more', output_format: 'txt',
                                    glossary_ids: %w[g-1 g-2], style_rule: 's-1',
-                                   translation_memory: 'tm-1', translation_memory_threshold: 80)
+                                   style_profile: 'sp-1', translation_memory: 'tm-1',
+                                   translation_memory_threshold: 80)
 
       expect(form_fields(form)).to eq(
         'source_lang' => 'EN', 'target_lang' => 'DE', 'filename' => 'name.txt',
         'formality' => 'more', 'output_format' => 'txt', 'glossary_ids' => 'g-1,g-2',
-        'style_id' => 's-1', 'translation_memory_id' => 'tm-1',
+        'style_id' => 's-1', 'style_profile_id' => 'sp-1', 'translation_memory_id' => 'tm-1',
         'translation_memory_threshold' => '80'
       )
     end
@@ -104,11 +106,19 @@ describe DeepL::DocumentApi do
       expect(form_fields(sent_form)).not_to have_key('enable_watermark')
     end
 
-    it 'takes the IDs of style rule, translation memory and glossary objects' do
+    it 'does not send style_profile_id when it is not set' do
+      expect(form_fields(sent_form(style_rule: 's-1'))).not_to have_key('style_profile_id')
+    end
+
+    it 'does not send style_profile_id when it is nil' do
+      expect(form_fields(sent_form(style_profile: nil))).not_to have_key('style_profile_id')
+    end
+
+    it 'takes the IDs of style rule, style profile, translation memory and glossary objects' do
       form = sent_form(**resource_options)
 
       expect(form_fields(form)).to include(
-        'style_id' => 's-obj', 'translation_memory_id' => 'tm-obj',
+        'style_id' => 's-obj', 'style_profile_id' => 'sp-obj', 'translation_memory_id' => 'tm-obj',
         'glossary_ids' => 'g-obj,g-ml,g-str'
       )
     end

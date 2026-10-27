@@ -224,6 +224,7 @@ The following parameters will be automatically converted:
 | `formality`           | No conversion applied
 | `glossary_id`         | No conversion applied
 | `style_rule`          | No conversion applied (can be a string ID or a StyleRule object)
+| `style_profile`       | No conversion applied (can be a string ID or a StyleProfile object, see [Style profiles](#style-profiles))
 | `translation_memory`  | No conversion applied (can be a string ID or a TranslationMemory object)
 | `translation_memory_threshold` | No conversion applied (integer 0-100, recommended minimum 75)
 | `context`             | No conversion applied
@@ -766,6 +767,28 @@ updated.description
 DeepL.style_profiles.destroy('YOUR_STYLE_PROFILE_ID')
 ```
 
+#### Using style profiles in translations
+
+Pass the `style_profile` option, a style profile ID string or a `StyleProfile` object, to
+`translate`, `document.upload` or `document.translate_document` to apply the profile's
+glossaries, style rule lists and translation memories. A component that does not fit the
+language pair is left out. The option cannot be combined with `glossary_id`,
+`glossary_ids`, `style_rule`, `translation_memory`, `translation_memory_threshold` or
+`custom_instructions`; the API rejects such requests.
+
+```rb
+translation = DeepL.translate 'The artist is here.', nil, 'DE', style_profile: profile
+puts translation.text
+# => Der Maler ist hier.
+
+DeepL.document.translate_document('/path/to/document.docx', '/path/to/translated.docx', 'EN', 'DE',
+                                  nil, style_profile: 'YOUR_STYLE_PROFILE_ID')
+```
+
+With documents, an unknown style profile is not rejected at upload: the translation fails
+with a `DeepL::Exceptions::DocumentTranslationError` whose message contains
+`Style profile not found.`
+
 ### Translation Memories
 
 Translation memories allow you to store and reuse previously created translations.
@@ -1087,8 +1110,9 @@ Document translation options include:
 - `enable_watermark`: `true` adds a "Translated by DeepL" watermark to the translated
   document. The API supports it only for `docx` and `pdf` output and ignores it for other
   formats. When not set, the parameter is not sent.
-- `style_rule`, `translation_memory`, `translation_memory_threshold`: see the style rules
-  and translation memory sections above.
+- `style_rule`, `style_profile`, `translation_memory`, `translation_memory_threshold`:
+  same as in text translation; see the style rules, style profiles and translation memory
+  sections above.
 
 ```rb
 DeepL.document.translate_document('/path/to/document.docx', '/path/to/translated.pdf', 'EN', 'DE',

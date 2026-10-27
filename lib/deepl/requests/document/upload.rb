@@ -57,6 +57,7 @@ module DeepL
           add_supported_options_to_form(form_data)
           add_glossary_ids_to_form(form_data)
           add_style_rule_to_form(form_data)
+          add_style_profile_to_form(form_data)
           add_translation_memory_to_form(form_data)
           add_translation_memory_threshold_to_form(form_data)
         end
@@ -79,6 +80,18 @@ module DeepL
           rule = delete_option(:style_rule)
           style_id = rule.is_a?(DeepL::Resources::StyleRule) ? rule.style_id : rule
           form_data.push(['style_id', style_id.to_s])
+        end
+
+        # Serializes the `style_profile` option (a style profile ID string or a
+        # `DeepL::Resources::StyleProfile` object) as a `style_profile_id` field.
+        def add_style_profile_to_form(form_data)
+          return unless option?(:style_profile)
+
+          profile = delete_option(:style_profile)
+          return if profile.nil?
+
+          profile_id = profile.is_a?(DeepL::Resources::StyleProfile) ? profile.id : profile
+          form_data.push(['style_profile_id', profile_id.to_s])
         end
 
         # Serializes the `translation_memory` option and appends it to the form data as a
