@@ -1021,6 +1021,70 @@ DeepL.document.translate_document('/path/to/document.docx', '/path/to/translated
 
 The `extra_body_parameters` option allows you to pass arbitrary parameters in the request body. This can be used to access beta features by adding new parameters, or to override built-in parameters (such as `target_lang`, `source_lang`, etc.) for testing purposes.
 
+### Admin API
+
+The Admin API lets you manage the developer keys of your organization and retrieve usage analytics. It requires an admin API key, which you can create in the "Admin API Keys" tab of your DeepL account. Admin keys cannot be used for translation, and developer keys cannot access the Admin API: the API rejects a wrong key with `DeepL::Exceptions::AuthorizationFailed`.
+
+Create a `DeepL::AdminClient` with your admin key. It is independent of `DeepL.configure`, does not read the `DEEPL_AUTH_KEY` and `DEEPL_SERVER_URL` environment variables, and uses the `https://api.deepl.com` server by default. It also accepts the `host:`, `http_client_options:`, `app_info_name:`, `app_info_version:`, `send_platform_info:`, `logger:`, `max_network_retries:` and `user_agent:` keyword arguments.
+
+```rb
+admin_client = DeepL::AdminClient.new('YOUR_ADMIN_KEY')
+```
+
+#### Managing developer keys
+
+```rb
+key = admin_client.create_developer_key('Staging Team Key')
+puts "Created #{key.label} (#{key.key_id})"
+
+admin_client.get_developer_keys.each do |developer_key|
+  puts "#{developer_key.label}: deactivated=#{developer_key.deactivated?}"
+end
+
+key = admin_client.rename_developer_key(key, 'Production Team Key')
+
+# Changes only the given limits; the others keep their current value.
+# nil removes a limit (unlimited) and 0 blocks that usage.
+key = admin_client.set_developer_key_usage_limits(key, characters: 500_000,
+                                                       speech_to_text_milliseconds: 60_000)
+key = admin_client.set_developer_key_usage_limits(key, speech_to_speech_milliseconds: nil)
+
+# Deactivation is permanent.
+admin_client.deactivate_developer_key(key)
+```
+
+`rename_developer_key`, `set_developer_key_usage_limits` and `deactivate_developer_key` accept either a key ID or a `DeepL::Resources::DeveloperKey` object and return the updated `DeepL::Resources::DeveloperKey`. `set_developer_key_usage_limits` accepts `characters:`, `speech_to_text_milliseconds:` and `speech_to_speech_milliseconds:`. Labels and limits are sent as given and validated by the API. A response without a `key_id` raises `DeepL::Exceptions::Error`.
+
+A failed `create_developer_key` request is retried only after HTTP 429, a DNS resolution error or a connection timeout, when the API cannot have created the key. Other requests are retried like all other requests of the library.
+
+#### Retrieving usage analytics
+
+`get_usage_analytics` returns a `DeepL::Resources::AdminUsageReport` for a date range. Dates are UTC calendar days, and both the start day and the end day are included. They can be `Date`, `Time` or `DateTime` objects or `YYYY-MM-DD` strings. For `Time` and `DateTime` values the SDK sends the UTC date of that moment, so `Time.new(2026, 10, 20, 0, 0, 0, '+02:00')` is sent as `2026-10-19`. An invalid date raises `ArgumentError` without sending a request. The API requires the end date to be after the start date, so a report covers at least two days, and at most 366 days after it; otherwise both analytics methods raise `DeepL::Exceptions::BadRequest`. Use `group_by:` to break the usage down by key (`DeepL::Constants::AdminUsageGroupBy::KEY`, see `key_usages`) or by key and day (`DeepL::Constants::AdminUsageGroupBy::KEY_AND_DAY`, see `key_and_day_usages`). The `group_by` of the report is the raw string the API returns. The usage breakdowns include `speech_to_text_minutes` and `speech_to_speech_minutes`.
+
+```rb
+report = admin_client.get_usage_analytics('2026-06-01', '2026-07-01',
+                                          group_by: DeepL::Constants::AdminUsageGroupBy::KEY)
+puts "Total characters: #{report.total_usage.total_characters}"
+report.key_usages.each do |key_usage|
+  puts "#{key_usage.api_key_label}: #{key_usage.usage.total_characters}"
+end
+```
+
+`get_custom_tag_usage_analytics` returns a `DeepL::Resources::CustomTagUsageReport` with the usage per custom tag, for a date range with the same limits. Use `aggregate_by:` to choose between the whole period (`DeepL::Constants::CustomTagUsageAggregateBy::PERIOD`, the default) and per-day usage (`DeepL::Constants::CustomTagUsageAggregateBy::DAY`). The results are paginated: pass the `next_page` value of a report as `page:` to get the next page. The `aggregate_by` of a custom tag report is the raw string the API returns.
+
+```rb
+page = nil
+loop do
+  report = admin_client.get_custom_tag_usage_analytics('2026-06-01', '2026-07-01', page: page)
+  report.usage.each do |tag_usage|
+    puts "#{tag_usage.custom_tag}: #{tag_usage.breakdown.total_characters}"
+  end
+  break if report.next_page.nil?
+
+  page = report.next_page
+end
+```
+
 ### Sending additional HTTP headers
 
 You can pass additional HTTP headers to `translate`, `rephrase`, `correct`, and the
@@ -1199,11 +1263,12 @@ There are two suites of specs, which must run in separate processes:
   ```
 
 - `spec/real_api` sends every endpoint once to the real API. Set `DEEPL_AUTH_KEY` to a test key,
-  and `DEEPL_SERVER_URL` if the key is not for the default server. The specs create resources
-  named `sdktest-ruby-...` and delete them again:
+  `DEEPL_ADMIN_KEY` to an admin key for the Admin API specs, and `DEEPL_SERVER_URL` if the keys
+  are not for the default server. The specs create resources named `sdktest-ruby-...` and delete
+  them again; developer keys cannot be deleted and are deactivated instead. The Admin API spec creates a key, renames it, sets its limits and deactivates it:
 
   ```
-  DEEPL_AUTH_KEY=... bundle exec rspec spec/real_api
+  DEEPL_AUTH_KEY=... DEEPL_ADMIN_KEY=... bundle exec rspec spec/real_api
   ```
 
 To run the offline specs and rubocop, use

@@ -79,6 +79,12 @@ require_relative 'deepl/requests/translate'
 require_relative 'deepl/requests/usage'
 require_relative 'deepl/requests/rephrase'
 require_relative 'deepl/requests/correct'
+require_relative 'deepl/requests/admin/base'
+require_relative 'deepl/requests/admin/usage_analytics'
+require_relative 'deepl/requests/admin/custom_tag_usage_analytics'
+require_relative 'deepl/requests/admin/create_developer_key'
+require_relative 'deepl/requests/admin/list_developer_keys'
+require_relative 'deepl/requests/admin/update_developer_key'
 
 # -- Responses and resources
 require_relative 'deepl/resources/base'
@@ -99,11 +105,16 @@ require_relative 'deepl/resources/language_resource'
 require_relative 'deepl/resources/language_support'
 require_relative 'deepl/resources/text'
 require_relative 'deepl/resources/usage'
+require_relative 'deepl/resources/developer_key'
+require_relative 'deepl/resources/admin_usage_report'
+require_relative 'deepl/resources/custom_tag_usage_report'
 
 # -- Utils
 require_relative 'deepl/utils/exception_builder'
+require_relative 'deepl/utils/http_client_builder'
 require_relative 'deepl/utils/backoff_timer'
 require_relative 'deepl/utils/time_parser'
+require_relative 'deepl/utils/number_parser'
 require_relative 'deepl/utils/term_validator'
 
 # -- Constants
@@ -114,6 +125,8 @@ require_relative 'deepl/constants/split_sentences'
 require_relative 'deepl/constants/tag_handling'
 require_relative 'deepl/constants/tone'
 require_relative 'deepl/constants/writing_style'
+require_relative 'deepl/constants/admin_usage_group_by'
+require_relative 'deepl/constants/custom_tag_usage_aggregate_by'
 
 # -- HTTP Utils
 require_relative 'http_client_options'
@@ -130,6 +143,7 @@ require_relative 'deepl/multilingual_glossary_api'
 require_relative 'deepl/spoken_terms_api'
 require_relative 'deepl/style_rule_api'
 require_relative 'deepl/translation_memory_api'
+require_relative 'deepl/admin_client'
 
 # -- Gem interface
 module DeepL

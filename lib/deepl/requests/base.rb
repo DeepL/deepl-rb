@@ -103,6 +103,7 @@ module DeepL
         rescue Net::HTTPBadResponse, Net::HTTPServerError, Net::HTTPFatalError, Timeout::Error,
                SocketError => e
           raise e if @backoff_timer.num_retries >= api.configuration.max_network_retries
+          raise e if retry_only_unprocessed? && !unprocessed_error?(e)
 
           wait_before_retry(e, files_to_reset)
           next
@@ -123,7 +124,20 @@ module DeepL
         return false if num_retries >= api.configuration.max_network_retries
         return exception.should_retry? if response.nil?
 
+        return response.is_a?(Net::HTTPTooManyRequests) if retry_only_unprocessed?
+
         response.is_a?(Net::HTTPTooManyRequests) || response.is_a?(Net::HTTPInternalServerError)
+      end
+
+      # Requests that are unsafe to repeat return true to retry only failures that show the
+      # request was not processed: HTTP 429, DNS resolution errors (SocketError) and connection
+      # timeouts (Net::OpenTimeout).
+      def retry_only_unprocessed?
+        false
+      end
+
+      def unprocessed_error?(error)
+        error.is_a?(SocketError) || error.is_a?(Net::OpenTimeout)
       end
 
       def post_request(payload)

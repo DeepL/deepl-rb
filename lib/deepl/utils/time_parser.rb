@@ -21,6 +21,20 @@ module DeepL
 
         Time.parse(time_string)
       end
+
+      ##
+      # Like +parse_optional_time+, but treats timestamps without a zone offset as UTC.
+      #
+      # @param [Object] time_string Timestamp in ISO 8601 format, or nil.
+      # @return [Time, nil] The parsed time, or nil if no valid timestamp was given.
+      def parse_optional_utc_time(time_string)
+        return nil unless time_string.is_a?(String) && !time_string.empty?
+        return Time.parse(time_string) if Date._parse(time_string).key?(:offset)
+
+        Time.parse("#{time_string}Z")
+      rescue ArgumentError
+        nil
+      end
     end
   end
 end

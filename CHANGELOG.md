@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `replace_term_list`, `destroy`, and `destroy_term_list`. Terms are passed and returned
   as arrays of strings and are checked like glossary terms before they are sent. Please
   refer to the README for usage instructions.
+- Added `DeepL::AdminClient` for the Admin API. It must be created with an admin
+  API key and supports managing developer keys (`create_developer_key`,
+  `get_developer_keys`, `deactivate_developer_key`, `rename_developer_key`,
+  `set_developer_key_usage_limits`) and retrieving usage analytics
+  (`get_usage_analytics`, `get_custom_tag_usage_analytics`).
+  `set_developer_key_usage_limits` changes only the given limits, including
+  `speech_to_speech_milliseconds`. New public types: `DeepL::AdminClient`,
+  `DeepL::Resources::DeveloperKey`, `DeepL::Resources::DeveloperKeyUsageLimits`,
+  `DeepL::Resources::AdminUsageReport`, `DeepL::Resources::AdminUsageBreakdown`,
+  `DeepL::Resources::KeyUsage`, `DeepL::Resources::CustomTagUsageReport`,
+  `DeepL::Resources::CustomTagUsageBreakdown`, `DeepL::Resources::CustomTagUsage`,
+  `DeepL::Constants::AdminUsageGroupBy` and `DeepL::Constants::CustomTagUsageAggregateBy`.
+  The usage breakdown includes `speech_to_speech_minutes`.
 - Added support for multilingual glossaries via the v3 glossary API.
   `DeepL.multilingual_glossaries` exposes `create`, `create_with_csv`, `find`,
   `list`, `entries`, `destroy`, `destroy_dictionary`, `replace_dictionary`,
