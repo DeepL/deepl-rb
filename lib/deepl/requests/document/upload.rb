@@ -43,10 +43,9 @@ module DeepL
         private
 
         def build_base_form_data(input_file)
-          form_data = [
-            ['file', input_file], ['source_lang', source_lang],
-            ['target_lang', target_lang]
-          ]
+          form_data = [['file', input_file]]
+          form_data.push(['source_lang', source_lang]) unless source_lang.nil?
+          form_data.push(['target_lang', target_lang])
           filename_param = filename || File.basename(input_file_path)
           form_data.push(['filename', filename_param]) unless filename_param.nil?
           add_extra_options_to_form(form_data)
@@ -78,6 +77,8 @@ module DeepL
           return unless option?(:style_rule)
 
           rule = delete_option(:style_rule)
+          return if rule.nil?
+
           style_id = rule.is_a?(DeepL::Resources::StyleRule) ? rule.style_id : rule
           form_data.push(['style_id', style_id.to_s])
         end

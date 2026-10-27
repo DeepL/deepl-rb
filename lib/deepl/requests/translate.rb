@@ -45,11 +45,13 @@ module DeepL
 
         if option?(:style_rule)
           style_rule = delete_option(:style_rule)
-          payload[:style_id] = if style_rule.is_a?(DeepL::Resources::StyleRule)
-                                 style_rule.style_id
-                               else
-                                 style_rule.to_s
-                               end
+          unless style_rule.nil?
+            payload[:style_id] = if style_rule.is_a?(DeepL::Resources::StyleRule)
+                                   style_rule.style_id
+                                 else
+                                   style_rule.to_s
+                                 end
+          end
         end
 
         if option?(:style_profile)

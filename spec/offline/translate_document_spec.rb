@@ -81,6 +81,18 @@ describe DeepL::DocumentApi do
                                       'filename' => 'example_document.txt')
     end
 
+    it 'sends no source_lang when the source language is nil' do
+      input, = create_text_document(temp_dir)
+      stub_upload.to_return(upload_reply)
+      forms = capture_forms
+
+      documents.upload(input, nil, 'DE')
+
+      expect(forms.first.assoc('file').last.path).to eq(input)
+      expect(form_fields(forms.first)).to eq('target_lang' => 'DE',
+                                             'filename' => 'example_document.txt')
+    end
+
     it 'sends every option as its own field, serializing IDs, the threshold and glossary_ids' do
       form = sent_form('name.txt', formality: 'more', output_format: 'txt',
                                    glossary_ids: %w[g-1 g-2], style_rule: 's-1',
@@ -112,6 +124,10 @@ describe DeepL::DocumentApi do
 
     it 'does not send style_profile_id when it is nil' do
       expect(form_fields(sent_form(style_profile: nil))).not_to have_key('style_profile_id')
+    end
+
+    it 'does not send style_id when style_rule is nil' do
+      expect(form_fields(sent_form(style_rule: nil))).not_to have_key('style_id')
     end
 
     it 'takes the IDs of style rule, style profile, translation memory and glossary objects' do

@@ -97,6 +97,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   library now requires it.
 - An option set to `false` with a string key (for example `'split_sentences' => false`) was read as
   unset, so its conversion was skipped and `false` was sent instead of the API value `'0'`.
+- Document translation (`DeepL.document.upload` and `translate_document`) with source language
+  `nil` raised `TypeError` before sending the request. It now omits `source_lang`, so the API
+  detects the language of the document.
+- `style_rule: nil` sent an empty `style_id` in text and document translation. A `nil` style rule
+  is now treated as unset and sends nothing.
 
 ## [3.9.0] - 2026-08-11
 ### Added

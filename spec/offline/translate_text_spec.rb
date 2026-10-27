@@ -107,6 +107,11 @@ describe 'DeepL.translate' do
       DeepL.translate('a', 'EN', 'DE', style_rule: rule)
     end
 
+    it 'sends no style_id when the style rule is nil' do
+      expect_body(base)
+      DeepL.translate('a', 'EN', 'DE', style_rule: nil)
+    end
+
     it 'sends a style profile ID as style_profile_id' do
       expect_body(base.merge(style_profile_id: 'sp-1'))
       DeepL.translate('a', 'EN', 'DE', style_profile: 'sp-1')
