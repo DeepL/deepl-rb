@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepL::Exceptions::ConnectionError`, raised for network failures without an HTTP
+  response (DNS, connection, TLS, timeout) after the retries; the original exception is its
+  `cause`.
+- Added `http_status_code` (`Integer`, `nil` without a response) to
+  `DeepL::Exceptions::Error`. `RequestError#request` now returns the failed request, and the
+  message of a `RequestError` for an unmapped status contains the status and the API's
+  message instead of `Unknown error.`.
+- Added the `style_profile` option to text translation (`DeepL.translate`) and document
+  translation (`DeepL.document.upload` and `translate_document`). It takes a style profile
+  ID string or a `DeepL::Resources::StyleProfile` object and is sent as `style_profile_id`.
+- Added support for style profiles (`/v3/style_profiles`) via `DeepL.style_profiles`,
+  which exposes `create`, `list`, `find`, `update`, and `destroy`. A style profile links
+  glossaries, style rule lists and translation memories. In `create` and `update`,
+  keywords left `nil` are not sent; an empty string clears `description` or `industry`,
+  and an empty array unlinks all components of that kind. Please refer to the README for
+  usage instructions.
+- Added support for spoken terms collections (`/v3/spoken-terms`) via
+  `DeepL.spoken_terms`, which exposes `create`, `list`, `find`, `update`, `entries`,
+  `replace_term_list`, `destroy`, and `destroy_term_list`. Terms are passed and returned
+  as arrays of strings and are checked like glossary terms before they are sent. Please
+  refer to the README for usage instructions.
 - Added the `style_profile` option to text translation (`DeepL.translate`) and document
   translation (`DeepL.document.upload` and `translate_document`). It takes a style profile
   ID string or a `DeepL::Resources::StyleProfile` object and is sent as `style_profile_id`.
@@ -63,6 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `quota_exceeded?` and `to_s` are unchanged.
 
 ### Changed
+- Network failures are now raised as `DeepL::Exceptions::ConnectionError` after the retries,
+  instead of the raw `SocketError`, `Timeout::Error`, `Errno::*` or `OpenSSL::SSL::SSLError`.
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`
   endpoint instead of the deprecated `GET /v2/languages` and `GET /v2/glossary-language-pairs`
   endpoints. Public method signatures and return types are unchanged. An unsupported `type`

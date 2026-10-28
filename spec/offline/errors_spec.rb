@@ -12,7 +12,7 @@ describe 'DeepL error mapping' do
     456 => [DeepL::Exceptions::QuotaExceeded, /Quota exceeded/],
     413 => [DeepL::Exceptions::RequestEntityTooLarge,
             /request size has reached the supported limit/],
-    418 => [DeepL::Exceptions::RequestError, 'Unknown error.']
+    418 => [DeepL::Exceptions::RequestError, 'Request failed with HTTP status 418: m']
   }.each do |status, (error_class, message)|
     it "raises #{error_class.name.split('::').last} for status #{status} without retrying" do
       stub = stub_request(:get, url('/v2/usage')).to_return(status: status, body: '{"message":"m"}')
@@ -42,11 +42,21 @@ describe 'DeepL error mapping' do
     end
   end
 
-  it 'retries a 503 reply' do
+  it 'retries a 503 reply and raises ServerError with its status' do
     stub = stub_request(:get, url('/v2/usage')).to_return(status: 503, body: '')
 
-    expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ServerError)
+    expect { DeepL.usage }
+      .to raise_error(DeepL::Exceptions::ServerError) { |e| expect(e.http_status_code).to eq(503) }
     expect(stub).to have_been_requested.times(3)
+  end
+
+  it 'keeps the status code and the failed request on the raised error' do
+    stub_request(:get, url('/v2/usage')).to_return(status: 418, body: '')
+
+    expect { DeepL.usage }.to(raise_error(DeepL::Exceptions::RequestError) do |error|
+      expect([error.http_status_code, error.request.path, error.message])
+        .to eq([418, '/v2/usage', 'Request failed with HTTP status 418.'])
+    end)
   end
 
   it 'uses the raw body as the message of a 400 reply with a JSON array' do

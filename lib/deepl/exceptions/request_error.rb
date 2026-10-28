@@ -8,13 +8,17 @@ module DeepL
     class RequestError < Error
       attr_reader :request, :response
 
-      def initialize(response)
+      def initialize(response, request = nil)
         super()
         @response = response
+        @request = request
+        @http_status_code = response.code.to_i if response.respond_to?(:code)
       end
 
       def to_s
-        'Unknown error.'
+        message = body_message
+        status = "HTTP status #{http_status_code}"
+        message ? "Request failed with #{status}: #{message}" : "Request failed with #{status}."
       end
 
       private

@@ -348,7 +348,8 @@ describe DeepL::AdminClient do
         WebMock.reset!
         stub = stub_create.to_raise(error)
 
-        expect { client.create_developer_key }.to raise_error(error)
+        expect { client.create_developer_key }
+          .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.cause).to be_a(error) }
         expect(stub).to have_been_requested.once
       end
     end

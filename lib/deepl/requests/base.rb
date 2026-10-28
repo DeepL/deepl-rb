@@ -119,7 +119,7 @@ module DeepL
         api.configuration.logger&.debug("Request details: #{details}")
         loop do
           resp = http_client.request(req)
-          validate_response!(resp)
+          validate_response!(resp, req)
           @response_received = true
           return [req, resp]
         rescue DeepL::Exceptions::Error => e
@@ -128,8 +128,10 @@ module DeepL
           wait_before_retry(e, files_to_reset)
           next
         rescue *NETWORK_ERRORS => e
-          raise e if @backoff_timer.num_retries >= api.configuration.max_network_retries
-          raise e if retry_only_unprocessed? && !unprocessed_error?(e)
+          if @backoff_timer.num_retries >= api.configuration.max_network_retries ||
+             (retry_only_unprocessed? && !unprocessed_error?(e))
+            raise Exceptions::ConnectionError, "Connection to the DeepL API failed: #{e.message}"
+          end
 
           wait_before_retry(e, files_to_reset)
           next
@@ -217,10 +219,10 @@ module DeepL
         del_req
       end
 
-      def validate_response!(response)
+      def validate_response!(response, request = nil)
         return if response.is_a?(Net::HTTPSuccess)
 
-        raise Utils::ExceptionBuilder.new(response).build
+        raise Utils::ExceptionBuilder.new(response, request).build
       end
 
       # Validates the +glossary_ids+ option and resolves it to an array of glossary ID strings.

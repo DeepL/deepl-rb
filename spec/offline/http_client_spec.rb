@@ -73,7 +73,9 @@ describe 'DeepL HTTP client' do
     it 'raises the network error after max_network_retries retries' do
       stub = stub_request(:get, url('/v2/usage')).to_timeout
 
-      expect { DeepL.usage }.to raise_error(Net::OpenTimeout)
+      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |error|
+        expect(error.cause).to be_a(Net::OpenTimeout)
+      }
       expect(stub).to have_been_requested.times(3)
     end
 

@@ -21,13 +21,14 @@ module DeepL
         end
       end
 
-      def initialize(response)
+      def initialize(response, request = nil)
         @response = response
+        @request = request
       end
 
       def build
         error_class = self.class.error_class_from_response_code(response.code.to_i)
-        error_class.new(response)
+        error_class.new(response, request)
       end
     end
   end
