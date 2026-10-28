@@ -126,7 +126,8 @@ module DeepL
         def build_doc_handle(request, response)
           parsed_response = JSON.parse(response.body)
           Resources::DocumentHandle.new(parsed_response['document_id'],
-                                        parsed_response['document_key'], request, response)
+                                        parsed_response['document_key'], request, response,
+                                        api: api)
         end
 
         def path

@@ -18,19 +18,25 @@ module DeepL
       data.each { |key, value| send("#{key}=", value) }
       @auth_key ||= ENV.fetch('DEEPL_AUTH_KEY', nil)
       @host ||= ENV.fetch('DEEPL_SERVER_URL', nil)
-      @host ||= if self.class.free_account_auth_key?(@auth_key)
-                  DEEPL_SERVER_URL_FREE
-                else
-                  DEEPL_SERVER_URL
-                end
       @version ||= 'v2'
       @user_agent ||= construct_user_agent(send_platform_info, app_info_name, app_info_version)
       @max_network_retries ||= 5
       @logger ||= nil
     end
 
+    # The host is resolved when it is read, so that an auth key set after the configuration was
+    # created (e.g. in a +DeepL.configure+ block) still selects the Free API.
+    def host
+      return @host unless @host.nil?
+
+      self.class.free_account_auth_key?(auth_key) ? DEEPL_SERVER_URL_FREE : DEEPL_SERVER_URL
+    end
+
     def validate!
-      raise Exceptions::Error, 'auth_key not provided' if auth_key.nil? || auth_key.empty?
+      return unless auth_key.nil? || auth_key.to_s.strip.empty?
+
+      raise Exceptions::Error,
+            'auth_key not provided'
     end
 
     def attributes

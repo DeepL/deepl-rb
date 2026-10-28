@@ -12,7 +12,6 @@ describe 'DeepL error mapping' do
     456 => [DeepL::Exceptions::QuotaExceeded, /Quota exceeded/],
     413 => [DeepL::Exceptions::RequestEntityTooLarge,
             /request size has reached the supported limit/],
-    503 => [DeepL::Exceptions::ServerError, /internal server error/],
     418 => [DeepL::Exceptions::RequestError, 'Unknown error.']
   }.each do |status, (error_class, message)|
     it "raises #{error_class.name.split('::').last} for status #{status} without retrying" do
@@ -40,6 +39,28 @@ describe 'DeepL error mapping' do
       stub_request(:get, url('/v2/usage')).to_return(status: status, body: 'plain text')
 
       expect { DeepL.usage }.to raise_error(error_class, 'plain text')
+    end
+  end
+
+  it 'retries a 503 reply' do
+    stub = stub_request(:get, url('/v2/usage')).to_return(status: 503, body: '')
+
+    expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ServerError)
+    expect(stub).to have_been_requested.times(3)
+  end
+
+  it 'uses the raw body as the message of a 400 reply with a JSON array' do
+    stub_request(:get, url('/v2/usage')).to_return(status: 400, body: '["x"]')
+
+    expect { DeepL.usage }.to raise_error(DeepL::Exceptions::BadRequest, '["x"]')
+  end
+
+  ['not json', '[]', '{"translations":[1]}'].each do |body|
+    it "raises DeepL::Exceptions::Error for the malformed response #{body}" do
+      stub_request(:post, url('/v2/translate')).to_return(status: 200, body: body)
+
+      expect { DeepL.translate('a', nil, 'DE') }
+        .to raise_error(an_instance_of(DeepL::Exceptions::Error), /Unexpected response/)
     end
   end
 

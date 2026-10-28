@@ -210,6 +210,21 @@ describe DeepL::DocumentApi do
       expect(status.successful?).to be(true)
     end
 
+    it 'polls through the connection and configuration the handle was created with' do
+      configuration = DeepL::Configuration.new(auth_key: 'other', host: 'https://other.example.test',
+                                               max_doc_status_queries: 0)
+      other = DeepL::DocumentApi.new(DeepL::API.new(configuration))
+      stub_request(:post, 'https://other.example.test/v2/document').to_return(upload_reply)
+      stub = stub_request(:post, 'https://other.example.test/v2/document/doc-1')
+             .with(headers: { 'Authorization' => 'DeepL-Auth-Key other' })
+             .to_return(status_reply('queued'))
+      input, = create_text_document(temp_dir)
+
+      other.upload(input, 'EN', 'DE').wait_until_document_translation_finished
+
+      expect(stub).to have_been_requested.once
+    end
+
     it 'stops after max_doc_status_queries polls' do
       DeepL.configuration.max_doc_status_queries = 0
       stub = stub_status(status_reply('queued'))

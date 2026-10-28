@@ -7,9 +7,7 @@ module DeepL
   module Exceptions
     class BadRequest < RequestError
       def to_s
-        JSON.parse(response.body)['message']
-      rescue JSON::ParserError
-        response.body
+        body_message.to_s
       end
     end
   end

@@ -75,6 +75,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Fixed
+- `DeepL.configure { |c| c.auth_key = '...:fx' }` kept `https://api.deepl.com`, because the
+  default server was chosen before the block set the key. Without a configured host, the
+  server is now chosen from the final key.
+- The auth key was sent with surrounding whitespace, and a whitespace-only key passed
+  `DeepL.configure`. The key is now trimmed, and a blank key raises
+  `DeepL::Exceptions::Error`.
+- Only HTTP 429 and 500 replies were retried; 502, 503, 504 and other 5xx replies were raised
+  immediately. Every 5xx reply is now retried.
+- Refused or reset connections, `EOFError` and TLS errors were not retried. They are now
+  retried like timeouts and DNS failures. `AdminClient#create_developer_key` also retries a
+  refused connection, which shows that the request was not sent.
+- A malformed response (invalid JSON or an unexpected structure) raised `JSON::ParserError`,
+  `NoMethodError` or `TypeError`. It now raises `DeepL::Exceptions::Error`. A 400 or 404
+  reply with a JSON array body raised `TypeError` when its message was read.
+- `extra_body_parameters` were overridden by options of the same name, and a string key next
+  to the SDK's symbol key sent the field twice. They are now applied last and replace the
+  SDK's field.
+- `DeepL.with_session` turned TLS off (instead of certificate verification) when
+  `enable_ssl_verification` was `false`, turned it on for `http://` hosts, and used a proxy
+  with only an address. It now builds its connection like `DeepL::AdminClient`.
+- `DocumentHandle#wait_until_document_translation_finished` polled through the module
+  configuration instead of the connection that created the handle.
 - Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create` and the
   `DeepL.multilingual_glossaries` methods) were sent unchecked, so a term with a tab or newline
   silently corrupted the entries. Such terms now raise `ArgumentError` before any request: a

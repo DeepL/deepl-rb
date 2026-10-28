@@ -188,5 +188,19 @@ describe 'DeepL.translate' do
       DeepL.translate('a', nil, 'DE', extra_body_parameters: { target_lang: 'FR',
                                                                beta_feature: 'on' })
     end
+
+    it 'overrides an option of the same name' do
+      expect_body(text: ['a'], source_lang: nil, target_lang: 'DE', formality: 'more')
+      DeepL.translate('a', nil, 'DE', formality: 'less',
+                                      extra_body_parameters: { formality: 'more' })
+    end
+
+    it 'replaces a built-in parameter given with a string key instead of sending it twice' do
+      stub_request(:post, url('/v2/translate'))
+        .with { |request| request.body.scan('"target_lang"').size == 1 }
+        .to_return(translation_reply)
+
+      DeepL.translate('a', nil, 'DE', extra_body_parameters: { 'target_lang' => 'FR' })
+    end
   end
 end

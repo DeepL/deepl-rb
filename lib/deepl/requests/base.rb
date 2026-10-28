@@ -9,6 +9,32 @@ module DeepL
       # Maximum number of glossaries that may be provided via the +glossary_ids+ option.
       MAX_GLOSSARY_IDS = 5
 
+      # Network failures without an HTTP response. Net::OpenTimeout and Net::ReadTimeout are
+      # Timeout::Errors, Errno::* are SystemCallErrors.
+      NETWORK_ERRORS = [Net::HTTPBadResponse, Timeout::Error, SocketError, SystemCallError,
+                        EOFError, OpenSSL::SSL::SSLError].freeze
+
+      # Errors raised while building the result from a received response: the response has an
+      # unexpected format.
+      RESPONSE_FORMAT_ERRORS = [JSON::ParserError, NoMethodError, TypeError, KeyError].freeze
+
+      # Wraps +request+ of every request class, so that a malformed response raises a
+      # DeepL::Exceptions::Error instead of a raw JSON or type error.
+      module ResponseFormatGuard
+        def request
+          super
+        rescue *RESPONSE_FORMAT_ERRORS => e
+          raise e unless @response_received
+
+          raise Exceptions::Error, "Unexpected response from the DeepL API: #{e.message}"
+        end
+      end
+
+      def self.inherited(subclass)
+        super
+        subclass.prepend(ResponseFormatGuard)
+      end
+
       attr_reader :api, :response, :options
 
       def initialize(api, options = {}, additional_headers = {})
@@ -68,7 +94,7 @@ module DeepL
 
         extra_params = option(:extra_body_parameters)
         extra_params.each do |key, value|
-          payload[key] = value
+          payload[key.to_s] = value
         end
       end
 
@@ -94,14 +120,14 @@ module DeepL
         loop do
           resp = http_client.request(req)
           validate_response!(resp)
+          @response_received = true
           return [req, resp]
         rescue DeepL::Exceptions::Error => e
           raise e unless should_retry?(resp, e, @backoff_timer.num_retries)
 
           wait_before_retry(e, files_to_reset)
           next
-        rescue Net::HTTPBadResponse, Net::HTTPServerError, Net::HTTPFatalError, Timeout::Error,
-               SocketError => e
+        rescue *NETWORK_ERRORS => e
           raise e if @backoff_timer.num_retries >= api.configuration.max_network_retries
           raise e if retry_only_unprocessed? && !unprocessed_error?(e)
 
@@ -126,25 +152,33 @@ module DeepL
 
         return response.is_a?(Net::HTTPTooManyRequests) if retry_only_unprocessed?
 
-        response.is_a?(Net::HTTPTooManyRequests) || response.is_a?(Net::HTTPInternalServerError)
+        response.is_a?(Net::HTTPTooManyRequests) || (500..599).cover?(response.code.to_i)
       end
 
       # Requests that are unsafe to repeat return true to retry only failures that show the
-      # request was not processed: HTTP 429, DNS resolution errors (SocketError) and connection
-      # timeouts (Net::OpenTimeout).
+      # request was not processed: HTTP 429, DNS resolution errors (SocketError), refused
+      # connections and connection timeouts (Net::OpenTimeout).
       def retry_only_unprocessed?
         false
       end
 
       def unprocessed_error?(error)
-        error.is_a?(SocketError) || error.is_a?(Net::OpenTimeout)
+        error.is_a?(SocketError) || error.is_a?(Net::OpenTimeout) ||
+          error.is_a?(Errno::ECONNREFUSED)
+      end
+
+      # The request body: the SDK's payload, then the options, then +extra_body_parameters+,
+      # which replace an SDK field of the same name.
+      def json_body(payload)
+        body = payload.merge(options_without_extra_params).transform_keys(&:to_s)
+        apply_extra_body_parameters_to_json(body)
+        body.to_json
       end
 
       def post_request(payload)
-        apply_extra_body_parameters_to_json(payload)
         http_headers = add_json_content_type(headers)
         post_req = Net::HTTP::Post.new(uri.path, http_headers)
-        post_req.body = payload.merge(options_without_extra_params).to_json
+        post_req.body = json_body(payload)
         post_req
       end
 
@@ -163,18 +197,16 @@ module DeepL
       end
 
       def patch_request(payload)
-        apply_extra_body_parameters_to_json(payload)
         http_headers = add_json_content_type(headers)
         req = Net::HTTP::Patch.new(uri.path, http_headers)
-        req.body = payload.merge(options_without_extra_params).to_json
+        req.body = json_body(payload)
         req
       end
 
       def put_request(payload)
-        apply_extra_body_parameters_to_json(payload)
         http_headers = add_json_content_type(headers)
         req = Net::HTTP::Put.new(uri.path, http_headers)
-        req.body = payload.merge(options_without_extra_params).to_json
+        req.body = json_body(payload)
         req
       end
 
@@ -267,7 +299,7 @@ module DeepL
       end
 
       def headers
-        { 'Authorization' => "DeepL-Auth-Key #{api.configuration.auth_key}",
+        { 'Authorization' => "DeepL-Auth-Key #{api.configuration.auth_key.to_s.strip}",
           'User-Agent' => api.configuration.user_agent }.merge(@additional_headers)
       end
 

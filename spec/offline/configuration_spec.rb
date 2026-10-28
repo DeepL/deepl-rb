@@ -73,6 +73,14 @@ describe DeepL::Configuration do
       end
     end
 
+    context 'when the free key is set after the configuration was created' do
+      it 'uses the free API URL' do
+        config.auth_key = 'abc:fx'
+
+        expect(config.host).to eq('https://api-free.deepl.com')
+      end
+    end
+
     context 'when using a pro key' do
       let(:attributes) { { auth_key: '123e4567-e89b-12d3-a456-426614174000' } }
 
@@ -122,6 +130,14 @@ describe DeepL::Configuration do
 
     context 'when the auth key is empty' do
       let(:attributes) { { auth_key: '' } }
+
+      it 'raises an error' do
+        expect { config.validate! }.to raise_error(DeepL::Exceptions::Error, auth_message)
+      end
+    end
+
+    context 'when the auth key is blank' do
+      let(:attributes) { { auth_key: "  \n" } }
 
       it 'raises an error' do
         expect { config.validate! }.to raise_error(DeepL::Exceptions::Error, auth_message)

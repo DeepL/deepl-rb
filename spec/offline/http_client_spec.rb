@@ -28,6 +28,32 @@ describe 'DeepL HTTP client' do
       expect(stub).to have_been_requested.twice
     end
 
+    it 'retries a 503 reply' do
+      stub = stub_usage(reply({}, 503), usage_reply)
+
+      DeepL.usage
+
+      expect(stub).to have_been_requested.twice
+    end
+
+    it 'retries refused and reset connections, EOF and TLS errors' do
+      [Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError, OpenSSL::SSL::SSLError].each do |error|
+        WebMock.reset!
+        stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
+
+        DeepL.usage
+
+        expect(stub).to have_been_requested.twice
+      end
+    end
+
+    it 'trims the auth key' do
+      DeepL.configuration.auth_key = " k \n"
+      stub_request(:get, url('/v2/usage')).with(headers: json_headers).to_return(usage_reply)
+
+      DeepL.usage
+    end
+
     it 'retries a network error' do
       stub = stub_request(:get, url('/v2/usage')).to_raise(SocketError).then.to_return(usage_reply)
 
@@ -93,6 +119,24 @@ describe 'DeepL HTTP client' do
 
       expect([client.proxy_address, client.proxy_port, client.open_timeout, client.read_timeout])
         .to eq(['proxy.example.test', 8080, 3, 4])
+    end
+
+    it 'enables SSL from the URL scheme and verifies certificates unless disabled' do
+      session_client = lambda do |host, verify|
+        DeepL.configuration.host = host
+        options = DeepL::HTTPClientOptions.new({}, nil, enable_ssl_verification: verify)
+        DeepL.with_session(options) { DeepL.api.http_client }
+      end
+
+      expect(session_client.call('http://localhost:3000', true)).to have_attributes(use_ssl?: false)
+      expect(session_client.call('https://api.deepl.com', false))
+        .to have_attributes(use_ssl?: true, verify_mode: OpenSSL::SSL::VERIFY_NONE)
+    end
+
+    it 'uses no proxy when only the proxy address is given' do
+      options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test' })
+
+      expect(DeepL.with_session(options) { DeepL.api.http_client }.proxy_address).to be_nil
     end
 
     it 'restores the previous client when the block ends' do

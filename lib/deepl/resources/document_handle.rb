@@ -8,11 +8,13 @@ module DeepL
     class DocumentHandle < Base
       attr_reader :document_id, :document_key
 
-      def initialize(document_id, document_key, *args)
+      # +api+ is the connection the handle was created with; status queries go through it.
+      def initialize(document_id, document_key, *args, api: nil)
         super(*args)
 
         @document_id = document_id
         @document_key = document_key
+        @api = api
       end
 
       def to_s
@@ -33,7 +35,7 @@ module DeepL
         loop do
           num_tries += 1
           sleep(calculate_waiting_time(doc_status)) unless doc_status.nil?
-          doc_status = DeepL.document.get_status(self)
+          doc_status = DocumentApi.new(api).get_status(self)
           break if doc_status.finished? || num_tries > max_tries
         end
         doc_status
@@ -46,8 +48,13 @@ module DeepL
         5
       end
 
+      # Handles created without a connection fall back to the deprecated module configuration.
+      def api
+        @api || DeepL.api
+      end
+
       def max_doc_status_queries
-        configured_value = DeepL.configuration.max_doc_status_queries
+        configured_value = api.configuration.max_doc_status_queries
         return configured_value unless configured_value.nil?
 
         10

@@ -325,6 +325,14 @@ describe DeepL::AdminClient do
       expect(stub).to have_been_requested.twice
     end
 
+    it 'retries after a refused connection' do
+      stub = stub_create.to_raise(Errno::ECONNREFUSED).then.to_return(reply(developer_key_json))
+
+      client.create_developer_key
+
+      expect(stub).to have_been_requested.twice
+    end
+
     it 'does not retry a 500 or 503 reply' do
       [500, 503].each do |status|
         WebMock.reset!
