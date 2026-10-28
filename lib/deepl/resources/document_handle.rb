@@ -50,7 +50,7 @@ module DeepL
 
       # Handles created without a connection fall back to the deprecated module configuration.
       def api
-        @api || DeepL.api
+        @api || DeepL.send(:module_api)
       end
 
       def max_doc_status_queries

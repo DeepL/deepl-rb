@@ -27,6 +27,40 @@ gem 'deepl-rb', require: 'deepl'
 
 ## Usage
 
+### Creating a client
+
+Create a `DeepL::Client` with your authentication key. Each client owns its configuration and
+HTTP connection, so several clients with different keys or options can be used side by side.
+The client reads no environment variables:
+
+```rb
+client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
+```
+
+`DeepL::Client.new` accepts these keyword arguments:
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| `server_url:` | `https://api-free.deepl.com` for Free keys (ending in `:fx`), else `https://api.deepl.com` | Base URL of the DeepL API. A path prefix is kept. |
+| `headers:` | `{}` | HTTP headers sent with every DeepL API request (not to pre-signed storage URLs). A `User-Agent` replaces the library's; `Authorization` cannot be replaced. |
+| `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and network failures. |
+| `timeout:` | `10` | Timeout of each attempt in seconds. A longer backoff interval takes precedence. |
+| `proxy:` | none | Proxy URL, e.g. `http://user:password@proxy.example:8080`. |
+| `send_platform_info:` | `true` | Adds the OS and Ruby versions to the `User-Agent`. |
+| `app_info:` | none | A `DeepL::AppInfo` or a hash with `app_name` and `app_version`, added to the `User-Agent`. |
+| `http_client_options:` | none | A `DeepL::HTTPClientOptions` with proxy, certificate, SSL verification and per-phase timeouts. Its timeouts take precedence over `timeout:`. |
+| `logger:` | none | Logger for requests and retries, see [Logging](#logging). |
+
+The authentication key is trimmed; an empty key raises `ArgumentError`.
+`DeepL::Client.free_account_auth_key?(key)` returns whether a key is a DeepL API Free key.
+
+Until `DeepL::Client` offers an operation, use the module-level API shown in the following
+sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
+is deprecated: each method prints a deprecation warning once per process, and it will be
+removed in the next major version.
+
+### Module-level configuration (deprecated)
+
 Setup an environment variable named `DEEPL_AUTH_KEY` with your authentication key:
 
 ```sh
@@ -47,9 +81,11 @@ You can also configure the API host and the API version:
 DeepL.configure do |config|
   config.auth_key = 'your-api-token'
   config.host = 'https://api-free.deepl.com' # Default value is 'https://api.deepl.com'
-  config.version = 'v1' # Default value is 'v2'
 end
 ```
+
+Without a host, keys ending in `:fx` use `https://api-free.deepl.com`. The `version` setting
+is deprecated.
 
 ### Available languages
 
@@ -1125,7 +1161,7 @@ The `extra_body_parameters` option allows you to pass arbitrary parameters in th
 
 The Admin API lets you manage the developer keys of your organization and retrieve usage analytics. It requires an admin API key, which you can create in the "Admin API Keys" tab of your DeepL account. Admin keys cannot be used for translation, and developer keys cannot access the Admin API: the API rejects a wrong key with `DeepL::Exceptions::AuthorizationFailed`.
 
-Create a `DeepL::AdminClient` with your admin key. It is independent of `DeepL.configure`, does not read the `DEEPL_AUTH_KEY` and `DEEPL_SERVER_URL` environment variables, and uses the `https://api.deepl.com` server by default. It also accepts the `host:`, `http_client_options:`, `app_info_name:`, `app_info_version:`, `send_platform_info:`, `logger:`, `max_network_retries:` and `user_agent:` keyword arguments.
+Create a `DeepL::AdminClient` with your admin key. It is independent of `DeepL.configure`, does not read the `DEEPL_AUTH_KEY` and `DEEPL_SERVER_URL` environment variables, and uses the `https://api.deepl.com` server by default. The admin key is trimmed. It also accepts the `server_url:`, `headers:`, `max_retries:`, `timeout:`, `proxy:`, `send_platform_info:`, `app_info:`, `http_client_options:` and `logger:` keyword arguments of [`DeepL::Client`](#creating-a-client); without `server_url:` it uses `https://api.deepl.com`, also for keys ending in `:fx`.
 
 ```rb
 admin_client = DeepL::AdminClient.new('YOUR_ADMIN_KEY')
@@ -1187,7 +1223,8 @@ end
 
 ### Sending additional HTTP headers
 
-You can pass additional HTTP headers to `translate`, `rephrase`, `correct`, and the
+`DeepL::Client.new(key, headers: { 'X-DeepL-Reporting-Tag' => 'my-tag' })` sends the headers
+with every DeepL API request of that client. With the module-level API, you can pass additional HTTP headers to `translate`, `rephrase`, `correct`, and the
 `document` methods. For example, to send the `X-DeepL-Reporting-Tag` header
 for usage reporting (see the [cookbook entry](https://developers.deepl.com/docs/learning-how-tos/cookbook/sending-custom-reporting-tags-from-client-libraries)):
 
@@ -1206,13 +1243,18 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | --------------- | ----------- |
 | `DeepL::Exceptions::AuthorizationFailed` | The authorization process has failed. Check your `auth_key` value. |
 | `DeepL::Exceptions::BadRequest` | Something is wrong in your request. Check `exception.message` for more information. |
+| `DeepL::Exceptions::ConnectionError` | No HTTP response after all retries (DNS, connection, TLS or timeout failure). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
 | `DeepL::Exceptions::QuotaExceeded` | You've reached the API's character limit. |
-| `DeepL::Exceptions::RequestError` | An unkown request error. Check `exception.response` and `exception.request` for more information. |
+| `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |
 | `DeepL::Exceptions::NotSupported` | The requested method or API endpoint is not supported. |
 | `DeepL::Exceptions::RequestEntityTooLarge` | Your request is too large, reduce the amount of data you are sending. The API has a request size limit of 128 KiB. |
-| `DeepL::Exceptions::ServerError` | An error occured in the DeepL API, wait a short amount of time and retry. |
+| `DeepL::Exceptions::ServerError` | An error occured in the DeepL API (HTTP 5xx), raised after all retries. |
+
+All of them are subclasses of `DeepL::Exceptions::Error`, which is also raised for a response
+that cannot be parsed. Errors of an HTTP response carry the status as an `Integer` in
+`exception.http_status_code` (`nil` otherwise).
 
 An exampling of handling a generic exception:
 
@@ -1243,9 +1285,27 @@ deepl.configure do |config|
 end
 ```
 
+### Retries and timeouts
+
+Requests that fail with HTTP 429, any 5xx status or a network failure (DNS, refused or reset
+connection, TLS error, timeout) are retried up to `max_retries:` times (default 5) with
+exponential backoff. Each attempt has a timeout of `timeout:` seconds (default 10). After the
+last retry, network failures raise `DeepL::Exceptions::ConnectionError`.
+`AdminClient#create_developer_key` is only retried when the request was not sent (HTTP 429,
+DNS failure, refused connection or connection timeout). With the module-level API, set
+`config.max_network_retries` and `config.timeout`.
+
 ### Proxy configuration
 
-To use HTTP proxies, a session needs to be used. The proxy can then be configured as part of the HTTP client options:
+Pass a proxy URL to the client:
+
+```rb
+client = DeepL::Client.new(auth_key, proxy: 'http://user:password@localhost:3128')
+```
+
+`DeepL::HTTPClientOptions` also takes the proxy as a URL or as a hash with `proxy_addr` and
+`proxy_port`, together with certificate, SSL verification and timeout options. With the
+module-level API, a session needs to be used; the proxy is configured as part of the HTTP client options:
 
 ```rb
 client_options = HTTPClientOptions.new({ 'proxy_addr' => 'http://localhost', 'proxy_port' => 80 })
@@ -1256,7 +1316,7 @@ end
 
 ### Anonymous platform information
 
-By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, you can opt-out by setting the `send_platform_info` flag in the configuration to `false` like so:
+By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, create the client with `send_platform_info: false`, or with the module-level API set the `send_platform_info` flag in the configuration to `false` like so:
 
 ```rb
 deepl.configure({}, nil, nil, false) do |config|
@@ -1264,7 +1324,7 @@ deepl.configure({}, nil, nil, false) do |config|
 end
 ```
 
-You can also complete customize the `User-Agent` header like so:
+You can also completely replace the `User-Agent` header with `headers: { 'User-Agent' => 'myCustomUserAgent' }`, or with the module-level API like so:
 
 ```rb
 deepl.configure do |config|
@@ -1287,6 +1347,13 @@ end
 ### Writing a plugin
 
 If you use this library in an application, please identify the application by setting the name and version of the plugin:
+
+```rb
+client = DeepL::Client.new(auth_key, app_info: { app_name: 'MyTranslationPlugin',
+                                                 app_version: '1.0.1' })
+```
+
+With the module-level API:
 
 ```rb
 deepl.configure({}, 'MyTranslationPlugin', '1.0.1') do |config|

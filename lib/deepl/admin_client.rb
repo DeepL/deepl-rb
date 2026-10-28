@@ -13,39 +13,37 @@ module DeepL
   # +DeepL::Exceptions::AuthorizationFailed+ if the admin key is not accepted.
   class AdminClient
     DEEPL_SERVER_URL = 'https://api.deepl.com'
-    CONFIGURATION_OPTIONS = %i[logger max_network_retries user_agent].freeze
-    private_constant :DEEPL_SERVER_URL, :CONFIGURATION_OPTIONS
-
-    attr_reader :api
+    private_constant :DEEPL_SERVER_URL
 
     ##
-    # @param [String] admin_key Admin API key.
-    # @param [String, nil] host Base URL of the DeepL API, defaults to +https://api.deepl.com+.
-    # @param [DeepL::HTTPClientOptions, nil] http_client_options Proxy, SSL and timeout options.
-    # @param [String, nil] app_info_name Name of your application, sent in the +User-Agent+.
-    # @param [String, nil] app_info_version Version of your application.
+    # @param [String] admin_key Admin API key, surrounding whitespace is removed.
+    # @param [String, nil] server_url Base URL of the DeepL API, defaults to
+    #   +https://api.deepl.com+ (also for keys ending in +:fx+).
+    # @param [Hash] headers HTTP headers sent with every request. A +User-Agent+ replaces the
+    #   library's; +Authorization+ cannot be replaced.
+    # @param [Integer] max_retries Number of retries after the first attempt.
+    # @param [Numeric] timeout Timeout of each attempt in seconds.
+    # @param [String, nil] proxy Proxy URL, e.g. +http://user:password@proxy.example:8080+.
     # @param [Boolean] send_platform_info Whether to send basic platform information.
-    # @param [Hash] options Further configuration: +:logger+, +:max_network_retries+ and
-    #   +:user_agent+, see +DeepL::Configuration+.
+    # @param [DeepL::AppInfo, Hash, nil] app_info Your application's +app_name+ and
+    #   +app_version+, added to the +User-Agent+.
+    # @param [DeepL::HTTPClientOptions, nil] http_client_options Proxy, SSL and timeout options.
+    # @param [Logger, nil] logger Logger for requests and retries.
     # @raise [ArgumentError] If +admin_key+ is empty.
-    def initialize(admin_key, host: nil, http_client_options: nil, app_info_name: nil, # rubocop:disable Metrics/ParameterLists
-                   app_info_version: nil, send_platform_info: true, **options)
-      validate_admin_key!(admin_key)
-      unknown_options = options.keys - CONFIGURATION_OPTIONS
-      raise ArgumentError, "Unknown options: #{unknown_options.join(', ')}" if unknown_options.any?
-
-      configuration = Configuration.new(options.merge(auth_key: admin_key,
-                                                      host: host || DEEPL_SERVER_URL),
-                                        app_info_name, app_info_version, send_platform_info)
-      @api = API.new(configuration)
-      return unless http_client_options
-
-      @api.update_http_client(Utils::HTTPClientBuilder.build(configuration.host,
-                                                             http_client_options))
+    def initialize(admin_key, server_url: nil, headers: {}, max_retries: 5, timeout: 10, # rubocop:disable Metrics/ParameterLists
+                   proxy: nil, send_platform_info: true, app_info: nil, http_client_options: nil,
+                   logger: nil)
+      @api = Utils::ClientBuilder.build_api(
+        admin_key, key_name: 'admin_key', server_url: server_url,
+                   default_server_url: DEEPL_SERVER_URL, headers: headers,
+                   max_retries: max_retries, timeout: timeout, proxy: proxy,
+                   send_platform_info: send_platform_info, app_info: app_info,
+                   http_client_options: http_client_options, logger: logger
+      )
     end
 
-    def configuration
-      api.configuration
+    def inspect
+      "#<#{self.class.name} server_url=#{configuration.host}>"
     end
 
     ##
@@ -151,8 +149,10 @@ module DeepL
 
     private
 
-    def validate_admin_key!(admin_key)
-      raise ArgumentError, 'admin_key must not be empty' if blank?(admin_key)
+    attr_reader :api
+
+    def configuration
+      api.configuration
     end
 
     def update_developer_key(action, payload)

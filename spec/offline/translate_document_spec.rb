@@ -281,8 +281,9 @@ describe DeepL::DocumentApi do
       RUBY
       lib = File.expand_path('../../lib', __dir__)
 
-      output, = Open3.capture2e({ 'PATH' => ENV.fetch('PATH') }, RbConfig.ruby, '-I', lib, '-r',
-                                'deepl', '-e', script, unsetenv_others: true)
+      # stdout only: stderr carries the deprecation warning of the module API.
+      output, = Open3.capture3({ 'PATH' => ENV.fetch('PATH') }, RbConfig.ruby, '-I', lib, '-r',
+                               'deepl', '-e', script, unsetenv_others: true)
 
       expect(output.strip).to eq('DeepL::Exceptions::DocumentTranslationError')
     end

@@ -7,7 +7,8 @@ require_relative 'real_api_helper'
 
 describe DeepL::AdminClient do
   subject(:client) do
-    described_class.new(ENV.fetch('DEEPL_ADMIN_KEY'), host: ENV.fetch('DEEPL_SERVER_URL', nil))
+    described_class.new(ENV.fetch('DEEPL_ADMIN_KEY'),
+                        server_url: ENV.fetch('DEEPL_SERVER_URL', nil))
   end
 
   before do

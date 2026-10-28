@@ -118,7 +118,10 @@ module DeepL
         api.configuration.logger&.info("Request to the DeepL API: #{self}")
         api.configuration.logger&.debug("Request details: #{details}")
         loop do
-          resp = http_client.request(req)
+          resp = nil
+          client = http_client
+          apply_request_timeout(client)
+          resp = client.request(req)
           validate_response!(resp, req)
           @response_received = true
           return [req, resp]
@@ -136,6 +139,19 @@ module DeepL
           wait_before_retry(e, files_to_reset)
           next
         end
+      end
+
+      # Per attempt, the timeout is the configured timeout or, if longer, the time until the
+      # backoff deadline. Timeouts given in HTTPClientOptions take precedence.
+      def apply_request_timeout(client) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity
+        timeout = api.configuration.timeout
+        return if timeout.nil? || !client.respond_to?(:read_timeout=)
+
+        timeout = [timeout.to_f, @backoff_timer.time_until_deadline].max
+        options = client.equal?(api.http_client) ? api.http_client_options : nil
+        client.open_timeout = timeout if options&.open_timeout.nil?
+        client.read_timeout = timeout if options&.read_timeout.nil?
+        client.write_timeout = timeout if options&.write_timeout.nil?
       end
 
       def wait_before_retry(error, files_to_reset)
@@ -300,9 +316,14 @@ module DeepL
         options
       end
 
+      # The configured +headers+ may replace the User-Agent but not the Authorization header.
       def headers
+        configured = (api.configuration.headers || {}).reject do |name, _|
+          name.to_s.casecmp?('authorization')
+        end
         { 'Authorization' => "DeepL-Auth-Key #{api.configuration.auth_key.to_s.strip}",
-          'User-Agent' => api.configuration.user_agent }.merge(@additional_headers)
+          'User-Agent' => api.configuration.user_agent }
+          .merge(configured).merge(@additional_headers)
       end
 
       def loggable_headers

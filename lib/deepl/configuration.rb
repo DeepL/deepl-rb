@@ -6,13 +6,14 @@
 module DeepL
   class Configuration
     ATTRIBUTES = %i[auth_key host logger max_doc_status_queries max_network_retries user_agent
-                    version].freeze
+                    version headers timeout].freeze
 
     attr_accessor(*ATTRIBUTES)
 
     DEEPL_SERVER_URL = 'https://api.deepl.com'
     DEEPL_SERVER_URL_FREE = 'https://api-free.deepl.com'
-    private_constant :DEEPL_SERVER_URL, :DEEPL_SERVER_URL_FREE
+    DEFAULT_TIMEOUT = 10.0
+    private_constant :DEEPL_SERVER_URL, :DEEPL_SERVER_URL_FREE, :DEFAULT_TIMEOUT
 
     def initialize(data = {}, app_info_name = nil, app_info_version = nil, send_platform_info = true) # rubocop:disable all
       data.each { |key, value| send("#{key}=", value) }
@@ -22,6 +23,8 @@ module DeepL
       @user_agent ||= construct_user_agent(send_platform_info, app_info_name, app_info_version)
       @max_network_retries ||= 5
       @logger ||= nil
+      @headers ||= {}
+      @timeout ||= DEFAULT_TIMEOUT
     end
 
     # The host is resolved when it is read, so that an auth key set after the configuration was
@@ -30,6 +33,18 @@ module DeepL
       return @host unless @host.nil?
 
       self.class.free_account_auth_key?(auth_key) ? DEEPL_SERVER_URL_FREE : DEEPL_SERVER_URL
+    end
+
+    ##
+    # @deprecated The API version is part of each endpoint; this setting will be removed in the
+    #   next major version.
+    def version=(value)
+      unless value.nil? || value == 'v2'
+        DeepL::Deprecation.warn_once('DeepL::Configuration#version=',
+                                     '[DEPRECATION] DeepL::Configuration#version= is deprecated ' \
+                                     'and will be removed in the next major version.')
+      end
+      @version = value
     end
 
     def validate!

@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepL::Client`, a client instance that owns its configuration and HTTP connection
+  and reads no environment variables: `DeepL::Client.new(auth_key, server_url:, headers:,
+  max_retries:, timeout:, proxy:, send_platform_info:, app_info:, http_client_options:,
+  logger:)`. Its operations follow in later changes. New public types: `DeepL::Client` and
+  `DeepL::AppInfo` (`app_name`, `app_version`).
+- Added the client options `headers:` (sent with every DeepL API request; a `User-Agent`
+  replaces the library's, `Authorization` cannot be replaced), `timeout:` (seconds per
+  attempt, default 10, applied to opening, reading and writing) and `proxy:` (a proxy URL,
+  also accepted as the `proxy` of `DeepL::HTTPClientOptions`). The module configuration has
+  `headers` and `timeout` attributes too.
+- Added `DeepL::Client.free_account_auth_key?(key)`.
 - Added `DeepL::Exceptions::ConnectionError`, raised for network failures without an HTTP
   response (DNS, connection, TLS, timeout) after the retries; the original exception is its
   `cause`.
@@ -27,23 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `replace_term_list`, `destroy`, and `destroy_term_list`. Terms are passed and returned
   as arrays of strings and are checked like glossary terms before they are sent. Please
   refer to the README for usage instructions.
-- Added the `style_profile` option to text translation (`DeepL.translate`) and document
-  translation (`DeepL.document.upload` and `translate_document`). It takes a style profile
-  ID string or a `DeepL::Resources::StyleProfile` object and is sent as `style_profile_id`.
-- Added support for style profiles (`/v3/style_profiles`) via `DeepL.style_profiles`,
-  which exposes `create`, `list`, `find`, `update`, and `destroy`. A style profile links
-  glossaries, style rule lists and translation memories. In `create` and `update`,
-  keywords left `nil` are not sent; an empty string clears `description` or `industry`,
-  and an empty array unlinks all components of that kind. Please refer to the README for
-  usage instructions.
-- Added support for spoken terms collections (`/v3/spoken-terms`) via
-  `DeepL.spoken_terms`, which exposes `create`, `list`, `find`, `update`, `entries`,
-  `replace_term_list`, `destroy`, and `destroy_term_list`. Terms are passed and returned
-  as arrays of strings and are checked like glossary terms before they are sent. Please
-  refer to the README for usage instructions.
 - Added `DeepL::AdminClient` for the Admin API. It must be created with an admin
-  API key and supports managing developer keys (`create_developer_key`,
-  `get_developer_keys`, `deactivate_developer_key`, `rename_developer_key`,
+  API key, accepts the options of `DeepL::Client` and supports managing developer keys
+  (`create_developer_key`, `get_developer_keys`, `deactivate_developer_key`, `rename_developer_key`,
   `set_developer_key_usage_limits`) and retrieving usage analytics
   (`get_usage_analytics`, `get_custom_tag_usage_analytics`).
   `set_developer_key_usage_limits` changes only the given limits, including
@@ -86,6 +83,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Network failures are now raised as `DeepL::Exceptions::ConnectionError` after the retries,
   instead of the raw `SocketError`, `Timeout::Error`, `Errno::*` or `OpenSSL::SSL::SSLError`.
+- Requests now time out after 10 seconds per attempt (or the backoff interval, if longer)
+  instead of Net::HTTP's 60 seconds; set `timeout:` (or `config.timeout`) to change it.
+  Timeouts given in `DeepL::HTTPClientOptions` still take precedence.
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`
   endpoint instead of the deprecated `GET /v2/languages` and `GET /v2/glossary-language-pairs`
   endpoints. Public method signatures and return types are unchanged. An unsupported `type`
@@ -96,6 +96,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reworked the test suite so that it no longer needs the `deepl-mock` server. The offline specs
   assert the exact outgoing requests with WebMock, and one real-API spec per resource calls each
   endpoint once. `webmock` and `webrick` are test dependencies again.
+
+### Deprecated
+- The module-level API is deprecated in favour of `DeepL::Client` and will be removed in the
+  next major version: `DeepL.configure`, `DeepL.configuration`, `DeepL.api`, `DeepL.translate`,
+  `DeepL.rephrase`, `DeepL.correct`, `DeepL.usage`, `DeepL.languages`,
+  `DeepL.languages_for_resource`, `DeepL.language_resources`, `DeepL.document`,
+  `DeepL.glossaries`, `DeepL.multilingual_glossaries`, `DeepL.spoken_terms`,
+  `DeepL.style_rules`, `DeepL.style_profiles`, `DeepL.translation_memories`,
+  `DeepL.with_session` and `DeepL.http_client`. Each prints a warning once per process and
+  keeps working unchanged.
+- `DeepL::Configuration#version=` (the API version is part of each endpoint).
 
 ### Fixed
 - `DeepL.configure { |c| c.auth_key = '...:fx' }` kept `https://api.deepl.com`, because the

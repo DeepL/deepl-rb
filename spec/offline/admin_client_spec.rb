@@ -6,7 +6,7 @@
 require_relative 'offline_helper'
 
 describe DeepL::AdminClient do
-  subject(:client) { described_class.new(admin_key, max_network_retries: 2) }
+  subject(:client) { described_class.new(admin_key, max_retries: 2) }
 
   let(:admin_key) { 'admin-key' }
   let(:admin_headers) do
@@ -38,26 +38,48 @@ describe DeepL::AdminClient do
       ENV['DEEPL_AUTH_KEY'] = 'environment-key'
       ENV['DEEPL_SERVER_URL'] = 'http://environment.example.test'
       begin
-        expect(client.configuration.auth_key).to eq(admin_key)
-        expect(client.configuration.host).to eq('https://api.deepl.com')
-        expect(described_class.new(admin_key, host: 'http://localhost:3000').configuration.host)
-          .to eq('http://localhost:3000')
+        stub_request(:get, url('/v2/admin/developer-keys')).with(headers: admin_headers)
+                                                           .to_return(reply([]))
+        stub_request(:get, 'http://localhost:3000/v2/admin/developer-keys').to_return(reply([]))
+
+        client.get_developer_keys
+        described_class.new(admin_key, server_url: 'http://localhost:3000').get_developer_keys
       ensure
         %w[DEEPL_AUTH_KEY DEEPL_SERVER_URL].each { |name| ENV.delete(name) }
         ENV.update(env)
       end
     end
 
+    it 'trims the admin key' do
+      stub_request(:get, url('/v2/admin/developer-keys')).with(headers: admin_headers)
+                                                         .to_return(reply([]))
+
+      described_class.new("  #{admin_key}\n").get_developer_keys
+    end
+
+    it 'sends the app info and the configured headers' do
+      stub_request(:get, url('/v2/admin/developer-keys'))
+        .with(headers: { 'X-Custom' => 'v',
+                         'User-Agent' => %r{\Adeepl-ruby/[^ ]+ my-app/1\.2\z} })
+        .to_return(reply([]))
+
+      described_class.new(admin_key, send_platform_info: false, headers: { 'X-Custom' => 'v' },
+                                     app_info: DeepL::AppInfo.new(app_name: 'my-app',
+                                                                  app_version: '1.2'))
+                     .get_developer_keys
+    end
+
     it 'applies the HTTP client options' do
       options = DeepL::HTTPClientOptions.new({}, nil, read_timeout: 7)
       admin_client = described_class.new(admin_key, http_client_options: options)
-      expect(admin_client.api.http_client.read_timeout).to eq(7)
+      expect(admin_client.send(:api).http_client.read_timeout).to eq(7)
     end
 
     it 'enables SSL from the URL scheme and verifies certificates unless disabled' do
       build = lambda do |host, verify|
         options = DeepL::HTTPClientOptions.new(nil, nil, enable_ssl_verification: verify)
-        described_class.new(admin_key, host: host, http_client_options: options).api.http_client
+        described_class.new(admin_key, server_url: host, http_client_options: options)
+                       .send(:api).http_client
       end
 
       expect(build.call('https://api.deepl.com', true)).to have_attributes(use_ssl?: true,
