@@ -8,7 +8,7 @@ module DeepL
     module StyleRule
       class Create < Base
         def initialize(api, name, language, options = {})
-          super(api, options)
+          super(api, options.dup)
           @name = name
           @language = language
           @configured_rules = delete_option(:configured_rules)

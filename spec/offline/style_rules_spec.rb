@@ -68,6 +68,16 @@ describe DeepL::StyleRuleApi do
       style_rules.create('n', 'en', configured_rules: rules, custom_instructions: instructions)
     end
 
+    it 'keeps the configured rules and custom instructions in a reused options hash' do
+      options = { configured_rules: { numbers: { number_format: 'dot' } },
+                  custom_instructions: [{ label: 'Tone', prompt: 'Be brief' }] }
+      stub_request(:post, url('/v3/style_rules'))
+        .with(body: { name: 'n', language: 'en' }.merge(options))
+        .to_return(reply(style_json, 201)).times(2)
+
+      2.times { style_rules.create('n', 'en', options) }
+    end
+
     it 'parses the configured rules, defaulting missing rules to an empty hash' do
       stub_request(:post, url('/v3/style_rules')).to_return(reply(style_json, 201))
 
