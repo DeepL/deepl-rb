@@ -33,7 +33,8 @@ module DeepL
 
         def query_params
           SUPPORTED_OPTIONS.each_with_object({}) do |option_name, params|
-            params[option_name] = option(option_name).to_s if option?(option_name)
+            value = option(option_name)
+            params[option_name] = value.to_s unless value.nil?
           end
         end
 

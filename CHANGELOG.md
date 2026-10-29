@@ -245,6 +245,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- `DeepL.translation_memories.list` and `segments` sent an option set to `nil` as an empty
+  query parameter (`page=`). Such options are no longer sent.
 - Translation memory and job IDs were inserted into the request path without URL encoding:
   an ID containing `/` changed the path and a space raised `URI::InvalidURIError`. They are
   now URL-encoded.

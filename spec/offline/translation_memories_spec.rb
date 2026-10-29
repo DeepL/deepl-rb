@@ -51,6 +51,13 @@ describe DeepL::TranslationMemoryApi do
 
       memories.list(page: 1, page_size: 20)
     end
+
+    it 'does not send an option set to nil' do
+      stub_request(:get, url('/v3/translation_memories?page_size=20'))
+        .to_return(reply(translation_memories: []))
+
+      memories.list(page: nil, page_size: 20)
+    end
   end
 
   describe '#find and #destroy' do
@@ -111,6 +118,14 @@ describe DeepL::TranslationMemoryApi do
 
       memories.segments('tm-1', page_size: 5, page_cursor: 'c-1', filter_text: 'a b',
                                 filter_case_sensitive: true)
+    end
+
+    it 'does not send an option set to nil' do
+      stub_request(:get, url('/v3/translation_memories/tm-1/segments?page_size=5'))
+        .to_return(reply(segments_json))
+
+      memories.segments('tm-1', page_size: 5, page_cursor: nil, filter_text: nil,
+                                filter_case_sensitive: nil)
     end
 
     it 'parses the timestamp of a target and the next page' do
