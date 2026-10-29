@@ -247,7 +247,7 @@ module DeepL
       # identifiers. Each entry may be a glossary ID string, a
       # `DeepL::Resources::Glossary` or a `DeepL::Resources::MultilingualGlossary` object. It:
       # * requires +source_lang+ to be set,
-      # * cannot be combined with the singular +glossary_id+ option,
+      # * cannot be combined with the singular +glossary+ or +glossary_id+ option,
       # * allows at most `MAX_GLOSSARY_IDS` identifiers.
       #
       # The API expects +glossary_ids+ as an array (a JSON array in the JSON translate body).
@@ -268,6 +268,33 @@ module DeepL
         ids.map { |glossary| glossary_id_string(glossary) }
       end
 
+      # Resolves the +glossary+ option (a glossary ID string, a `DeepL::Resources::Glossary` or
+      # a `DeepL::Resources::MultilingualGlossary`) to the ID sent as +glossary_id+, and warns
+      # about the deprecated +glossary_id+ option.
+      #
+      # @return [String, nil] The glossary ID, or nil if the +glossary+ option is unset.
+      # @raise [ArgumentError] If +glossary+ is combined with +glossary_id+.
+      def build_glossary_param
+        warn_glossary_id_deprecated if option?(:glossary_id)
+        return nil unless option?(:glossary)
+
+        glossary = delete_option(:glossary)
+        return nil if glossary.nil?
+
+        if option?(:glossary_id)
+          raise ArgumentError,
+                'The `glossary` option cannot be used together with the `glossary_id` option'
+        end
+        glossary_id_string(glossary)
+      end
+
+      def warn_glossary_id_deprecated
+        Deprecation.warn_once_at_caller(
+          'option glossary_id',
+          '[DEPRECATION] The glossary_id option is deprecated, use the glossary option instead.'
+        )
+      end
+
       def glossary_id_string(glossary)
         return glossary.id if glossary.is_a?(DeepL::Resources::Glossary)
         return glossary.id if glossary.is_a?(DeepL::Resources::MultilingualGlossary)
@@ -276,10 +303,7 @@ module DeepL
       end
 
       def validate_glossary_ids!(ids, source_lang)
-        if option?(:glossary_id)
-          raise ArgumentError,
-                'The `glossary_ids` option cannot be used together with the `glossary_id` option'
-        end
+        validate_no_single_glossary!
         if source_lang.nil?
           raise ArgumentError, 'The `glossary_ids` option requires `source_lang` to be set'
         end
@@ -287,6 +311,16 @@ module DeepL
 
         raise ArgumentError,
               "A maximum of #{MAX_GLOSSARY_IDS} glossary IDs may be provided via `glossary_ids`"
+      end
+
+      def validate_no_single_glossary!
+        single = if !option(:glossary).nil? then 'glossary'
+                 elsif option?(:glossary_id) then 'glossary_id'
+                 end
+        return unless single
+
+        raise ArgumentError,
+              "The `glossary_ids` option cannot be used together with the `#{single}` option"
       end
 
       def path

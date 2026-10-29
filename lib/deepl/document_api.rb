@@ -26,14 +26,16 @@ module DeepL
     #                               the different kinds of documents (PDFs, etc). If nil, will use
     #                               the filename of +input_file_path+.
     # @param [Hash] options Additional (body) options for the upload. Notable glossary options:
-    #                       +:glossary_id+ (a single glossary ID) or +:glossary_ids+ (an array of
-    #                       up to 5 glossary IDs, as strings, `DeepL::Resources::Glossary`
-    #                       or `DeepL::Resources::MultilingualGlossary` objects).
+    #                       +:glossary+ (a glossary ID, `DeepL::Resources::Glossary` or
+    #                       `DeepL::Resources::MultilingualGlossary`; replaces the deprecated
+    #                       +:glossary_id+) or +:glossary_ids+ (an array of up to 5 glossary IDs
+    #                       or objects).
     #                       +:glossary_ids+ requires +source_lang+ to be set, cannot be combined
-    #                       with +:glossary_id+, and raises `ArgumentError` if these rules are
-    #                       violated or more than 5 IDs are provided. Notable style/translation
-    #                       memory options (mirroring text translation): +:style_rule+ (a style rule
-    #                       ID string or a `DeepL::Resources::StyleRule` object),
+    #                       with +:glossary+ or +:glossary_id+, and raises `ArgumentError` if
+    #                       these rules are violated or more than 5 IDs are provided. Notable
+    #                       style/translation memory options (mirroring text translation):
+    #                       +:style_rule+ (a style rule ID string or a
+    #                       `DeepL::Resources::StyleRule` object),
     #                       +:style_profile+ (a style profile ID string or a
     #                       `DeepL::Resources::StyleProfile` object),
     #                       +:translation_memory+ (a translation memory ID string or a

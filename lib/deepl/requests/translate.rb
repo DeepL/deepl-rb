@@ -89,6 +89,8 @@ module DeepL
 
         glossary_ids = build_glossary_ids_param(source_lang)
         payload[:glossary_ids] = glossary_ids unless glossary_ids.nil?
+        glossary_id = build_glossary_param
+        payload[:glossary_id] = glossary_id unless glossary_id.nil?
 
         build_texts(*execute_request_with_retries(post_request(payload)))
       end

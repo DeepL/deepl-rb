@@ -176,6 +176,33 @@ describe 'DeepL.translate' do
     end
   end
 
+  describe 'glossary' do
+    let(:base) { { text: ['a'], source_lang: 'EN', target_lang: 'DE' } }
+
+    it 'sends a glossary ID as glossary_id' do
+      expect_body(base.merge(glossary_id: 'g-1'))
+      DeepL.translate('a', 'EN', 'DE', glossary: 'g-1')
+    end
+
+    it 'sends the ID of a glossary or multilingual glossary object as glossary_id' do
+      glossary = DeepL::Resources::Glossary.new({ 'glossary_id' => 'g-2' }, nil, nil)
+      multilingual = DeepL::Resources::MultilingualGlossary.new({ 'glossary_id' => 'g-3' }, nil,
+                                                                nil)
+      expect_body(base.merge(glossary_id: 'g-2'))
+      expect_body(base.merge(glossary_id: 'g-3'))
+
+      DeepL.translate('a', 'EN', 'DE', glossary: glossary)
+      DeepL.translate('a', 'EN', 'DE', 'glossary' => multilingual)
+    end
+
+    it 'raises ArgumentError together with glossary_id or glossary_ids' do
+      expect { DeepL.translate('a', 'EN', 'DE', glossary: 'g-1', glossary_id: 'g-2') }
+        .to raise_error(ArgumentError, /`glossary` option cannot be used together/)
+      expect { DeepL.translate('a', 'EN', 'DE', glossary: 'g-1', glossary_ids: ['g-2']) }
+        .to raise_error(ArgumentError, /together with the `glossary` option/)
+    end
+  end
+
   describe 'result' do
     def stub_translation(translation)
       stub_request(:post, url('/v2/translate')).to_return(reply(translations: [translation]))

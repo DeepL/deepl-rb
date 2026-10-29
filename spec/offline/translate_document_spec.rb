@@ -144,6 +144,13 @@ describe DeepL::DocumentApi do
         .to eq('source_lang' => 'EN', 'target_lang' => 'DE', 'filename' => 'example_document.txt')
     end
 
+    it 'sends the glossary option, an ID or a glossary object, as glossary_id' do
+      glossary = DeepL::Resources::MultilingualGlossary.new({ 'glossary_id' => 'g-ml',
+                                                              'name' => 'n' }, nil, nil)
+      expect(form_fields(sent_form(glossary: 'g-1'))).to include('glossary_id' => 'g-1')
+      expect(form_fields(sent_form(glossary: glossary))).to include('glossary_id' => 'g-ml')
+    end
+
     it 'lets extra_body_parameters add a field and override an existing one' do
       form = sent_form(formality: 'more', extra_body_parameters: { formality: 'less', beta: true })
 

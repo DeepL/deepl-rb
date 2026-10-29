@@ -55,6 +55,7 @@ module DeepL
         def add_extra_options_to_form(form_data)
           add_supported_options_to_form(form_data)
           add_glossary_ids_to_form(form_data)
+          add_glossary_to_form(form_data)
           add_style_rule_to_form(form_data)
           add_style_profile_to_form(form_data)
           add_translation_memory_to_form(form_data)
@@ -68,6 +69,13 @@ module DeepL
         def add_glossary_ids_to_form(form_data)
           glossary_ids = build_glossary_ids_param(source_lang)
           form_data.push(['glossary_ids', glossary_ids.join(',')]) unless glossary_ids.nil?
+        end
+
+        # Resolves the `glossary` option (an ID string, a `DeepL::Resources::Glossary` or a
+        # `DeepL::Resources::MultilingualGlossary`) and appends it as a `glossary_id` field.
+        def add_glossary_to_form(form_data)
+          glossary_id = build_glossary_param
+          form_data.push(['glossary_id', glossary_id]) unless glossary_id.nil?
         end
 
         # Serializes the `style_rule` option and appends it to the form data as a `style_id`
