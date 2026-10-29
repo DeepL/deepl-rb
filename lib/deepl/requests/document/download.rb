@@ -31,8 +31,10 @@ module DeepL
 
         private
 
+        # Binary mode: text mode would convert newlines on Windows and transcode the bytes when
+        # Encoding.default_internal is set.
         def extract_file(_request, response)
-          File.write(@output_file, response.body)
+          File.binwrite(@output_file, response.body)
         end
 
         def path

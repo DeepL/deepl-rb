@@ -217,6 +217,20 @@ describe DeepL::DocumentApi do
 
       expect(File.binread(output)).to eq(Fixtures::BINARY_CONTENT)
     end
+
+    it 'writes the bytes unchanged when Encoding.default_internal is set' do
+      output = File.join(temp_dir, 'result.docx')
+      stub_request(:post, url('/v2/document/doc-1/result'))
+        .to_return(status: 200, body: Fixtures::BINARY_CONTENT)
+      previous = Encoding.default_internal
+      Encoding.default_internal = Encoding::UTF_8
+
+      documents.download(handle, output)
+
+      expect(File.binread(output)).to eq(Fixtures::BINARY_CONTENT)
+    ensure
+      Encoding.default_internal = previous
+    end
   end
 
   describe DeepL::Resources::DocumentHandle, '#wait_until_document_translation_finished' do
