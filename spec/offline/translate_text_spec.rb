@@ -99,7 +99,17 @@ describe 'DeepL.translate' do
       end
     end
 
-    %i[splitting_tags non_splitting_tags ignore_tags custom_instructions].each do |option|
+    it 'sends a custom_instructions string as one instruction' do
+      expect_body(text: ['a'], target_lang: 'DE', custom_instructions: ['Be formal, and short'])
+      DeepL.translate('a', nil, 'DE', custom_instructions: 'Be formal, and short')
+    end
+
+    it 'sends a custom_instructions array unchanged' do
+      expect_body(text: ['a'], target_lang: 'DE', custom_instructions: %w[x y])
+      DeepL.translate('a', nil, 'DE', custom_instructions: %w[x y])
+    end
+
+    %i[splitting_tags non_splitting_tags ignore_tags].each do |option|
       it "sends a comma separated #{option} string as an array" do
         expect_body({ text: ['a'], target_lang: 'DE', option => %w[x y] })
         DeepL.translate('a', nil, 'DE', option => 'x,y')

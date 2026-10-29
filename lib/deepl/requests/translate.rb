@@ -17,6 +17,10 @@ module DeepL
           (value.is_a?(Array) ? value : value.split(','))
         end
       }.freeze
+      # A custom instruction may contain commas, so a single string is one instruction.
+      STRING_TO_SINGLE_ELEMENT_ARRAY_CONVERSION = lambda { |value|
+        value.is_a?(String) ? [value] : value
+      }.freeze
       OPTIONS_CONVERSIONS = {
         split_sentences: BOOLEAN_TO_STRING_CONVERSION,
         preserve_formatting: STRING_TO_BOOLEAN_CONVERSION,
@@ -24,7 +28,7 @@ module DeepL
         splitting_tags: STRING_TO_ARRAY_CONVERSION,
         non_splitting_tags: STRING_TO_ARRAY_CONVERSION,
         ignore_tags: STRING_TO_ARRAY_CONVERSION,
-        custom_instructions: STRING_TO_ARRAY_CONVERSION
+        custom_instructions: STRING_TO_SINGLE_ELEMENT_ARRAY_CONVERSION
       }.freeze
 
       attr_reader :text, :source_lang, :target_lang, :ignore_tags, :splitting_tags,
