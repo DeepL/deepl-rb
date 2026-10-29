@@ -62,6 +62,13 @@ module DeepL
       attributes == other.attributes
     end
 
+    # Redacts the auth key, so that it never shows in the inspect output of objects holding the
+    # configuration.
+    def inspect
+      shown = attributes.merge(auth_key: auth_key.nil? ? nil : '[REDACTED]')
+      "#<#{self.class.name} #{shown.map { |name, value| "#{name}=#{value.inspect}" }.join(', ')}>"
+    end
+
     # The key is trimmed like the one sent in the Authorization header.
     def self.free_account_auth_key?(key)
       key.to_s.strip.end_with?(':fx')

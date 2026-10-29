@@ -225,6 +225,15 @@ describe DeepL::DocumentApi do
       expect(stub).to have_been_requested.once
     end
 
+    it 'does not show the auth key in inspect' do
+      configuration = DeepL::Configuration.new(auth_key: 'sdktest-secret-key')
+      other = described_class.new('doc-1', 'key-1', nil, nil,
+                                  api: DeepL::API.new(configuration))
+
+      expect(other.inspect).not_to include('sdktest-secret-key')
+      expect(configuration.inspect).not_to include('sdktest-secret-key')
+    end
+
     it 'stops after max_doc_status_queries polls' do
       DeepL.configuration.max_doc_status_queries = 0
       stub = stub_status(status_reply('queued'))

@@ -133,6 +133,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with only an address. It now builds its connection like `DeepL::AdminClient`.
 - `DocumentHandle#wait_until_document_translation_finished` polled through the module
   configuration instead of the connection that created the handle.
+- `DocumentHandle#inspect` and `DeepL::Configuration#inspect` showed the auth key. The key
+  is now left out (`[REDACTED]` in the configuration).
 - Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create` and the
   `DeepL.multilingual_glossaries` methods) were sent unchecked, so a term with a tab or newline
   silently corrupted the entries. Such terms now raise `ArgumentError` before any request: a

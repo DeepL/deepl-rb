@@ -21,6 +21,11 @@ module DeepL
         "DocumentHandle: ID: #{document_id} - Key: #{document_key}"
       end
 
+      # Leaves out the connection, which holds the auth key.
+      def inspect
+        "#<#{self.class.name} document_id=#{document_id.inspect}>"
+      end
+
       ##
       # For this DocumentHandle, waits until the document translation is finished and returns the
       # final status of the document.
