@@ -49,7 +49,7 @@ describe DeepL::AdminClient do
   end
 
   it 'sends the developer key requests: create, list, rename, set limits and deactivate' do
-    key = client.create_developer_key(unique_name('developer-key'))
+    key = client.create_developer_key(label: unique_name('developer-key'))
     failure = nil
     begin
       expect(key.deactivated?).to be(false)

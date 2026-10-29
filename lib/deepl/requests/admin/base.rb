@@ -9,8 +9,10 @@ module DeepL
   module Requests
     module Admin
       class Base < Requests::Base
-        def initialize(api)
-          super(api, {})
+        def initialize(api, extra_body_parameters = nil)
+          options = {}
+          options[:extra_body_parameters] = extra_body_parameters unless extra_body_parameters.nil?
+          super(api, options)
         end
 
         def to_s

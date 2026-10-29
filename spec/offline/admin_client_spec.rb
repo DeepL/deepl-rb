@@ -294,7 +294,7 @@ describe DeepL::AdminClient do
       stub_create.with(body: { label: 'developer key prod' }.to_json, headers: admin_headers)
                  .to_return(reply(developer_key_json))
 
-      key = client.create_developer_key('developer key prod')
+      key = client.create_developer_key(label: 'developer key prod')
 
       expect(key).to have_attributes(key_id: key_id, label: 'developer key prod',
                                      creation_time: Time.utc(2025, 7, 8, 8, 15, 29.362r),
@@ -308,6 +308,14 @@ describe DeepL::AdminClient do
       stub_create.with(body: '{}').to_return(reply(developer_key_json))
 
       client.create_developer_key
+    end
+
+    it 'adds the extra body parameters last' do
+      stub_create.with(body: { label: 'replaced', extra: [1] }.to_json)
+                 .to_return(reply(developer_key_json))
+
+      client.create_developer_key(label: 'given',
+                                  extra_body_parameters: { label: 'replaced', extra: [1] })
     end
 
     it 'raises when the response has no key_id' do
@@ -443,6 +451,17 @@ describe DeepL::AdminClient do
       client.set_developer_key_usage_limits(key, characters: 0)
       client.set_developer_key_usage_limits(key_id, speech_to_text_milliseconds: nil,
                                                     speech_to_speech_milliseconds: 60_000)
+    end
+
+    it 'adds the extra body parameters last, apart from the usage limits' do
+      stub_put('deactivate', key_id: key_id, extra: true)
+      stub_put('label', key_id: key_id, label: 'replaced')
+      stub_put('limits', key_id: key_id, characters: 0, extra: nil)
+
+      client.deactivate_developer_key(key, extra_body_parameters: { extra: true })
+      client.rename_developer_key(key, 'given', extra_body_parameters: { label: 'replaced' })
+      client.set_developer_key_usage_limits(key, characters: 0,
+                                                 extra_body_parameters: { extra: nil })
     end
 
     it 'sends the given key even if the limits contain a key_id' do

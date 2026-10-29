@@ -7,8 +7,8 @@ module DeepL
   module Requests
     module Admin
       class CreateDeveloperKey < Base
-        def initialize(api, label = nil)
-          super(api)
+        def initialize(api, label = nil, extra_body_parameters = nil)
+          super(api, extra_body_parameters)
           @label = label
         end
 

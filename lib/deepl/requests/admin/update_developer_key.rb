@@ -8,10 +8,10 @@ module DeepL
     module Admin
       ##
       # Sends a PUT to +admin/developer-keys/<action>+. The payload is sent as is, so +nil+
-      # values are serialized as explicit JSON nulls.
+      # values are serialized as explicit JSON nulls; +extra_body_parameters+ are added last.
       class UpdateDeveloperKey < Base
-        def initialize(api, action, payload)
-          super(api)
+        def initialize(api, action, payload, extra_body_parameters = nil)
+          super(api, extra_body_parameters)
           @action = action
           @payload = payload
         end

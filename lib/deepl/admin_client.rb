@@ -94,10 +94,12 @@ module DeepL
     # Creation is retried only after failures that show the request was not processed (HTTP 429,
     # DNS resolution errors and connection timeouts), so that a retry cannot create a second key.
     #
-    # @param [String, nil] label Label for the new key.
+    # @param [String, nil] label Label for the new key, not sent if +nil+.
+    # @param [Hash, nil] extra_body_parameters Added to the request body last; replaces fields
+    #   of the same name. Values are sent as given.
     # @return [DeepL::Resources::DeveloperKey]
-    def create_developer_key(label = nil)
-      Requests::Admin::CreateDeveloperKey.new(api, label).request
+    def create_developer_key(label: nil, extra_body_parameters: nil)
+      Requests::Admin::CreateDeveloperKey.new(api, label, extra_body_parameters).request
     end
 
     ##
@@ -112,10 +114,12 @@ module DeepL
     # Deactivates a developer key. Deactivation is permanent.
     #
     # @param [String, DeepL::Resources::DeveloperKey] key Key ID or developer key.
+    # @param [Hash, nil] extra_body_parameters Added to the request body last; replaces fields
+    #   of the same name. Values are sent as given.
     # @return [DeepL::Resources::DeveloperKey]
     # @raise [ArgumentError] If the key ID is empty.
-    def deactivate_developer_key(key)
-      update_developer_key('deactivate', key_id: key_id(key))
+    def deactivate_developer_key(key, extra_body_parameters: nil)
+      update_developer_key('deactivate', { key_id: key_id(key) }, extra_body_parameters)
     end
 
     ##
@@ -123,10 +127,12 @@ module DeepL
     #
     # @param [String, DeepL::Resources::DeveloperKey] key Key ID or developer key.
     # @param [String] label New label for the key.
+    # @param [Hash, nil] extra_body_parameters Added to the request body last; replaces fields
+    #   of the same name. Values are sent as given.
     # @return [DeepL::Resources::DeveloperKey]
     # @raise [ArgumentError] If the key ID is empty.
-    def rename_developer_key(key, label)
-      update_developer_key('label', key_id: key_id(key), label: label)
+    def rename_developer_key(key, label, extra_body_parameters: nil)
+      update_developer_key('label', { key_id: key_id(key), label: label }, extra_body_parameters)
     end
 
     ##
@@ -141,10 +147,12 @@ module DeepL
     #   text translation, document translation and text improvement),
     #   +:speech_to_text_milliseconds+ and +:speech_to_speech_milliseconds+, each an +Integer+ or
     #   +nil+. They are sent as is and validated by the API.
+    # @param [Hash, nil] extra_body_parameters Added to the request body last; replaces fields
+    #   of the same name. Values are sent as given.
     # @return [DeepL::Resources::DeveloperKey]
     # @raise [ArgumentError] If the key ID is empty.
-    def set_developer_key_usage_limits(key, **limits)
-      update_developer_key('limits', limits.merge(key_id: key_id(key)))
+    def set_developer_key_usage_limits(key, extra_body_parameters: nil, **limits)
+      update_developer_key('limits', limits.merge(key_id: key_id(key)), extra_body_parameters)
     end
 
     private
@@ -155,8 +163,8 @@ module DeepL
       api.configuration
     end
 
-    def update_developer_key(action, payload)
-      Requests::Admin::UpdateDeveloperKey.new(api, action, payload).request
+    def update_developer_key(action, payload, extra_body_parameters)
+      Requests::Admin::UpdateDeveloperKey.new(api, action, payload, extra_body_parameters).request
     end
 
     def key_id(key)
