@@ -12,8 +12,8 @@ module DeepL
         def initialize(api, style_id, instruction_id, label, prompt, # rubocop:disable Metrics/ParameterLists
                        source_language = nil, options = {})
           super(api, options)
-          @style_id = style_id
-          @instruction_id = instruction_id
+          @style_id = style_rule_id(style_id)
+          @instruction_id = custom_instruction_id(instruction_id)
           @label = label
           @prompt = prompt
           @source_language = source_language

@@ -11,7 +11,7 @@ module DeepL
 
         def initialize(api, style_id, options = {})
           super(api, options)
-          @style_id = style_id
+          @style_id = style_rule_id(style_id)
         end
 
         def request

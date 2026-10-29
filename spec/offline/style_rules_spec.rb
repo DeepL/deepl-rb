@@ -91,6 +91,37 @@ describe DeepL::StyleRuleApi do
     end
   end
 
+  describe 'resource objects' do
+    let(:rule) { DeepL::Resources::StyleRule.new({ 'style_id' => 's-1', 'name' => 'n' }, nil, nil) }
+    let(:instruction) { DeepL::Resources::CustomInstruction.new('id' => 'i-1') }
+
+    it 'sends the ID of a StyleRule object' do
+      stub_request(:get, url('/v3/style_rules/s-1')).to_return(reply(style_json))
+      stub_request(:patch, url('/v3/style_rules/s-1')).to_return(reply(style_json))
+      stub_request(:put, url('/v3/style_rules/s-1/configured_rules')).to_return(reply(style_json))
+      stub_request(:delete, url('/v3/style_rules/s-1')).to_return(status: 204)
+
+      style_rules.find(rule)
+      style_rules.update_name(rule, 'new')
+      style_rules.update_configured_rules(rule, {})
+      style_rules.destroy(rule)
+    end
+
+    it 'sends the IDs of StyleRule and CustomInstruction objects' do
+      path = url('/v3/style_rules/s-1/custom_instructions/i-1')
+      stub_request(:post, url('/v3/style_rules/s-1/custom_instructions'))
+        .to_return(reply(instruction_json, 201))
+      stub_request(:get, path).to_return(reply(instruction_json))
+      stub_request(:put, path).to_return(reply(instruction_json))
+      stub_request(:delete, path).to_return(status: 204)
+
+      style_rules.create_custom_instruction(rule, 'Tone', 'Be brief')
+      style_rules.find_custom_instruction(rule, instruction)
+      style_rules.update_custom_instruction(rule, instruction, 'New', 'Be long')
+      style_rules.destroy_custom_instruction(rule, instruction)
+    end
+  end
+
   describe '#update_name' do
     it 'sends a PATCH with the name' do
       stub_request(:patch, url('/v3/style_rules/s-1'))
