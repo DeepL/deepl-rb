@@ -247,6 +247,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document upload.
 - Added support for using a style rule in document translation via the
   `style_id` option (the `style_rule` option) in document upload.
+- `DeepL.rephrase` returned fewer results than texts, or `nil` for a string, when the response
+  contained fewer improvements than texts. It now raises `DeepL::Exceptions::Error`.
 - Added support for using a translation memory in document translation via the
   `translation_memory_id` option (the `translation_memory` and
   `translation_memory_threshold` options) in document upload.

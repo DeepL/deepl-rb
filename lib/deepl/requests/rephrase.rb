@@ -6,6 +6,8 @@
 module DeepL
   module Requests
     class Rephrase < Base
+      include WriteImprovements
+
       attr_reader :text, :target_lang, :writing_style, :tone
 
       def initialize(api, text, target_lang = nil, writing_style = nil, tone = nil, options = {}, # rubocop:disable Metrics/ParameterLists
@@ -38,13 +40,7 @@ module DeepL
       private
 
       def build_texts(request, response)
-        data = JSON.parse(response.body)
-
-        texts = data['improvements'].map do |improvement|
-          Resources::Text.new(improvement['text'], improvement['detected_source_language'], nil,
-                              request, response)
-        end
-
+        texts = build_improvements(text.is_a?(Array) ? text.size : 1, request, response)
         texts.size == 1 ? texts.first : texts
       end
 

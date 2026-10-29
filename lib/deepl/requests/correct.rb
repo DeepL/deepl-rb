@@ -6,6 +6,8 @@
 module DeepL
   module Requests
     class Correct < Base
+      include WriteImprovements
+
       attr_reader :text, :target_lang
 
       def initialize(api, text, target_lang = nil, options = {}, additional_headers = {})
@@ -43,13 +45,7 @@ module DeepL
       end
 
       def build_texts(request, response)
-        data = JSON.parse(response.body)
-
-        texts = data['improvements'].map do |improvement|
-          Resources::Text.new(improvement['text'], improvement['detected_source_language'], nil,
-                              request, response)
-        end
-
+        texts = build_improvements(text_arrayified.size, request, response)
         text.is_a?(Array) ? texts : texts.first
       end
 

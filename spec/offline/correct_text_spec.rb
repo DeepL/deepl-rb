@@ -45,6 +45,15 @@ describe 'DeepL.correct' do
     expect(DeepL.correct(['Helo']).map(&:class)).to eq([DeepL::Resources::Text])
   end
 
+  [['Helo', []], [%w[a b], [{ text: 'x' }]]].each do |text, improvements|
+    it "raises DeepL::Exceptions::Error for #{improvements.size} improvements of #{text.inspect}" do
+      stub_correct.to_return(reply(improvements: improvements))
+
+      expect { DeepL.correct(text) }
+        .to raise_error(an_instance_of(DeepL::Exceptions::Error), /expected \d improvements/)
+    end
+  end
+
   [[''], [[]], [['a', '']]].each do |args|
     it "raises ArgumentError for #{args.first.inspect} without sending a request" do
       expect { DeepL.correct(*args) }.to raise_error(ArgumentError, /non-empty/)

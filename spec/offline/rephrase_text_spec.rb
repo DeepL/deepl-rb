@@ -52,4 +52,13 @@ describe 'DeepL.rephrase' do
 
     expect(DeepL.rephrase(%w[a b]).map(&:class)).to eq([DeepL::Resources::Text] * 2)
   end
+
+  [['Hello', []], [%w[a b], [{ text: 'x' }]]].each do |text, improvements|
+    it "raises DeepL::Exceptions::Error for #{improvements.size} improvements of #{text.inspect}" do
+      stub_rephrase.to_return(reply(improvements: improvements))
+
+      expect { DeepL.rephrase(text) }
+        .to raise_error(an_instance_of(DeepL::Exceptions::Error), /expected \d improvements/)
+    end
+  end
 end
