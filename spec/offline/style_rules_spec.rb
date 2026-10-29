@@ -39,6 +39,13 @@ describe DeepL::StyleRuleApi do
       expect([rule.creation_time, rule.updated_time])
         .to eq([Time.utc(2026, 1, 2, 3, 4, 5), Time.utc(2026, 2, 3, 4, 5, 6)])
     end
+
+    it 'raises a DeepL error for a malformed timestamp' do
+      stub_request(:get, url('/v3/style_rules'))
+        .to_return(reply(style_rules: [style_json.merge(creation_time: 'not a time')]))
+
+      expect { style_rules.list }.to raise_error(DeepL::Exceptions::Error, /invalid time/)
+    end
   end
 
   describe '#create' do

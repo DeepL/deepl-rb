@@ -80,6 +80,9 @@ module DeepL
         return nil unless time_string
 
         Time.parse(time_string)
+      rescue ArgumentError, TypeError
+        raise Exceptions::Error,
+              "Unexpected response from the DeepL API: invalid time #{time_string.inspect}"
       end
     end
   end
