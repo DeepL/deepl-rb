@@ -77,6 +77,25 @@ describe DeepL::TranslationMemoryApi do
     end
   end
 
+  describe 'IDs in the path' do
+    it 'URL-encodes translation memory and job IDs' do # rubocop:disable RSpec/ExampleLength
+      stub_request(:get, url('/v3/translation_memories/a%2Fb%20c')).to_return(reply(memory_json))
+      stub_request(:delete, url('/v3/translation_memories/a%2Fb%20c')).to_return(status: 204)
+      stub_request(:get, url('/v3/translation_memories/a%2Fb%20c/segments'))
+        .to_return(reply(segment_count: 0, segments: []))
+      stub_request(:post, url('/v3/translation_memories/a%2Fb%20c/export'))
+        .to_return(reply({ job_id: 'j-1' }, 202))
+      stub_request(:get, url('/v3/translation_memories/jobs/j%3F1'))
+        .to_return(reply(job_json('processing')))
+
+      memories.find('a/b c')
+      memories.destroy('a/b c')
+      memories.segments('a/b c')
+      memories.create_export('a/b c')
+      memories.find_job('j?1')
+    end
+  end
+
   describe '#segments' do
     let(:segments_json) do
       { segment_count: 7, next_page_cursor: 'c-2',

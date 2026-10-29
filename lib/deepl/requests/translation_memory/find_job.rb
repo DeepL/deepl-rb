@@ -30,7 +30,7 @@ module DeepL
         end
 
         def path
-          "translation_memories/jobs/#{job_id}"
+          "translation_memories/jobs/#{escape_path_segment(job_id)}"
         end
       end
     end

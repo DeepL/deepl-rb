@@ -245,6 +245,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- Translation memory and job IDs were inserted into the request path without URL encoding:
+  an ID containing `/` changed the path and a space raised `URI::InvalidURIError`. They are
+  now URL-encoded.
 - Style rule list and custom instruction IDs were inserted into the request path without
   URL encoding: an ID containing `/` changed the path and a space raised
   `URI::InvalidURIError`. They are now URL-encoded.

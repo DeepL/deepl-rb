@@ -33,7 +33,7 @@ module DeepL
         end
 
         def path
-          "translation_memories/#{translation_memory_id}/export"
+          "translation_memories/#{escape_path_segment(translation_memory_id)}/export"
         end
       end
     end
