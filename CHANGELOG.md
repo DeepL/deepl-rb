@@ -131,6 +131,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL.with_session` turned TLS off (instead of certificate verification) when
   `enable_ssl_verification` was `false`, turned it on for `http://` hosts, and used a proxy
   with only an address. It now builds its connection like `DeepL::AdminClient`.
+- `DeepL.with_session` opened its connection with Net::HTTP's 60 second open timeout and
+  raised DNS, connection and TLS failures raw. It now uses the configured `timeout` unless
+  the HTTP client options set `open_timeout`, and raises `DeepL::Exceptions::ConnectionError`.
 - `DocumentHandle#wait_until_document_translation_finished` polled through the module
   configuration instead of the connection that created the handle.
 - `DocumentHandle#inspect` and `DeepL::Configuration#inspect` showed the auth key. The key

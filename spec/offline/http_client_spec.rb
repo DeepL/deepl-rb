@@ -141,6 +141,24 @@ describe 'DeepL HTTP client' do
       expect(DeepL.with_session(options) { DeepL.api.http_client }.proxy_address).to be_nil
     end
 
+    it 'raises ConnectionError when the session cannot connect' do
+      http = Net::HTTP.new('unresolvable.invalid', 443)
+      allow(http).to receive(:start).and_raise(SocketError, 'getaddrinfo: Name not known')
+      allow(DeepL::Utils::HTTPClientBuilder).to receive(:build).and_return(http)
+
+      expect { DeepL.with_session { nil } }
+        .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.cause).to be_a(SocketError) }
+    end
+
+    it 'opens the session connection with the configured timeout' do
+      DeepL.configuration.timeout = 4
+      options = DeepL::HTTPClientOptions.new({}, nil, read_timeout: 7)
+
+      client = DeepL.with_session(options) { DeepL.api.http_client }
+
+      expect([client.open_timeout, client.read_timeout]).to eq([4, 7])
+    end
+
     it 'restores the previous client when the block ends' do
       previous = DeepL.api.http_client
       options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test',

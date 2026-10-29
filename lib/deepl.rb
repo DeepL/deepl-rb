@@ -336,7 +336,7 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     previous_http_client = @http_client
     begin
       http = Utils::HTTPClientBuilder.build(module_configuration.host, client_options)
-      http.start
+      start_session(http, client_options)
       @http_client = http
       module_api.update_http_client(http, client_options)
       yield
@@ -370,6 +370,15 @@ module DeepL # rubocop:disable Metrics/ModuleLength
 
   def module_api
     @api ||= API.new(module_configuration) # rubocop:disable Naming/MemoizedInstanceVariableName
+  end
+
+  # Opens the session connection within the configured timeout, unless the options set one.
+  def start_session(http, client_options)
+    timeout = module_configuration.timeout
+    http.open_timeout = timeout if client_options.open_timeout.nil? && timeout
+    http.start
+  rescue *Requests::Base::NETWORK_ERRORS => e
+    raise Exceptions::ConnectionError, "Connection to the DeepL API failed: #{e.message}"
   end
 
   def ensure_configured
