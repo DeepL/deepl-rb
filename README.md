@@ -54,8 +54,9 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 The authentication key is trimmed; an empty key raises `ArgumentError`.
 `DeepL::Client.free_account_auth_key?(key)` returns whether a key is a DeepL API Free key.
 
-`DeepL::Client` offers text translation (`translate_text`, see [Translate](#translate)); for
-the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
+`DeepL::Client` offers text translation (`translate_text`, see [Translate](#translate)) and
+document translation (`translate_document` and its steps, see
+[Translate documents](#translate-documents)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
 is deprecated: each method prints a deprecation warning once per process, and it will be
 removed in the next major version.
 
@@ -1136,32 +1137,83 @@ end
 
 ### Translate documents
 
-To translate a document, use the `document.translate_document` method. Example:
+To translate a document, use the `translate_document` method of `DeepL::Client`. It uploads
+the document, waits until the translation is done and writes the translated document to the
+output path, which must not exist yet. It returns the final
+`DeepL::Resources::DocumentTranslationStatus`:
 
 ```rb
-DeepL.document.translate_document('/path/to/spanish_document.pdf', '/path/to/translated_document.pdf', 'ES', 'EN')
+status = client.translate_document('/path/to/spanish_document.pdf',
+                                   '/path/to/translated_document.pdf', 'ES', 'EN')
+puts status.billed_characters
+# => 2045
 ```
 
-The lower level `upload`, `get_status` and `download` methods are also exposed, as well as the convenience method `wait_until_document_translation_finished` on the `DocumentHandle` object, which would replace `get_status`:
+Every failure (also a failed translation) raises `DeepL::Exceptions::DocumentTranslationError`.
+Once the upload succeeded, its `document_handle` is set, so you can still query the status and
+download the document. `timeout_s:` limits the wait after the upload in seconds; by default
+`translate_document` waits until the translation is done or failed:
+
+```rb
+begin
+  client.translate_document('/path/to/document.docx', '/path/to/translated.docx', 'EN', 'DE',
+                            timeout_s: 600, formality: 'more')
+rescue DeepL::Exceptions::DocumentTranslationError => e
+  puts "Translation failed: #{e.message}, document: #{e.document_handle&.document_id}"
+end
+```
+
+The steps are also exposed. `translate_document_upload` returns a
+`DeepL::Resources::DocumentHandle` (`document_id`, `document_key`).
+`translate_document_wait_until_done(handle, timeout_s: nil)` queries the status every 5 seconds
+until the translation is done and returns that status; it raises `DeepL::Exceptions::Error`
+with the API's error message if the translation fails, and when `timeout_s` expires.
+`translate_document_get_status` queries the status once, and `translate_document_download`
+writes the translated document, overwriting an existing file; it raises
+`DeepL::Exceptions::DocumentNotReadyError` if the translation is not done yet.
+
+```rb
+handle = client.translate_document_upload('/path/to/spanish_document.pdf', 'ES', 'EN',
+                                          filename: 'report.pdf')
+status = client.translate_document_get_status(handle)
+puts "#{status.status}, ok: #{status.ok?}, done: #{status.successful?}"
+# => translating, ok: true, done: false
+client.translate_document_wait_until_done(handle)
+client.translate_document_download(handle, '/path/to/translated_document.pdf')
+```
+
+A `DeepL::Resources::DocumentTranslationStatus` has `document_id`, `status` (a string;
+`DeepL::Constants::DocumentStatusCode` has the values `QUEUED`, `TRANSLATING`, `DONE` and
+`ERROR`), `seconds_remaining`, `billed_characters` and `error_message`, and the predicates
+`successful?` (done), `error?` (failed), `ok?` (not failed, also while queued or translating)
+and `finished?` (done or failed).
+
+With the deprecated module-level API, the same methods are `DeepL.document.translate_document`,
+`upload`, `get_status` and `download`, which take the filename as a positional parameter and
+optional additional headers. `DeepL.document.translate_document` waits until the translation is
+done or failed and returns the final status; the deprecated configuration setting
+`max_doc_status_queries` limits the number of status requests. The deprecated
+`DocumentHandle#wait_until_document_translation_finished` returns the final status also when
+the translation failed.
+
 ```rb
 doc_handle = DeepL.document.upload('/path/to/spanish_document.pdf', 'ES', 'EN')
-doc_status = doc_handle.wait_until_document_translation_finished # alternatively poll `DeepL.document.get_status`
-# until the `doc_status.successful?`
+doc_status = doc_handle.wait_until_document_translation_finished
 DeepL.document.download(doc_handle, '/path/to/translated_document.pdf') unless doc_status.error?
 ```
 
 You can also pass additional options to document translation methods, including `extra_body_parameters`:
 
 ```rb
-options = {
-  formality: 'more',
-  extra_body_parameters: { example_param: 'true' }
-}
-doc_handle = DeepL.document.upload('/path/to/spanish_document.pdf', 'ES', 'EN', nil, options)
+doc_handle = client.translate_document_upload('/path/to/spanish_document.pdf', 'ES', 'EN',
+                                              formality: 'more',
+                                              extra_body_parameters: { example_param: 'true' })
 ```
 
 Document translation options include:
 
+- `filename` (`DeepL::Client` only): the file name sent with the upload, including its
+  extension. Defaults to the base name of the input path.
 - `formality`: same as for text translation.
 - `glossary` / `glossary_ids`: see the glossary sections above. `glossary_id` is deprecated,
   use `glossary`.
@@ -1175,8 +1227,8 @@ Document translation options include:
   sections above.
 
 ```rb
-DeepL.document.translate_document('/path/to/document.docx', '/path/to/translated.pdf', 'EN', 'DE',
-                                  nil, output_format: 'pdf', enable_watermark: true)
+client.translate_document('/path/to/document.docx', '/path/to/translated.pdf', 'EN', 'DE',
+                          output_format: 'pdf', enable_watermark: true)
 ```
 
 The `extra_body_parameters` option allows you to pass arbitrary parameters in the request body. This can be used to access beta features by adding new parameters, or to override built-in parameters (such as `target_lang`, `source_lang`, etc.) for testing purposes.
@@ -1268,7 +1320,8 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | `DeepL::Exceptions::AuthorizationFailed` | The authorization process has failed. Check your `auth_key` value. |
 | `DeepL::Exceptions::BadRequest` | Something is wrong in your request. Check `exception.message` for more information. |
 | `DeepL::Exceptions::ConnectionError` | No HTTP response after all retries (DNS, connection, TLS or timeout failure). The original exception is `exception.cause`. |
-| `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information. |
+| `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
+| `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
 | `DeepL::Exceptions::QuotaExceeded` | You've reached the API's character limit. |
 | `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |

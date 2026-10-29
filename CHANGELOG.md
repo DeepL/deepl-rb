@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added document translation to `DeepL::Client`: `translate_document(input_path,
+  output_path, source_lang, target_lang, timeout_s: nil, **options)`,
+  `translate_document_upload(input_path, source_lang, target_lang, **options)`,
+  `translate_document_get_status(handle)`, `translate_document_wait_until_done(handle,
+  timeout_s: nil)` and `translate_document_download(handle, output_path)`. The file name is
+  the `filename:` option. `translate_document` returns the final status and wraps every
+  failure in `DeepL::Exceptions::DocumentTranslationError`; `translate_document_wait_until_done`
+  raises `DeepL::Exceptions::Error` with the API's message when the translation fails, and both
+  raise when `timeout_s` expires.
+- Added `DeepL::Exceptions::DocumentNotReadyError` (a `ServerError`), raised for HTTP 503 on a
+  document download.
+- Added `DeepL::Exceptions::DocumentTranslationError#document_handle`, the handle of the
+  uploaded document (`nil` if the upload failed).
+- Added `DeepL::Resources::DocumentTranslationStatus#ok?` (the translation has not failed) and
+  `DeepL::Constants::DocumentStatusCode` (`QUEUED`, `TRANSLATING`, `DONE`, `ERROR`).
 - Added `DeepL::Client#translate_text(text, source_lang, target_lang, **options)`. It takes
   the options of `DeepL.translate` as keyword arguments and returns one
   `DeepL::Resources::Text` for a string and an array for an array, also for a one-element
@@ -95,6 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `quota_exceeded?` and `to_s` are unchanged.
 
 ### Changed
+- `DeepL.document.translate_document` now returns the final
+  `DeepL::Resources::DocumentTranslationStatus`, as documented, instead of the number of bytes
+  written.
 - Text translation now always sends `show_billed_characters: true`, so every result has
   `billed_characters`.
 - Network failures are now raised as `DeepL::Exceptions::ConnectionError` after the retries,
@@ -126,7 +144,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `glossary_id` option of text and document translation, use `glossary` instead. It
   prints a warning once per process and keeps working unchanged.
 
+- `DeepL::Resources::DocumentHandle#wait_until_document_translation_finished`, use
+  `DeepL::Client#translate_document_wait_until_done` instead.
+- `DeepL::Configuration#max_doc_status_queries=`, use the `timeout_s:` of
+  `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 ### Fixed
+- `DeepL.document.translate_document` and `DocumentHandle#wait_until_document_translation_finished`
+  stopped polling after 11 status requests (about 50 seconds), and `translate_document` then
+  downloaded the unfinished document. They now poll until the translation is done or failed;
+  only an explicitly configured `max_doc_status_queries` still limits the requests, and
+  `translate_document` then raises `DocumentTranslationError` instead of downloading.
+- Downloaded documents were written in text mode, which converted newlines on Windows and
+  failed or transcoded the bytes when `Encoding.default_internal` was set. They are now
+  written in binary mode.
+- Document IDs are now URL-encoded in the status and download paths.
 - Text translation sent options set to `nil`, and a `nil` source language, as JSON `null`.
   They are now treated as unset and not sent.
 - `translation_memory: nil` sent an empty `translation_memory_id`, and
