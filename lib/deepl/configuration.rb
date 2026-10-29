@@ -36,6 +36,20 @@ module DeepL
     end
 
     ##
+    # @deprecated Use the +timeout_s:+ of DeepL::Client#translate_document or
+    #   DeepL::Client#translate_document_wait_until_done instead.
+    def max_doc_status_queries=(value)
+      unless value.nil?
+        DeepL::Deprecation.warn_once_at_caller(
+          'DeepL::Configuration#max_doc_status_queries=',
+          '[DEPRECATION] DeepL::Configuration#max_doc_status_queries= is deprecated, use the ' \
+          'timeout_s: of DeepL::Client#translate_document instead.'
+        )
+      end
+      @max_doc_status_queries = value
+    end
+
+    ##
     # @deprecated The API version is part of each endpoint; this setting will be removed in the
     #   next major version.
     def version=(value)

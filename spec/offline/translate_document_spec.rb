@@ -426,4 +426,125 @@ describe DeepL::DocumentApi do
       expect(File.exist?(output)).to be(false)
     end
   end
+
+  describe 'DeepL::Client document translation' do
+    let(:client) { DeepL::Client.new(OfflineHelper::AUTH_KEY) }
+    let(:poller) { DeepL::Utils::DocumentPoller }
+
+    def stub_download(body = 'Protonenstrahl')
+      stub_request(:post, url('/v2/document/doc-1/result'))
+        .with(body: document_key_body, headers: json_headers).to_return(status: 200, body: body)
+    end
+
+    describe '#translate_document_upload' do
+      it 'sends the filename option as the filename field and returns the handle' do
+        input, = create_text_document(temp_dir)
+        stub_upload.to_return(upload_reply)
+        forms = capture_forms
+
+        result = client.translate_document_upload(input, 'EN', 'DE', filename: 'name.docx',
+                                                                     formality: 'more')
+
+        expect(form_fields(forms.first)).to eq('source_lang' => 'EN', 'target_lang' => 'DE',
+                                               'filename' => 'name.docx', 'formality' => 'more')
+        expect([result.document_id, result.document_key]).to eq(%w[doc-1 key-1])
+      end
+    end
+
+    describe '#translate_document_get_status' do
+      it 'sends the document key and parses the status' do
+        stub_status(status_reply('translating', seconds_remaining: 3, billed_characters: 11))
+
+        status = client.translate_document_get_status(handle)
+
+        expect([status.status, status.seconds_remaining, status.billed_characters, status.ok?])
+          .to eq(['translating', 3, 11, true])
+      end
+    end
+
+    describe '#translate_document_wait_until_done' do
+      before { allow(poller).to receive(:sleep) }
+
+      it 'polls every 5 seconds, past unknown statuses, until done and returns the status' do
+        stub = stub_status(status_reply('queued'), status_reply('new_status'),
+                           status_reply('done', billed_characters: 11))
+        expect(poller).to receive(:sleep).with(5).twice
+
+        status = client.translate_document_wait_until_done(handle)
+
+        expect(stub).to have_been_requested.times(3)
+        expect([status.status, status.billed_characters]).to eq(['done', 11])
+      end
+
+      it 'raises Error with the API message when the translation fails' do
+        stub_status(status_reply('error', error_message: 'Unsupported file'))
+
+        expect { client.translate_document_wait_until_done(handle) }
+          .to raise_error(DeepL::Exceptions::Error, /Unsupported file/)
+      end
+
+      it 'raises Error when timeout_s expires, sleeping no longer than the time left' do
+        allow(poller).to receive(:monotonic_now).and_return(0, 3, 8)
+        stub = stub_status(status_reply('translating'))
+        expect(poller).to receive(:sleep).with(4).once
+
+        expect { client.translate_document_wait_until_done(handle, timeout_s: 7) }
+          .to raise_error(DeepL::Exceptions::Error, /within 7 seconds/)
+        expect(stub).to have_been_requested.twice
+      end
+    end
+
+    describe '#translate_document_download' do
+      it 'writes the translated document and returns nil' do
+        output = File.join(temp_dir, 'result.docx')
+        stub_download(Fixtures::BINARY_CONTENT)
+
+        expect(client.translate_document_download(handle, output)).to be_nil
+        expect(File.binread(output)).to eq(Fixtures::BINARY_CONTENT)
+      end
+    end
+
+    describe '#translate_document' do
+      before { allow(poller).to receive(:sleep) }
+
+      it 'uploads with the options, waits, downloads and returns the final status' do # rubocop:disable RSpec/ExampleLength
+        input, output = create_text_document(temp_dir)
+        stub_upload.to_return(upload_reply)
+        stub_status(status_reply('translating'), status_reply('done', billed_characters: 11))
+        stub_download
+        forms = capture_forms
+
+        status = client.translate_document(input, output, 'EN', 'DE', filename: 'name.txt',
+                                                                      glossary: 'g-1')
+
+        expect(form_fields(forms.first))
+          .to include('filename' => 'name.txt', 'glossary_id' => 'g-1')
+        expect([status.status, status.billed_characters]).to eq(['done', 11])
+        expect(File.read(output)).to eq('Protonenstrahl')
+      end
+
+      it 'raises DocumentTranslationError with the handle when timeout_s expires' do
+        allow(poller).to receive(:monotonic_now).and_return(0, 2)
+        input, output = create_text_document(temp_dir)
+        stub_upload.to_return(upload_reply)
+        stub_status(status_reply('queued'))
+
+        expect { client.translate_document(input, output, 'EN', 'DE', timeout_s: 1) }
+          .to raise_error(DeepL::Exceptions::DocumentTranslationError, /within 1 seconds/) { |e|
+            expect(e.document_handle.document_id).to eq('doc-1')
+          }
+        expect(File.exist?(output)).to be(false)
+      end
+
+      it 'raises DocumentTranslationError without a handle when the upload fails' do
+        input, output = create_text_document(temp_dir)
+        stub_upload.to_return(reply({ message: 'bad' }, 400))
+
+        expect { client.translate_document(input, output, 'EN', 'DE') }
+          .to raise_error(DeepL::Exceptions::DocumentTranslationError, /bad/) { |e|
+            expect(e.document_handle).to be_nil
+          }
+      end
+    end
+  end
 end

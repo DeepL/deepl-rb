@@ -31,9 +31,14 @@ module DeepL
       # failed) and returns the final status of the document. Stops early only if the
       # deprecated +max_doc_status_queries+ is configured.
       #
+      # @deprecated Use DeepL::Client#translate_document_wait_until_done instead.
       # @return [DeepL::Resources::DocumentTranslationStatus] Final status of the document
       #                                                       translation.
       def wait_until_document_translation_finished
+        Deprecation.warn_once('DocumentHandle#wait_until_document_translation_finished',
+                              '[DEPRECATION] DeepL::Resources::DocumentHandle#' \
+                              'wait_until_document_translation_finished is deprecated, use ' \
+                              'DeepL::Client#translate_document_wait_until_done instead.')
         Utils::DocumentPoller.wait_until_finished(
           api, self, max_queries: api.configuration.max_doc_status_queries
         )

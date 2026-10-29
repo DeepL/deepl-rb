@@ -88,6 +88,102 @@ module DeepL
       text.is_a?(Array) && !result.is_a?(Array) ? [result] : result
     end
 
+    ##
+    # Translates the document at +input_path+ and writes the result to +output_path+: uploads
+    # it, waits until the translation is done and downloads it.
+    #
+    # @param [String] input_path Path of the document to translate.
+    # @param [String] output_path Path to write the translated document to. Must not exist.
+    # @param [String, nil] source_lang Source language, +nil+ to detect it.
+    # @param [String] target_lang Target language.
+    # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the translation after
+    #   the upload, +nil+ to wait until it is done.
+    # @param [Hash] options The options of #translate_document_upload, including +:filename+.
+    # @return [DeepL::Resources::DocumentTranslationStatus] The final status, +done+.
+    # @raise [IOError] If +output_path+ already exists; nothing is uploaded.
+    # @raise [DeepL::Exceptions::DocumentTranslationError] For any other failure, also a failed
+    #   translation or an expired +timeout_s+. Its +document_handle+ is set once the upload
+    #   succeeded, so the document can still be queried and downloaded.
+    def translate_document(input_path, output_path, source_lang, target_lang, timeout_s: nil, # rubocop:disable Metrics/MethodLength
+                           **options)
+      raise IOError, 'File already exists at output path' if File.exist?(output_path)
+
+      handle = nil
+      begin
+        handle = translate_document_upload(input_path, source_lang, target_lang, **options)
+        status = translate_document_wait_until_done(handle, timeout_s: timeout_s)
+        translate_document_download(handle, output_path)
+        status
+      rescue StandardError => e
+        FileUtils.rm_f(output_path)
+        raise Exceptions::DocumentTranslationError.new(
+          "Error occurred during document translation: #{e.message}", handle
+        )
+      end
+    end
+
+    ##
+    # Uploads the document at +input_path+ for translation. Options set to +nil+ are not sent.
+    #
+    # @param [String] input_path Path of the document to translate.
+    # @param [String, nil] source_lang Source language, +nil+ to detect it.
+    # @param [String] target_lang Target language.
+    # @param [Hash] options Document translation options:
+    #   * +:filename+ - File name sent with the upload, including its extension. Defaults to the
+    #     base name of +input_path+.
+    #   * +:formality+, +:output_format+ - Sent unchanged.
+    #   * +:enable_watermark+ - +true+ or +false+.
+    #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
+    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
+    #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Requires +source_lang+ and
+    #     cannot be combined with +:glossary+.
+    #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
+    #   * +:translation_memory_threshold+ - Integer 0-100.
+    #   * +:extra_body_parameters+ - A hash added to the form last; replaces fields of the same
+    #     name.
+    # @return [DeepL::Resources::DocumentHandle] Handle of the uploaded document.
+    # @raise [ArgumentError] If the glossary options are combined or more than 5 are given.
+    def translate_document_upload(input_path, source_lang, target_lang, **options)
+      filename = options.delete(:filename)
+      Requests::Document::Upload.new(api, input_path, source_lang, target_lang, filename,
+                                     options).request
+    end
+
+    ##
+    # Queries the status of a document translation once.
+    #
+    # @param [DeepL::Resources::DocumentHandle] handle Handle returned by the upload.
+    # @return [DeepL::Resources::DocumentTranslationStatus]
+    def translate_document_get_status(handle)
+      Requests::Document::GetStatus.new(api, handle.document_id, handle.document_key).request
+    end
+
+    ##
+    # Polls the status of a document translation every 5 seconds until it is done.
+    #
+    # @param [DeepL::Resources::DocumentHandle] handle Handle returned by the upload.
+    # @param [Numeric, nil] timeout_s Maximum time to wait in seconds, +nil+ to wait until the
+    #   translation is done or failed.
+    # @return [DeepL::Resources::DocumentTranslationStatus] The final status, +done+.
+    # @raise [DeepL::Exceptions::Error] If the translation fails (with the API's error message)
+    #   or +timeout_s+ expires.
+    def translate_document_wait_until_done(handle, timeout_s: nil)
+      Utils::DocumentPoller.wait_until_done(api, handle, timeout_s: timeout_s)
+    end
+
+    ##
+    # Downloads the translated document to +output_path+, overwriting an existing file.
+    #
+    # @param [DeepL::Resources::DocumentHandle] handle Handle returned by the upload.
+    # @param [String] output_path Path to write the translated document to.
+    # @return [nil]
+    # @raise [DeepL::Exceptions::DocumentNotReadyError] If the translation is not done yet.
+    def translate_document_download(handle, output_path)
+      Requests::Document::Download.new(api, handle.document_id, handle.document_key,
+                                       output_path).request
+      nil
+    end
+
     def inspect
       "#<#{self.class.name} server_url=#{configuration.host}>"
     end
