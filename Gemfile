@@ -5,6 +5,8 @@ source 'https://rubygems.org'
 group :development do
   # Gem management
   gem 'juwelier'
+  # juwelier 2.4.9 calls Git::Repository#lib, which git 6 removed
+  gem 'git', '< 6'
 end
 
 group :test, :development do
