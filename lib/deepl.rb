@@ -280,18 +280,18 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     TranslationMemoryApi.new(module_api, options)
   end
 
-  # @deprecated Use DeepL::Client instead.
+  # @deprecated Use DeepL::Client#rephrase_text instead.
   def rephrase(text, target_lang = nil, writing_style = nil, tone = nil, options = {}, # rubocop:disable Metrics/ParameterLists
                additional_headers = {})
-    deprecated(:rephrase, 'DeepL::Client')
+    deprecated(:rephrase, 'DeepL::Client#rephrase_text')
     ensure_configured
     Requests::Rephrase.new(module_api, text, target_lang, writing_style, tone, options,
                            additional_headers).request
   end
 
-  # @deprecated Use DeepL::Client instead.
+  # @deprecated Use DeepL::Client#correct_text instead.
   def correct(text, target_lang = nil, options = {}, additional_headers = {})
-    deprecated(:correct, 'DeepL::Client')
+    deprecated(:correct, 'DeepL::Client#correct_text')
     ensure_configured
     Requests::Correct.new(module_api, text, target_lang, options, additional_headers).request
   end

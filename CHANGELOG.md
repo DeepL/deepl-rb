@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the options of `DeepL.translate` as keyword arguments and returns one
   `DeepL::Resources::Text` for a string and an array for an array, also for a one-element
   array.
+- Added `DeepL::Client#rephrase_text(text, target_lang = nil, writing_style: nil, tone: nil,
+  **options)` and `DeepL::Client#correct_text(text, target_lang = nil, **options)`. The
+  writing style and tone are keyword arguments, `extra_body_parameters:` is applied last, and
+  both return one `DeepL::Resources::Text` for a string and an array for an array, also for a
+  one-element array.
+- Added `target_language` (`String`) to `DeepL::Resources::Text` for rephrase and correct
+  results. It is `nil` for text translation results and when the response does not contain
+  it or contains an unexpected value.
 - Added the `glossary` option to text translation and document translation
   (`DeepL.document.upload` and `translate_document`). It takes a glossary ID or a
   `DeepL::Resources::Glossary` or `DeepL::Resources::MultilingualGlossary` object and is sent
@@ -239,6 +247,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   detects the language of the document.
 - `style_rule: nil` sent an empty `style_id` in text and document translation. A `nil` style rule
   is now treated as unset and sends nothing.
+- `DeepL.rephrase` returned fewer results than texts, or `nil` for a string, when the response
+  contained fewer improvements than texts. It now raises `DeepL::Exceptions::Error`.
 
 ## [3.9.0] - 2026-08-11
 ### Added
@@ -247,8 +257,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document upload.
 - Added support for using a style rule in document translation via the
   `style_id` option (the `style_rule` option) in document upload.
-- `DeepL.rephrase` returned fewer results than texts, or `nil` for a string, when the response
-  contained fewer improvements than texts. It now raises `DeepL::Exceptions::Error`.
 - Added support for using a translation memory in document translation via the
   `translation_memory_id` option (the `translation_memory` and
   `translation_memory_threshold` options) in document upload.

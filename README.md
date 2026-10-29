@@ -54,9 +54,11 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 The authentication key is trimmed; an empty key raises `ArgumentError`.
 `DeepL::Client.free_account_auth_key?(key)` returns whether a key is a DeepL API Free key.
 
-`DeepL::Client` offers text translation (`translate_text`, see [Translate](#translate)) and
+`DeepL::Client` offers text translation (`translate_text`, see [Translate](#translate)),
 document translation (`translate_document` and its steps, see
-[Translate documents](#translate-documents)) and spoken terms (see
+[Translate documents](#translate-documents)), rephrasing and correction (`rephrase_text` and
+`correct_text`, see [Rephrase Text](#rephrase-text) and [Correct Text](#correct-text)) and
+spoken terms (see
 [Spoken terms](#spoken-terms)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
 is deprecated: each method prints a deprecation warning once per process, and it will be
 removed in the next major version.
@@ -293,48 +295,73 @@ result for a one-element array.
 
 ### Rephrase Text
 
-To rephrase or improve text, including changing the writing style or tone of the text, use the `rephrase` method:
+To rephrase or improve text, including changing the writing style or tone of the text, use
+the `rephrase_text` method of `DeepL::Client`:
 
 ```rb
-rephrased_text = DeepL.rephrase 'you will acquire new rephrased text', 'EN'
+rephrased_text = client.rephrase_text 'you will acquire new rephrased text', 'EN'
 
 puts rephrased_text.class
 # => DeepL::Resources::Text
 puts rephrased_text.text
 # => 'You get new rephrased text.'
+puts rephrased_text.detected_source_language
+# => 'en'
+puts rephrased_text.target_language
+# => 'en-US'
 ```
 
-As with translate, the text input can be a single string or an array of strings.
+As with `translate_text`, the text can be a string or an array of strings: a string returns a
+`DeepL::Resources::Text`, an array returns an array of them (also for an array with one
+element). The target language is optional.
 
-You can use the additional arguments to specify the writing style or tone you want for the rephrased text:
+Use the `writing_style:` or `tone:` keyword to choose the writing style or tone of the
+rephrased text (`DeepL::Constants::WritingStyle` and `DeepL::Constants::Tone` list the values;
+any string is sent as given). `extra_body_parameters:` is a hash added to the request body
+last; it replaces fields of the same name.
 
 ```rb
-rephrased_text = DeepL.rephrase 'you will acquire new rephrased text', 'EN', 'casual'
+rephrased_text = client.rephrase_text 'you will acquire new rephrased text', 'EN',
+                                      writing_style: 'casual'
 
 puts rephrased_text.text
 # => 'You'll get new, rephrased text.'
 ```
 
 ```rb
-rephrased_text = DeepL.rephrase 'you will acquire new rephrased text', 'EN', nil, 'friendly'
+rephrased_text = client.rephrase_text 'you will acquire new rephrased text', 'EN',
+                                      tone: DeepL::Constants::Tone::FRIENDLY
 
 puts rephrased_text.text
 # => 'You'll get to enjoy new, rephrased text!'
 ```
 
+The deprecated module-level `DeepL.rephrase(text, target_lang = nil, writing_style = nil,
+tone = nil, options = {}, additional_headers = {})` takes the writing style and tone as
+positional arguments. Unlike `rephrase_text`, it returns a single result for a one-element
+array.
+
 ### Correct Text
 
-To fix grammar, spelling and punctuation, use the `correct` method. It accepts a
-string or an array of strings, plus an optional target language:
+To fix grammar, spelling and punctuation, use the `correct_text` method of `DeepL::Client`.
+It accepts a string or an array of strings, plus an optional target language and
+`extra_body_parameters:`:
 
 ```ruby
-corrected = DeepL.correct 'I has a apple.', 'en-US'
+corrected = client.correct_text 'I has a apple.', 'en-US'
 puts corrected.text
 # => 'It has an apple.'
+puts corrected.target_language
+# => 'en-US'
 ```
 
 A string returns a `DeepL::Resources::Text`; an array returns an array of them (also for an
-array with one element). Empty text raises `ArgumentError`.
+array with one element). Empty text raises `ArgumentError`. The deprecated module-level
+`DeepL.correct(text, target_lang = nil, options = {}, additional_headers = {})` behaves the
+same.
+
+Both methods raise `DeepL::Exceptions::Error` if the response contains fewer improvements than
+texts were sent.
 
 ### Glossaries
 

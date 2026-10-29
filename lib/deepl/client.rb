@@ -185,6 +185,42 @@ module DeepL
     end
 
     ##
+    # Rephrases +text+, optionally into another variant or language and with a writing style
+    # or tone. Options set to +nil+ are not sent.
+    #
+    # @param [String, Array<String>] text Text or texts to rephrase.
+    # @param [String, nil] target_lang Target language, +nil+ to keep the language of the text.
+    # @param [String, nil] writing_style Writing style, see +DeepL::Constants::WritingStyle+.
+    #   Cannot be combined with +tone+.
+    # @param [String, nil] tone Tone, see +DeepL::Constants::Tone+.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last;
+    #   replaces fields of the same name. Other options are sent unchanged.
+    # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
+    #   an array for an array (also for a one-element array).
+    # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
+    def rephrase_text(text, target_lang = nil, writing_style: nil, tone: nil, **options)
+      result = Requests::Rephrase.new(api, text, target_lang, writing_style, tone,
+                                      options.compact).request
+      text.is_a?(Array) && !result.is_a?(Array) ? [result] : result
+    end
+
+    ##
+    # Corrects the grammar, spelling and punctuation of +text+. Options set to +nil+ are not
+    # sent.
+    #
+    # @param [String, Array<String>] text Text or texts to correct.
+    # @param [String, nil] target_lang Target language, +nil+ to keep the language of the text.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last;
+    #   replaces fields of the same name. Other options are sent unchanged.
+    # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
+    #   an array for an array (also for a one-element array).
+    # @raise [ArgumentError] If +text+ is empty or contains an empty string.
+    # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
+    def correct_text(text, target_lang = nil, **options)
+      Requests::Correct.new(api, text, target_lang, options.compact).request
+    end
+
+    ##
     # Creates a spoken terms collection, which improves the transcription of the given terms.
     #
     # @param [String] name Name of the collection.

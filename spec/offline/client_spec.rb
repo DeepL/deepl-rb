@@ -216,4 +216,58 @@ describe DeepL::Client do
       expect(client.translate_text(['Hello'], 'EN', 'DE').map(&:text)).to eq(['Hallo'])
     end
   end
+
+  describe '#rephrase_text' do
+    let(:client) { described_class.new(OfflineHelper::AUTH_KEY) }
+
+    def stub_rephrase(body, improvements)
+      stub_request(:post, url('/v2/write/rephrase'))
+        .with(body: body, headers: json_headers)
+        .to_return(reply(improvements: improvements))
+    end
+
+    it 'sends the writing style and tone keywords, no nil options, and returns one result' do
+      stub_rephrase({ text: ['Hello'], target_lang: 'en-GB', writing_style: 'business',
+                      tone: 'friendly' },
+                    [{ text: 'Hi', detected_source_language: 'en', target_language: 'en-GB' }])
+
+      result = client.rephrase_text('Hello', 'en-GB', writing_style: 'business',
+                                                      tone: 'friendly', context: nil)
+      expect([result.class, result.text, result.target_language])
+        .to eq([DeepL::Resources::Text, 'Hi', 'en-GB'])
+    end
+
+    it 'applies extra_body_parameters last, replacing string or symbol keyed fields' do
+      stub_rephrase({ text: ['Hello'], tone: 'confident', beta: true }, [{ text: 'Hi' }])
+
+      client.rephrase_text('Hello', tone: 'friendly',
+                                    extra_body_parameters: { 'tone' => 'confident', beta: true })
+    end
+
+    it 'returns an array for a one-element array' do
+      stub_rephrase({ text: ['Hello'] }, [{ text: 'Hi' }])
+
+      expect(client.rephrase_text(['Hello']).map(&:text)).to eq(['Hi'])
+    end
+  end
+
+  describe '#correct_text' do
+    let(:client) { described_class.new(OfflineHelper::AUTH_KEY) }
+
+    it 'sends the text, the target language and the extra body parameters' do
+      stub_request(:post, url('/v2/write/correct'))
+        .with(body: { text: ['Helo'], target_lang: 'en-US', beta: 1 }, headers: json_headers)
+        .to_return(reply(improvements: [{ text: 'Hello', target_language: 'en-US' }]))
+
+      result = client.correct_text('Helo', 'en-US', extra_body_parameters: { beta: 1 })
+      expect([result.text, result.target_language]).to eq(%w[Hello en-US])
+    end
+
+    it 'returns an array for a one-element array' do
+      stub_request(:post, url('/v2/write/correct'))
+        .to_return(reply(improvements: [{ text: 'Hello' }]))
+
+      expect(client.correct_text(['Helo']).map(&:text)).to eq(['Hello'])
+    end
+  end
 end
