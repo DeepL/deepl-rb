@@ -13,7 +13,7 @@ module DeepL
   #                                                                         app_version: '1.2.3' })
   #
   # All methods may raise a +DeepL::Exceptions::Error+ or a subclass.
-  class Client
+  class Client # rubocop:disable Metrics/ClassLength
     DEEPL_SERVER_URL = 'https://api.deepl.com'
     DEEPL_SERVER_URL_FREE = 'https://api-free.deepl.com'
     private_constant :DEEPL_SERVER_URL, :DEEPL_SERVER_URL_FREE
@@ -271,6 +271,86 @@ module DeepL
     # @return [nil]
     def delete_spoken_terms_list(spoken_terms, lang)
       Requests::SpokenTerms::DestroyTermList.new(api, spoken_terms, lang).request
+    end
+
+    ##
+    # Lists style profiles, one page at a time. Arguments left +nil+ are not sent.
+    #
+    # @param [Integer, nil] page Index of the page, starting at 0 (API default: 0).
+    # @param [Integer, nil] page_size Style profiles per page (API default: 10, at most 100).
+    # @return [Array<DeepL::Resources::StyleProfile>]
+    def list_style_profiles(page: nil, page_size: nil)
+      Requests::StyleProfile::List.new(api, { page: page, page_size: page_size }.compact).request
+    end
+
+    ##
+    # Creates a style profile, which links glossaries, style rule lists and translation
+    # memories. Keywords left +nil+ are not sent. If a component cannot be used, the request
+    # fails and no style profile is created.
+    #
+    # @param [String] name Name of the style profile.
+    # @param [String, nil] description Free-text description.
+    # @param [String, nil] industry The industry the style profile is written for.
+    # @param [Array<String, DeepL::Resources::Glossary, DeepL::Resources::MultilingualGlossary>,
+    #   nil] glossary_ids Glossaries to link (IDs or objects), highest priority first.
+    # @param [Array<String, DeepL::Resources::StyleRule>, nil] style_rule_ids Style rule lists.
+    # @param [Array<String, DeepL::Resources::TranslationMemory>, nil] translation_memory_ids
+    #   Translation memories.
+    # @param [Boolean, nil] glossary_priority_order_enabled Whether the order of +glossary_ids+
+    #   sets priority.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::StyleProfile] The created style profile.
+    def create_style_profile(name, description: nil, industry: nil, glossary_ids: nil, # rubocop:disable Metrics/ParameterLists
+                             style_rule_ids: nil, translation_memory_ids: nil,
+                             glossary_priority_order_enabled: nil, **options)
+      fields = { description: description, industry: industry, glossary_ids: glossary_ids,
+                 style_rule_ids: style_rule_ids, translation_memory_ids: translation_memory_ids,
+                 glossary_priority_order_enabled: glossary_priority_order_enabled }
+      Requests::StyleProfile::Create.new(api, name, fields, options).request
+    end
+
+    ##
+    # Retrieves a style profile.
+    #
+    # @param [String, DeepL::Resources::StyleProfile] style_profile ID or style profile.
+    # @return [DeepL::Resources::StyleProfile]
+    # @raise [ArgumentError] If the ID is empty.
+    # @raise [DeepL::Exceptions::NotFound] If the style profile does not exist.
+    def get_style_profile(style_profile)
+      Requests::StyleProfile::Find.new(api, style_profile).request
+    end
+
+    ##
+    # Updates a style profile. Keywords left +nil+ are not sent and leave the field unchanged;
+    # without any, an empty object is sent. An empty string clears +description+ or +industry+.
+    # A component list replaces the linked list in full; an empty array unlinks all components
+    # of that kind.
+    #
+    # @param [String, DeepL::Resources::StyleProfile] style_profile ID or style profile.
+    # @param [String, nil] name New name.
+    # @param [Hash] options The keywords of #create_style_profile, including
+    #   +:extra_body_parameters+.
+    # @return [DeepL::Resources::StyleProfile] The updated style profile.
+    # @raise [ArgumentError] If the ID is empty.
+    def update_style_profile(style_profile, name: nil, description: nil, industry: nil, # rubocop:disable Metrics/ParameterLists
+                             glossary_ids: nil, style_rule_ids: nil, translation_memory_ids: nil,
+                             glossary_priority_order_enabled: nil, **options)
+      fields = { name: name, description: description, industry: industry,
+                 glossary_ids: glossary_ids, style_rule_ids: style_rule_ids,
+                 translation_memory_ids: translation_memory_ids,
+                 glossary_priority_order_enabled: glossary_priority_order_enabled }
+      Requests::StyleProfile::Update.new(api, style_profile, fields, options).request
+    end
+
+    ##
+    # Deletes a style profile.
+    #
+    # @param [String, DeepL::Resources::StyleProfile] style_profile ID or style profile.
+    # @return [nil]
+    # @raise [ArgumentError] If the ID is empty.
+    def delete_style_profile(style_profile)
+      Requests::StyleProfile::Destroy.new(api, style_profile).request
+      nil
     end
 
     def inspect

@@ -56,12 +56,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the `style_profile` option to text translation (`DeepL.translate`) and document
   translation (`DeepL.document.upload` and `translate_document`). It takes a style profile
   ID string or a `DeepL::Resources::StyleProfile` object and is sent as `style_profile_id`.
-- Added support for style profiles (`/v3/style_profiles`) via `DeepL.style_profiles`,
-  which exposes `create`, `list`, `find`, `update`, and `destroy`. A style profile links
-  glossaries, style rule lists and translation memories. In `create` and `update`,
-  keywords left `nil` are not sent; an empty string clears `description` or `industry`,
-  and an empty array unlinks all components of that kind. Please refer to the README for
-  usage instructions.
+- Added support for style profiles (`/v3/style_profiles`) to `DeepL::Client`:
+  `create_style_profile(name, **options)`, `list_style_profiles(page:, page_size:)`,
+  `get_style_profile(style_profile)`, `update_style_profile(style_profile, **options)` and
+  `delete_style_profile(style_profile)` (returns `nil`). A style profile links glossaries,
+  style rule lists and translation memories; it is given as its ID or a
+  `DeepL::Resources::StyleProfile`, whose ID is `style_profile_id`. The component lists
+  (`glossary_ids`, `style_rule_ids`, `translation_memory_ids`) take IDs or the
+  `Glossary`, `MultilingualGlossary`, `StyleRule` and `TranslationMemory` objects, which are
+  sent as their IDs. In create and update, keywords left `nil` are not sent; an empty string
+  clears `description` or `industry`, and an empty array unlinks all components of that
+  kind. Please refer to the README for usage instructions.
 - Added support for spoken terms collections (`/v3/spoken-terms`) to `DeepL::Client`:
   `create_spoken_terms(name, term_lists, **options)`, `list_spoken_terms`,
   `get_spoken_terms(spoken_terms)`, `update_spoken_terms(spoken_terms, name:, term_lists:,
@@ -144,7 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL.rephrase`, `DeepL.correct`, `DeepL.usage`, `DeepL.languages`,
   `DeepL.languages_for_resource`, `DeepL.language_resources`, `DeepL.document`,
   `DeepL.glossaries`, `DeepL.multilingual_glossaries`, `DeepL.style_rules`,
-  `DeepL.style_profiles`, `DeepL.translation_memories`,
+  `DeepL.translation_memories`,
   `DeepL.with_session` and `DeepL.http_client`. Each prints a warning once per process and
   keeps working unchanged.
 - `DeepL::Configuration#version=` (the API version is part of each endpoint).

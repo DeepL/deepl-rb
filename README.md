@@ -761,34 +761,41 @@ handle = DeepL.document.upload 'my_document.docx', 'EN', 'ES', 'my_document.docx
 ### Style profiles
 
 A style profile bundles glossaries, style rule lists and translation memories under one
-name. `DeepL.style_profiles` exposes `create`, `find`, `list`, `update` and `destroy`.
-`find`, `update` and `destroy` accept a style profile ID string or a
-`DeepL::Resources::StyleProfile` object.
+name. `DeepL::Client` manages them with `create_style_profile`, `get_style_profile`,
+`list_style_profiles`, `update_style_profile` and `delete_style_profile`. The last three
+take a style profile ID string or a `DeepL::Resources::StyleProfile` object; the ID of a
+profile is `style_profile_id`.
 
 #### Creating a style profile
 
 Only the name is required. The optional keywords are `description`, `industry`,
-`glossary_ids`, `style_rule_ids`, `translation_memory_ids` (arrays of IDs) and
+`glossary_ids`, `style_rule_ids`, `translation_memory_ids` and
 `glossary_priority_order_enabled` (when `true`, the order of `glossary_ids` sets priority).
-If any of the component IDs cannot be used, the request fails and no style profile is
-created.
+The component lists take IDs or the resource objects (`Glossary`, `MultilingualGlossary`,
+`StyleRule`, `TranslationMemory`), which are sent as their IDs. If any component cannot be
+used, the request fails and no style profile is created. `extra_body_parameters` adds
+fields to the request body.
 
 ```rb
+client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
+
 # Only a name
-profile = DeepL.style_profiles.create('Legal, German')
+profile = client.create_style_profile('Legal, German')
 
 # With components
-profile = DeepL.style_profiles.create(
+profile = client.create_style_profile(
   'Legal, German',
   description: 'Contract wording for the German market.',
   industry: 'Legal',
   glossary_ids: ['YOUR_GLOSSARY_ID'],
-  style_rule_ids: ['YOUR_STYLE_ID'],
+  style_rule_ids: [style_rule],        # a DeepL::Resources::StyleRule
   translation_memory_ids: ['YOUR_TM_ID'],
   glossary_priority_order_enabled: true
 )
 profile.class
 # => DeepL::Resources::StyleProfile
+profile.style_profile_id
+# => "3f1c9d0e-7a24-4b58-9c31-8f0e5d2a1b47"
 profile.style_rule_ids
 # => ["YOUR_STYLE_ID"]
 profile.creation_time.class
@@ -799,25 +806,26 @@ profile.creation_time.class
 
 #### Retrieving and listing style profiles
 
-`list` returns an array of style profiles, one page at a time. It accepts `page`
-(0-indexed, default 0) and `page_size` (default 10; values above 100 are reduced to 100).
+`list_style_profiles` returns an array of style profiles, one page at a time. It accepts
+`page:` (0-indexed, default 0) and `page_size:` (default 10; values above 100 are reduced to
+100).
 
 ```rb
-profile = DeepL.style_profiles.find('YOUR_STYLE_PROFILE_ID')
+profile = client.get_style_profile('YOUR_STYLE_PROFILE_ID')
 
-profiles = DeepL.style_profiles.list
-profiles = DeepL.style_profiles.list(page: 1, page_size: 100)
+profiles = client.list_style_profiles
+profiles = client.list_style_profiles(page: 1, page_size: 100)
 ```
 
 #### Updating a style profile
 
-`update` takes the same keywords as `create`, plus `name`. Keywords you leave out
-(or set to `nil`) are not sent and leave the field unchanged. An empty string clears
-`description` or `industry`. A component list you send replaces the linked list in full;
-an empty array unlinks all components of that kind.
+`update_style_profile` takes the same keywords as `create_style_profile`, plus `name`.
+Keywords you leave out (or set to `nil`) are not sent and leave the field unchanged. An
+empty string clears `description` or `industry`. A component list you send replaces the
+linked list in full; an empty array unlinks all components of that kind.
 
 ```rb
-updated = DeepL.style_profiles.update(
+updated = client.update_style_profile(
   'YOUR_STYLE_PROFILE_ID',
   name: 'Legal, German (2026)',
   industry: 'Legal',
@@ -830,26 +838,28 @@ updated.description
 
 #### Deleting a style profile
 
+`delete_style_profile` returns `nil`.
+
 ```rb
-DeepL.style_profiles.destroy('YOUR_STYLE_PROFILE_ID')
+client.delete_style_profile('YOUR_STYLE_PROFILE_ID')
 ```
 
 #### Using style profiles in translations
 
 Pass the `style_profile` option, a style profile ID string or a `StyleProfile` object, to
-`translate`, `document.upload` or `document.translate_document` to apply the profile's
-glossaries, style rule lists and translation memories. A component that does not fit the
-language pair is left out. The option cannot be combined with `glossary`, `glossary_id`,
-`glossary_ids`, `style_rule`, `translation_memory`, `translation_memory_threshold` or
-`custom_instructions`; the API rejects such requests.
+`translate_text`, `translate_document` or `translate_document_upload` to apply the
+profile's glossaries, style rule lists and translation memories. A component that does not
+fit the language pair is left out. The option cannot be combined with `glossary`,
+`glossary_id`, `glossary_ids`, `style_rule`, `translation_memory`,
+`translation_memory_threshold` or `custom_instructions`; the API rejects such requests.
 
 ```rb
-translation = DeepL.translate 'The artist is here.', nil, 'DE', style_profile: profile
+translation = client.translate_text('The artist is here.', nil, 'DE', style_profile: profile)
 puts translation.text
 # => Der Maler ist hier.
 
-DeepL.document.translate_document('/path/to/document.docx', '/path/to/translated.docx', 'EN', 'DE',
-                                  nil, style_profile: 'YOUR_STYLE_PROFILE_ID')
+client.translate_document('/path/to/document.docx', '/path/to/translated.docx', 'EN', 'DE',
+                          style_profile: 'YOUR_STYLE_PROFILE_ID')
 ```
 
 With documents, an unknown style profile is not rejected at upload: the translation fails

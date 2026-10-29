@@ -7,14 +7,14 @@ module DeepL
   module Resources
     # A style profile: a named set of glossaries, style rule lists and translation memories.
     class StyleProfile < Base
-      attr_reader :id, :name, :description, :industry, :glossary_ids, :style_rule_ids,
+      attr_reader :style_profile_id, :name, :description, :industry, :glossary_ids, :style_rule_ids,
                   :translation_memory_ids, :glossary_priority_order_enabled, :creation_time,
                   :updated_time
 
       def initialize(profile, *args) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
         super(*args)
 
-        @id = profile['style_profile_id']
+        @style_profile_id = profile['style_profile_id']
         @name = profile['name']
         @description = optional_string(profile['description'])
         @industry = optional_string(profile['industry'])
@@ -27,7 +27,7 @@ module DeepL
       end
 
       def to_s
-        "#{id} - #{name}"
+        "#{style_profile_id} - #{name}"
       end
 
       private

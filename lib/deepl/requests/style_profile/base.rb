@@ -9,11 +9,13 @@ module DeepL
       # Common behaviour of the style profile requests: served under +v3+, with the ID escaped
       # into the path and GET/DELETE sent without a body.
       class Base < DeepL::Requests::Base
+        COMPONENT_ID_FIELDS = %i[glossary_ids style_rule_ids translation_memory_ids].freeze
+
         private
 
         def style_profile_id(style_profile)
           id = if style_profile.is_a?(DeepL::Resources::StyleProfile)
-                 style_profile.id.to_s
+                 style_profile.style_profile_id.to_s
                else
                  style_profile.to_s
                end
@@ -29,7 +31,25 @@ module DeepL
         # Adds the optional fields that are set. nil is not sent; '' and [] are sent as given.
         def optional_fields_payload(fields)
           fields.each_with_object({}) do |(key, value), payload|
-            payload[key] = value unless value.nil?
+            next if value.nil?
+
+            payload[key] = COMPONENT_ID_FIELDS.include?(key) ? component_ids(value) : value
+          end
+        end
+
+        # Replaces resource objects in a component list by their IDs; other entries are kept.
+        def component_ids(value)
+          return value unless value.is_a?(Array)
+
+          value.map { |component| component_id(component) }
+        end
+
+        def component_id(component)
+          case component
+          when DeepL::Resources::Glossary, DeepL::Resources::MultilingualGlossary then component.id
+          when DeepL::Resources::StyleRule then component.style_id
+          when DeepL::Resources::TranslationMemory then component.translation_memory_id
+          else component
           end
         end
 

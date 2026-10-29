@@ -64,7 +64,7 @@ module DeepL
           profile = delete_option(:style_profile)
           unless profile.nil?
             payload[:style_profile_id] = if profile.is_a?(DeepL::Resources::StyleProfile)
-                                           profile.id
+                                           profile.style_profile_id
                                          else
                                            profile.to_s
                                          end

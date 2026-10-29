@@ -100,8 +100,8 @@ module DeepL
           profile = delete_option(:style_profile)
           return if profile.nil?
 
-          profile_id = profile.is_a?(DeepL::Resources::StyleProfile) ? profile.id : profile
-          form_data.push(['style_profile_id', profile_id.to_s])
+          profile = profile.style_profile_id if profile.is_a?(DeepL::Resources::StyleProfile)
+          form_data.push(['style_profile_id', profile.to_s])
         end
 
         # Serializes the `translation_memory` option and appends it to the form data as a

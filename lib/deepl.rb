@@ -156,7 +156,6 @@ require_relative 'deepl/configuration'
 require_relative 'deepl/document_api'
 require_relative 'deepl/glossary_api'
 require_relative 'deepl/multilingual_glossary_api'
-require_relative 'deepl/style_profile_api'
 require_relative 'deepl/style_rule_api'
 require_relative 'deepl/translation_memory_api'
 require_relative 'deepl/app_info'
@@ -264,17 +263,6 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     deprecated(:multilingual_glossaries, 'DeepL::Client')
     ensure_configured
     MultilingualGlossaryApi.new(module_api, options)
-  end
-
-  ##
-  # Manages style profiles, which bundle glossaries, style rule lists and translation memories.
-  #
-  # @return [DeepL::StyleProfileApi]
-  # @deprecated Use DeepL::Client instead.
-  def style_profiles(options = {})
-    deprecated(:style_profiles, 'DeepL::Client')
-    ensure_configured
-    StyleProfileApi.new(module_api, options)
   end
 
   # @deprecated Use DeepL::Client instead.
