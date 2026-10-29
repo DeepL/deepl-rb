@@ -18,7 +18,7 @@ describe 'languages' do
   it 'sends GET /v3/languages/resources and parses the resources and their features' do
     resources = DeepL.language_resources
 
-    translate_text = resources.find { |resource| resource.resource == 'translate_text' }
+    translate_text = resources.find { |resource| resource.name == 'translate_text' }
     expect(translate_text.features['glossary'].needs_source_support?).to be(true)
     expect(translate_text.features['glossary'].needs_target_support?).to be(true)
   end

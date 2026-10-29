@@ -96,6 +96,21 @@ describe 'DeepL::Constants' do
     end
   end
 
+  describe DeepL::Constants::LanguageResourceName do
+    it 'includes the resources of the languages endpoint' do
+      expect(described_class.options).to contain_exactly(
+        'translate_text', 'translate_document', 'glossary', 'voice', 'write', 'style_rules',
+        'translation_memory'
+      )
+    end
+  end
+
+  describe DeepL::Constants::LanguageInclude do
+    it 'includes beta and external' do
+      expect([described_class::BETA, described_class::EXTERNAL]).to eq(%w[beta external])
+    end
+  end
+
   describe DeepL::Constants::SplitSentences do
     subject(:split_sentences) { described_class }
 

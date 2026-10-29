@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added the language operations to `DeepL::Client`: `get_source_languages`,
+  `get_target_languages`, `get_language_resources` and `get_languages_for_resource(resource,
+  include: nil)`. `include:` takes one value or an array and is sent as one `include` query
+  parameter per value; without it none is sent. Source and target languages keep their
+  upper-case codes; `get_languages_for_resource` returns the codes as the API sends them.
+- Added `DeepL::Constants::LanguageResourceName` (`TRANSLATE_TEXT`, `TRANSLATE_DOCUMENT`,
+  `GLOSSARY`, `VOICE`, `WRITE`, `STYLE_RULES`, `TRANSLATION_MEMORY`) and
+  `DeepL::Constants::LanguageInclude` (`BETA`, `EXTERNAL`). Other strings are still accepted
+  and sent unchanged.
 - Added document translation to `DeepL::Client`: `translate_document(input_path,
   output_path, source_lang, target_lang, timeout_s: nil, **options)`,
   `translate_document_upload(input_path, source_lang, target_lang, **options)`,
@@ -118,7 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `include` option (`beta`, `external`) also returns beta or third-party-backed
   languages and features.
 - Added `DeepL.language_resources` (`GET /v3/languages/resources`), which returns
-  each resource and its features as `DeepL::Resources::LanguageResource` objects,
+  each resource (`name`) and its features as `DeepL::Resources::LanguageResource` objects,
   including whether a feature needs source and/or target language support.
 - Added the `enable_watermark` option to `DeepL.document.upload` and
   `DeepL.document.translate_document`. When `true`, the API adds a "Translated by DeepL"

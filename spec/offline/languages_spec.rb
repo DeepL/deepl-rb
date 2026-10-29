@@ -95,9 +95,92 @@ describe 'languages' do
       resource = DeepL.language_resources.first
       feature = resource.features['formality']
 
-      expect([resource.resource, resource.supports?(:formality), resource.supports?(:glossary),
+      expect([resource.name, resource.supports?(:formality), resource.supports?(:glossary),
               feature.needs_source_support?, feature.needs_target_support?])
         .to eq(['translate_text', true, false, false, true])
+    end
+  end
+
+  describe DeepL::Client do
+    let(:client) { described_class.new('client-key', server_url: 'https://client.example.test') }
+    let(:client_headers) do
+      { 'Authorization' => 'DeepL-Auth-Key client-key', 'Content-Type' => 'application/json' }
+    end
+
+    def stub_client_get(path, body)
+      stub_request(:get, "https://client.example.test#{path}")
+        .with(headers: client_headers).to_return(reply(body))
+    end
+
+    def stub_client_languages
+      stub_client_get('/v3/languages?resource=translate_text',
+                      [{ lang: 'en', name: 'English', usable_as_source: true,
+                         usable_as_target: false },
+                       { lang: 'en-gb', name: 'English (British)', usable_as_source: false,
+                         usable_as_target: true, features: { formality: { status: 'stable' } } },
+                       { lang: 'ja', name: 'Japanese', usable_as_source: true,
+                         usable_as_target: true }])
+    end
+
+    it '#get_source_languages returns the source languages without formality support' do
+      stub_client_languages
+
+      languages = client.get_source_languages
+
+      expect(languages.map { |l| [l.code, l.name, l.supports_formality?] })
+        .to eq([['EN', 'English', nil], ['JA', 'Japanese', nil]])
+    end
+
+    it '#get_target_languages returns the target languages with their formality support' do
+      stub_client_languages
+
+      languages = client.get_target_languages
+
+      expect(languages.map { |l| [l.code, l.supports_formality?] })
+        .to eq([['EN-GB', true], ['JA', false]])
+    end
+
+    it '#get_language_resources parses the resource name and its features' do
+      stub_client_get('/v3/languages/resources',
+                      [{ name: 'glossary', features: [{ name: 'formality' }] }])
+
+      resource = client.get_language_resources.first
+
+      expect([resource.name, resource.to_s, resource.supports?(:formality)])
+        .to eq(['glossary', 'glossary', true])
+    end
+
+    it '#get_languages_for_resource sends the resource and returns the codes unchanged' do
+      stub_client_get('/v3/languages?resource=translate_document',
+                      [{ lang: 'en-GB', name: 'English (British)', status: 'stable',
+                         usable_as_source: false, usable_as_target: true }])
+
+      languages = client.get_languages_for_resource(
+        DeepL::Constants::LanguageResourceName::TRANSLATE_DOCUMENT
+      )
+
+      expect(languages.map(&:code)).to eq(['en-GB'])
+    end
+
+    it '#get_languages_for_resource sends one include parameter per value' do
+      # WebMock matches repeated query keys by their last value only, so the path of the sent
+      # request is asserted.
+      stub_client_get('/v3/languages?resource=voice&include=beta&include=external',
+                      [{ lang: 'de', name: 'German' }])
+
+      languages = client.get_languages_for_resource(
+        :voice, include: [DeepL::Constants::LanguageInclude::BETA,
+                          DeepL::Constants::LanguageInclude::EXTERNAL]
+      )
+
+      expect(languages.first.request.path)
+        .to eq('/v3/languages?resource=voice&include=beta&include=external')
+    end
+
+    it '#get_languages_for_resource sends a resource and include value without a constant' do
+      stub_client_get('/v3/languages?resource=new_resource&include=preview', [])
+
+      client.get_languages_for_resource('new_resource', include: 'preview')
     end
   end
 

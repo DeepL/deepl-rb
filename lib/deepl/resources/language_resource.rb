@@ -5,7 +5,7 @@
 
 module DeepL
   module Resources
-    # A feature supported by a DeepL API resource, as returned by `DeepL.language_resources`.
+    # A feature supported by a DeepL API resource, as returned by `DeepL::Client#get_language_resources`.
     class ResourceFeature
       attr_reader :name
 
@@ -30,14 +30,14 @@ module DeepL
       end
     end
 
-    # A DeepL API resource and the features it supports, as returned by `DeepL.language_resources`.
+    # A DeepL API resource and the features it supports, as returned by `DeepL::Client#get_language_resources`.
     class LanguageResource < Base
-      attr_reader :resource, :features
+      attr_reader :name, :features
 
       def initialize(resource, *args)
         super(*args)
 
-        @resource = resource['name']
+        @name = resource['name']
         @features = (resource['features'] || []).to_h do |feature|
           resource_feature = ResourceFeature.new(feature)
           [resource_feature.name, resource_feature]
@@ -45,7 +45,7 @@ module DeepL
       end
 
       def to_s
-        resource
+        name
       end
 
       # Returns true if this resource exposes the given feature (e.g. 'glossary').

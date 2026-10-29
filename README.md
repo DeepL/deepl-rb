@@ -93,45 +93,46 @@ is deprecated.
 
 ### Available languages
 
-Available languages can be retrieved via API:
+`get_source_languages` and `get_target_languages` of `DeepL::Client` return the languages that
+can be translated from and into, as `DeepL::Resources::Language` objects with upper-case codes:
 
 ```rb
-languages = DeepL.languages
+languages = client.get_source_languages
 
-puts languages.class
-# => Array
 puts languages.first.class
 # => DeepL::Resources::Language
 puts "#{languages.first.code} -> #{languages.first.name}"
 # => "ES -> Spanish"
+
+german = client.get_target_languages.find { |language| language.code == 'DE' }
+puts german.supports_formality?
+# => true
 ```
 
-Note that source and target languages may be different, which can be retrieved by using the `type`
-option:
-
-```rb
-puts DeepL.languages(type: :source).count
-# => 24
-puts DeepL.languages(type: :target).count
-# => 26
-```
+`supports_formality?` is `true` or `false` for target languages and `nil` for source languages.
 
 All languages are also defined on the
 [official API documentation](https://developers.deepl.com/docs/api-reference/translate).
 
-`DeepL::Resources::Language#supports_formality?` is `true` or `false` for target languages and
-`nil` for source languages.
+The module-level `DeepL.languages(type: :source)` and `DeepL.languages(type: :target)` are
+deprecated.
 
 #### Languages per resource
 
-`DeepL.languages_for_resource` returns the languages supported by a given API resource
-(`translate_text`, `translate_document`, `glossary`, `voice`, `write`, `style_rules` or
-`translation_memory`), with source/target usability and per-feature support. Pass
-`include: ['beta']` and/or `'external'` to also list beta languages and features or features that
-rely on third-party providers:
+`get_languages_for_resource` returns the languages supported by a given API resource, with
+source/target usability and per-feature support. The language codes are returned as the API sends
+them (`de`, `en-GB`). The resources are defined in `DeepL::Constants::LanguageResourceName`
+(`TRANSLATE_TEXT`, `TRANSLATE_DOCUMENT`, `GLOSSARY`, `VOICE`, `WRITE`, `STYLE_RULES`,
+`TRANSLATION_MEMORY`). Pass `include:` with one value or an array of values from
+`DeepL::Constants::LanguageInclude` (`BETA`, `EXTERNAL`) to also list beta languages and features
+or features that rely on third-party providers. Other strings are sent unchanged, for both the
+resource and `include:`.
 
 ```rb
-languages = DeepL.languages_for_resource('translate_text', include: ['beta'])
+languages = client.get_languages_for_resource(
+  DeepL::Constants::LanguageResourceName::TRANSLATE_TEXT,
+  include: [DeepL::Constants::LanguageInclude::BETA]
+)
 
 german = languages.find { |language| language.code == 'de' }
 puts german.usable_as_target?
@@ -142,17 +143,19 @@ puts german.features['formality'].status
 # => "stable"
 ```
 
-`DeepL.language_resources` lists every resource with its features, and whether a feature must be
-supported by the source language, the target language, or both:
+`get_language_resources` lists every resource with its `name` and features, and whether a
+feature must be supported by the source language, the target language, or both:
 
 ```rb
-translate_text = DeepL.language_resources.find { |resource| resource.resource == 'translate_text' }
+translate_text = client.get_language_resources.find { |resource| resource.name == 'translate_text' }
 formality = translate_text.features['formality']
 puts formality.needs_source_support?
 # => false
 puts formality.needs_target_support?
 # => true
 ```
+
+The module-level `DeepL.languages_for_resource` and `DeepL.language_resources` are deprecated.
 
 ### Translate
 

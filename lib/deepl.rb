@@ -136,6 +136,8 @@ require_relative 'deepl/utils/document_poller'
 require_relative 'deepl/constants/base_constant'
 require_relative 'deepl/constants/document_status_code'
 require_relative 'deepl/constants/formality'
+require_relative 'deepl/constants/language_include'
+require_relative 'deepl/constants/language_resource_name'
 require_relative 'deepl/constants/model_type'
 require_relative 'deepl/constants/split_sentences'
 require_relative 'deepl/constants/tag_handling'
@@ -179,9 +181,11 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     module_api
   end
 
-  # @deprecated Use DeepL::Client instead.
+  # @deprecated Use DeepL::Client#get_source_languages or DeepL::Client#get_target_languages
+  #   instead.
   def languages(options = {})
-    deprecated(:languages, 'DeepL::Client')
+    deprecated(:languages,
+               'DeepL::Client#get_source_languages or DeepL::Client#get_target_languages')
     Requests::Languages.new(module_api, options).request
   end
 
@@ -197,9 +201,9 @@ module DeepL # rubocop:disable Metrics/ModuleLength
   #     stable languages and features are returned.
   # @return [Array<DeepL::Resources::LanguageSupport>] The supported languages.
   # @raise [ArgumentError] If +resource+ is empty.
-  # @deprecated Use DeepL::Client instead.
+  # @deprecated Use DeepL::Client#get_languages_for_resource instead.
   def languages_for_resource(resource, options = {})
-    deprecated(:languages_for_resource, 'DeepL::Client')
+    deprecated(:languages_for_resource, 'DeepL::Client#get_languages_for_resource')
     ensure_configured
     Requests::LanguagesForResource.new(module_api, resource, options).request
   end
@@ -209,9 +213,9 @@ module DeepL # rubocop:disable Metrics/ModuleLength
   # feature requires support from the source and/or target language.
   #
   # @return [Array<DeepL::Resources::LanguageResource>] One entry per resource.
-  # @deprecated Use DeepL::Client instead.
+  # @deprecated Use DeepL::Client#get_language_resources instead.
   def language_resources(options = {})
-    deprecated(:language_resources, 'DeepL::Client')
+    deprecated(:language_resources, 'DeepL::Client#get_language_resources')
     ensure_configured
     Requests::LanguageResources.new(module_api, options).request
   end

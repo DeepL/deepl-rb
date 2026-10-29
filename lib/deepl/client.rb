@@ -221,6 +221,49 @@ module DeepL
     end
 
     ##
+    # Retrieves the languages that can be translated from, with upper-case codes (+EN+, +DE+).
+    #
+    # @return [Array<DeepL::Resources::Language>] The source languages;
+    #   +supports_formality?+ is +nil+ for each.
+    def get_source_languages # rubocop:disable Naming/AccessorMethodName
+      Requests::Languages.new(api, type: :source).request
+    end
+
+    ##
+    # Retrieves the languages that can be translated into, with upper-case codes (+EN-GB+, +DE+).
+    #
+    # @return [Array<DeepL::Resources::Language>] The target languages, each with
+    #   +supports_formality?+ set to +true+ or +false+.
+    def get_target_languages # rubocop:disable Naming/AccessorMethodName
+      Requests::Languages.new(api, type: :target).request
+    end
+
+    ##
+    # Retrieves the resources supported by the DeepL API with their features, and whether each
+    # feature requires support from the source and/or target language.
+    #
+    # @return [Array<DeepL::Resources::LanguageResource>] One entry per resource.
+    def get_language_resources # rubocop:disable Naming/AccessorMethodName
+      Requests::LanguageResources.new(api).request
+    end
+
+    ##
+    # Retrieves the languages supported by +resource+, each with its per-feature support. The
+    # language codes are returned as the API sends them.
+    #
+    # @param [String, Symbol] resource Resource to query, see
+    #   +DeepL::Constants::LanguageResourceName+. Other values are sent unchanged.
+    # @param [String, Array<String>, nil] include Also return beta languages and features or
+    #   features relying on third-party providers, see +DeepL::Constants::LanguageInclude+. Sent
+    #   as one +include+ query parameter per value; +nil+ sends none, which returns stable
+    #   languages and features only.
+    # @return [Array<DeepL::Resources::LanguageSupport>] The supported languages.
+    # @raise [ArgumentError] If +resource+ is empty.
+    def get_languages_for_resource(resource, include: nil)
+      Requests::LanguagesForResource.new(api, resource, { include: include }.compact).request
+    end
+
+    ##
     # Creates a spoken terms collection, which improves the transcription of the given terms.
     #
     # @param [String] name Name of the collection.
