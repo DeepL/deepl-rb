@@ -8,19 +8,38 @@ require_relative 'offline_helper'
 describe 'DeepL.translate' do
   let(:translation_reply) { reply(translations: [{ text: 'Hallo' }]) }
 
+  # Every translate request asks for the billed characters.
   def expect_body(body)
-    stub_request(:post, url('/v2/translate')).with(body: body, headers: json_headers)
-                                             .to_return(translation_reply)
+    stub_request(:post, url('/v2/translate'))
+      .with(body: { show_billed_characters: true }.merge(body), headers: json_headers)
+      .to_return(translation_reply)
   end
 
-  it 'sends the text with a null source language for auto-detection' do
-    expect_body(text: ['Hello'], source_lang: nil, target_lang: 'DE')
+  it 'sends no source language for auto-detection' do
+    expect_body(text: ['Hello'], target_lang: 'DE')
     DeepL.translate('Hello', nil, 'DE')
+  end
+
+  it 'always sends show_billed_characters' do
+    stub_request(:post, url('/v2/translate'))
+      .with(body: { text: ['Hello'], source_lang: 'EN', target_lang: 'DE',
+                    show_billed_characters: true })
+      .to_return(translation_reply)
+
+    DeepL.translate('Hello', 'EN', 'DE')
+  end
+
+  it 'sends no options set to nil' do
+    expect_body(text: ['Hello'], target_lang: 'DE')
+    DeepL.translate('Hello', nil, 'DE', formality: nil, 'context' => nil, glossary: nil,
+                                        translation_memory: nil,
+                                        translation_memory_threshold: nil)
   end
 
   it 'sends the source language and several texts' do
     stub_request(:post, url('/v2/translate'))
-      .with(body: { text: %w[Hello Bye], source_lang: 'EN', target_lang: 'DE' })
+      .with(body: { text: %w[Hello Bye], source_lang: 'EN', target_lang: 'DE',
+                    show_billed_characters: true })
       .to_return(reply(translations: [{ text: 'Hallo' }, { text: 'Tschüss' }]))
 
     expect(DeepL.translate(%w[Hello Bye], 'EN', 'DE').map(&:class))
@@ -61,20 +80,20 @@ describe 'DeepL.translate' do
   describe 'option conversions' do
     { true => '1', false => '0', 'nonewlines' => 'nonewlines' }.each do |value, sent|
       it "sends split_sentences #{value.inspect} as #{sent.inspect}" do
-        expect_body(text: ['a'], source_lang: nil, target_lang: 'DE', split_sentences: sent)
+        expect_body(text: ['a'], target_lang: 'DE', split_sentences: sent)
         DeepL.translate('a', nil, 'DE', split_sentences: value)
       end
     end
 
     it 'converts split_sentences false given with a string key' do
-      expect_body(text: ['a'], source_lang: nil, target_lang: 'DE', split_sentences: '0')
+      expect_body(text: ['a'], target_lang: 'DE', split_sentences: '0')
       DeepL.translate('a', nil, 'DE', 'split_sentences' => false)
     end
 
     { '1' => true, '0' => false, true => true }.each do |value, sent|
       %i[preserve_formatting outline_detection].each do |option|
         it "sends #{option} #{value.inspect} as #{sent.inspect}" do
-          expect_body({ text: ['a'], source_lang: nil, target_lang: 'DE', option => sent })
+          expect_body({ text: ['a'], target_lang: 'DE', option => sent })
           DeepL.translate('a', nil, 'DE', option => value)
         end
       end
@@ -82,12 +101,12 @@ describe 'DeepL.translate' do
 
     %i[splitting_tags non_splitting_tags ignore_tags custom_instructions].each do |option|
       it "sends a comma separated #{option} string as an array" do
-        expect_body({ text: ['a'], source_lang: nil, target_lang: 'DE', option => %w[x y] })
+        expect_body({ text: ['a'], target_lang: 'DE', option => %w[x y] })
         DeepL.translate('a', nil, 'DE', option => 'x,y')
       end
 
       it "sends a #{option} array unchanged" do
-        expect_body({ text: ['a'], source_lang: nil, target_lang: 'DE', option => %w[x y] })
+        expect_body({ text: ['a'], target_lang: 'DE', option => %w[x y] })
         DeepL.translate('a', nil, 'DE', option => %w[x y])
       end
     end
@@ -178,19 +197,19 @@ describe 'DeepL.translate' do
   describe 'extra_body_parameters' do
     it 'keeps the type of each value' do
       extra = { flag: true, off: false, count: 42, label: 'x', list: [1, 'a'], nested: { a: 1 } }
-      expect_body({ text: ['a'], source_lang: nil, target_lang: 'DE' }.merge(extra))
+      expect_body({ text: ['a'], target_lang: 'DE' }.merge(extra))
 
       DeepL.translate('a', nil, 'DE', extra_body_parameters: extra)
     end
 
     it 'adds new parameters and overrides built-in ones' do
-      expect_body(text: ['a'], source_lang: nil, target_lang: 'FR', beta_feature: 'on')
+      expect_body(text: ['a'], target_lang: 'FR', beta_feature: 'on')
       DeepL.translate('a', nil, 'DE', extra_body_parameters: { target_lang: 'FR',
                                                                beta_feature: 'on' })
     end
 
     it 'overrides an option of the same name' do
-      expect_body(text: ['a'], source_lang: nil, target_lang: 'DE', formality: 'more')
+      expect_body(text: ['a'], target_lang: 'DE', formality: 'more')
       DeepL.translate('a', nil, 'DE', formality: 'less',
                                       extra_body_parameters: { formality: 'more' })
     end

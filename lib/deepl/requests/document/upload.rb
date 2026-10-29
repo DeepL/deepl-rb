@@ -103,6 +103,8 @@ module DeepL
           return unless option?(:translation_memory)
 
           tm = delete_option(:translation_memory)
+          return if tm.nil?
+
           tm_id = tm.is_a?(DeepL::Resources::TranslationMemory) ? tm.translation_memory_id : tm
           form_data.push(['translation_memory_id', tm_id.to_s])
         end
@@ -113,6 +115,8 @@ module DeepL
           return unless option?(:translation_memory_threshold)
 
           threshold = delete_option(:translation_memory_threshold)
+          return if threshold.nil?
+
           form_data.push(['translation_memory_threshold', threshold.to_s])
         end
 

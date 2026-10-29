@@ -139,6 +139,11 @@ describe DeepL::DocumentApi do
       )
     end
 
+    it 'does not send translation_memory_id or the threshold when they are nil' do
+      expect(form_fields(sent_form(translation_memory: nil, translation_memory_threshold: nil)))
+        .to eq('source_lang' => 'EN', 'target_lang' => 'DE', 'filename' => 'example_document.txt')
+    end
+
     it 'lets extra_body_parameters add a field and override an existing one' do
       form = sent_form(formality: 'more', extra_body_parameters: { formality: 'less', beta: true })
 
