@@ -89,6 +89,13 @@ describe 'DeepL::Constants' do
     end
   end
 
+  describe DeepL::Constants::TagHandlingVersion do
+    it 'includes v1 and v2' do
+      expect([described_class::V1, described_class::V2]).to eq(%w[v1 v2])
+      expect(described_class.options).to contain_exactly('v1', 'v2')
+    end
+  end
+
   describe DeepL::Constants::SplitSentences do
     subject(:split_sentences) { described_class }
 

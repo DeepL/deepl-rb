@@ -5,7 +5,7 @@
 
 module DeepL
   module Requests
-    class Translate < Base
+    class Translate < Base # rubocop:disable Metrics/ClassLength
       STRING_TO_BOOLEAN_MAP = { '1' => true, '0' => false }.freeze
       BOOLEAN_TO_STRING_MAP = { true => '1', false => '0' }.freeze
       STRING_TO_BOOLEAN_CONVERSION = ->(value) { STRING_TO_BOOLEAN_MAP[value] }
@@ -116,11 +116,19 @@ module DeepL
         data = JSON.parse(response.body)
 
         texts = data['translations'].map do |translation|
-          Resources::Text.new(translation['text'], translation['detected_source_language'],
-                              translation['model_type_used'], request, response)
+          Resources::Text.new(
+            translation['text'], translation['detected_source_language'],
+            translation['model_type_used'], request, response,
+            Utils::NumberParser.optional_count(translation['billed_characters']),
+            optional_string(translation['tag_handling_version'])
+          )
         end
 
         texts.size == 1 ? texts.first : texts
+      end
+
+      def optional_string(value)
+        value if value.is_a?(String)
       end
 
       def path

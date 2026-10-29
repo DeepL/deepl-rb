@@ -176,6 +176,29 @@ describe 'DeepL.translate' do
     end
   end
 
+  describe 'result' do
+    def stub_translation(translation)
+      stub_request(:post, url('/v2/translate')).to_return(reply(translations: [translation]))
+    end
+
+    it 'parses billed_characters and tag_handling_version' do
+      stub_translation(text: 'Hallo', detected_source_language: 'EN', billed_characters: 5,
+                       tag_handling_version: 'v2')
+
+      result = DeepL.translate('Hello', nil, 'DE', tag_handling: 'xml')
+      expect([result.billed_characters, result.tag_handling_version]).to eq([5, 'v2'])
+    end
+
+    it 'leaves malformed or missing fields nil and keeps the other fields' do
+      stub_translation(text: 'Hallo', detected_source_language: 'EN', billed_characters: 'five',
+                       tag_handling_version: 2)
+
+      result = DeepL.translate('Hello', nil, 'DE')
+      expect([result.text, result.detected_source_language, result.billed_characters,
+              result.tag_handling_version]).to eq(['Hallo', 'EN', nil, nil])
+    end
+  end
+
   describe 'glossary_ids' do
     let(:base) { { text: ['a'], source_lang: 'EN', target_lang: 'DE' } }
 
