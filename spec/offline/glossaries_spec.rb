@@ -32,6 +32,14 @@ describe DeepL::GlossaryApi do
       glossaries.create('terms', 'EN', 'DE', "Apple,Apfel\n", entries_format: 'csv')
     end
 
+    it 'strips surrounding whitespace from the terms of an array' do
+      stub_request(:post, url('/v2/glossaries'))
+        .with(body: hash_including(entries: "Apple\tApfel\n"))
+        .to_return(reply(glossary_json, 201))
+
+      glossaries.create('terms', 'EN', 'DE', [[' Apple ', "Apfel\n"]])
+    end
+
     it 'returns a glossary' do
       stub_request(:post, url('/v2/glossaries')).to_return(reply(glossary_json, 201))
 
@@ -40,7 +48,7 @@ describe DeepL::GlossaryApi do
   end
 
   describe '#create with invalid terms' do
-    [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]]].each do |entries|
+    [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]], [['Apple', ' ']]].each do |entries|
       it "raises ArgumentError for #{entries.inspect} and sends no request" do
         expect { glossaries.create('terms', 'EN', 'DE', entries) }.to raise_error(ArgumentError)
         expect(a_request(:any, /.*/)).not_to have_been_made

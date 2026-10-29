@@ -70,8 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `delete_spoken_terms_list(spoken_terms, lang)`. A collection is given as its ID or a
   `DeepL::Resources::SpokenTerms` (`spoken_terms_id`, `name`, `creation_time`, `term_lists`);
   the terms of a language as a `DeepL::Resources::SpokenTermsEntries` or a hash with `:lang`
-  and `:entries`. Terms are arrays of strings and are checked like glossary terms before they
-  are sent. The delete methods return `nil`. Please refer to the README for usage
+  and `:entries`. Terms are arrays of strings and are stripped and checked like glossary terms
+  before they are sent. The delete methods return `nil`. Please refer to the README for usage
   instructions. Collection IDs are URL-encoded in the request paths.
 - Added `DeepL::AdminClient` for the Admin API. It must be created with an admin
   API key, accepts the options of `DeepL::Client` and supports managing developer keys
@@ -204,9 +204,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Configuration#inspect` showed the auth key. It now shows `[REDACTED]`.
 - Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create` and the
   `DeepL.multilingual_glossaries` methods) were sent unchecked, so a term with a tab or newline
-  silently corrupted the entries. Such terms now raise `ArgumentError` before any request: a
-  term must not be empty or contain C0 or C1 control characters, U+2028 or U+2029. Entries
-  given as a TSV or CSV string are still sent as given.
+  silently corrupted the entries. Each term is now stripped of surrounding whitespace and sent
+  stripped; an invalid term raises `ArgumentError` before any request: it must not be empty or
+  contain C0 or C1 control characters, U+2028 or U+2029. Entries given as a TSV or CSV string
+  are still sent as given.
 - Debug logging no longer includes the auth key in the logged request headers.
 - Network errors (timeouts, `SocketError`) were retried without limit. They are now retried at
   most `max_network_retries` times, like 429 and 500 replies, and then raised.

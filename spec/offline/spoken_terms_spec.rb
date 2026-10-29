@@ -63,7 +63,15 @@ describe 'DeepL::Client spoken terms' do
   end
 
   describe 'term check' do
-    [["a\nb"]].each do |bad|
+    it 'strips surrounding whitespace from each term before sending it' do
+      stub_request(:post, url('/v3/spoken-terms'))
+        .with(body: { name: 'terms', term_lists: [{ lang: 'en', entries: "API\nDeepL" }] })
+        .to_return(reply(collection_json, 201))
+
+      client.create_spoken_terms('terms', [{ lang: 'en', entries: [' API ', "DeepL\n"] }])
+    end
+
+    [["a\nb"], ['  ']].each do |bad|
       it "raises ArgumentError for #{bad.inspect} and sends no request" do
         expect { client.create_spoken_terms('terms', [{ lang: 'en', entries: bad }]) }
           .to raise_error(ArgumentError)
