@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepL::Client#translate_text(text, source_lang, target_lang, **options)`. It takes
+  the options of `DeepL.translate` as keyword arguments and returns one
+  `DeepL::Resources::Text` for a string and an array for an array, also for a one-element
+  array.
+- Added the `glossary` option to text translation and document translation
+  (`DeepL.document.upload` and `translate_document`). It takes a glossary ID or a
+  `DeepL::Resources::Glossary` or `DeepL::Resources::MultilingualGlossary` object and is sent
+  as `glossary_id`.
+- Added `billed_characters` (`Integer`) and `tag_handling_version` (`String`) to
+  `DeepL::Resources::Text` for text translation results. They are `nil` when the response
+  does not contain them or contains an unexpected value.
+- Added `DeepL::Constants::TagHandlingVersion` (`V1`, `V2`) for the `tag_handling_version`
+  option.
 - Added `DeepL::Client`, a client instance that owns its configuration and HTTP connection
   and reads no environment variables: `DeepL::Client.new(auth_key, server_url:, headers:,
   max_retries:, timeout:, proxy:, send_platform_info:, app_info:, http_client_options:,
@@ -82,6 +95,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `quota_exceeded?` and `to_s` are unchanged.
 
 ### Changed
+- Text translation now always sends `show_billed_characters: true`, so every result has
+  `billed_characters`.
 - Network failures are now raised as `DeepL::Exceptions::ConnectionError` after the retries,
   instead of the raw `SocketError`, `Timeout::Error`, `Errno::*` or `OpenSSL::SSL::SSLError`.
 - Requests now time out after 10 seconds per attempt (or the backoff interval, if longer)
@@ -108,8 +123,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL.with_session` and `DeepL.http_client`. Each prints a warning once per process and
   keeps working unchanged.
 - `DeepL::Configuration#version=` (the API version is part of each endpoint).
+- The `glossary_id` option of text and document translation, use `glossary` instead. It
+  prints a warning once per process and keeps working unchanged.
 
 ### Fixed
+- Text translation sent options set to `nil`, and a `nil` source language, as JSON `null`.
+  They are now treated as unset and not sent.
+- `translation_memory: nil` sent an empty `translation_memory_id`, and
+  `translation_memory_threshold: nil` sent `null` (text) or an empty field (documents). Both
+  are now treated as unset and not sent.
+- A `custom_instructions` string was split at commas into several instructions. It is now
+  sent as one instruction.
 - `DeepL.configure { |c| c.auth_key = '...:fx' }` kept `https://api.deepl.com`, because the
   default server was chosen before the block set the key. Without a configured host, the
   server is now chosen from the final key.

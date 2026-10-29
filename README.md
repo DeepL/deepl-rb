@@ -54,8 +54,8 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 The authentication key is trimmed; an empty key raises `ArgumentError`.
 `DeepL::Client.free_account_auth_key?(key)` returns whether a key is a DeepL API Free key.
 
-Until `DeepL::Client` offers an operation, use the module-level API shown in the following
-sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
+`DeepL::Client` offers text translation (`translate_text`, see [Translate](#translate)); for
+the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
 is deprecated: each method prints a deprecation warning once per process, and it will be
 removed in the next major version.
 
@@ -152,31 +152,39 @@ puts formality.needs_target_support?
 
 ### Translate
 
-To translate a simple text, use the `translate` method:
+To translate a simple text, use the `translate_text` method of `DeepL::Client`:
 
 ```rb
-translation = DeepL.translate 'This is my text', 'EN', 'ES'
+translation = client.translate_text 'This is my text', 'EN', 'ES'
 
 puts translation.class
 # => DeepL::Resources::Text
 puts translation.text
 # => 'Este es mi texto'
+puts translation.billed_characters
+# => 15
 ```
+
+Each result has `text`, `detected_source_language`, `billed_characters` (the characters
+billed for the text; the library always asks the API for it), `model_type_used` and
+`tag_handling_version` (the tag handling version the API used, when tag handling was
+requested). A field the response does not contain is `nil`.
 
 Enable auto-detect source language by skipping the source language with `nil`:
 
 ```rb
-translation = DeepL.translate 'This is my text', nil, 'ES'
+translation = client.translate_text 'This is my text', nil, 'ES'
 
 puts translation.detected_source_language
 # => 'EN'
 ```
 
-Translate a list of texts by passing an array as an argument:
+Translate a list of texts by passing an array as an argument. An array, also one with a
+single text, returns an array of results:
 
 ```rb
 texts = ['Sample text', 'Another text']
-translations = DeepL.translate texts, 'EN', 'ES'
+translations = client.translate_text texts, 'EN', 'ES'
 
 puts translations.class
 # => Array
@@ -184,12 +192,13 @@ puts translations.first.class
 # => DeepL::Resources::Text
 ```
 
-You can also use custom query parameters, like `tag_handling`, `split_sentences`, `non_splitting_tags` or `ignore_tags`:
+Options are passed as keyword arguments; an option set to `nil` is not sent. You can use
+options like `tag_handling`, `split_sentences`, `non_splitting_tags` or `ignore_tags`:
 
 ```rb
-translation = DeepL.translate '<p>A sample</p>', 'EN', 'ES',
-                              tag_handling: 'xml', split_sentences: false,
-                              non_splitting_tags: 'h1', ignore_tags: %w[code pre]
+translation = client.translate_text '<p>A sample</p>', 'EN', 'ES',
+                                    tag_handling: 'xml', split_sentences: false,
+                                    non_splitting_tags: 'h1', ignore_tags: %w[code pre]
 
 puts translation.text
 # => "<p>Una muestra</p>"
@@ -198,20 +207,24 @@ puts translation.text
 To specify which version of the tag handling algorithm to use, you can use the `tag_handling_version` parameter:
 
 ```rb
-translation = DeepL.translate '<p>A sample</p>', 'EN', 'ES',
-                              tag_handling: 'xml', tag_handling_version: 'v2'
+translation = client.translate_text '<p>A sample</p>', 'EN', 'ES',
+                                    tag_handling: 'xml',
+                                    tag_handling_version: DeepL::Constants::TagHandlingVersion::V2
 
 puts translation.text
 # => "<p>Una muestra</p>"
+puts translation.tag_handling_version
+# => "v2"
 ```
 
-The available values are `'v1'` and `'v2'`.
+The available values are `'v1'` and `'v2'` (`DeepL::Constants::TagHandlingVersion::V1` and
+`V2`); other strings are sent as given.
 
 To translate with context, simply supply the `context` parameter:
 
 ```rb
-translation = DeepL.translate 'That is hot!', 'EN', 'ES',
-                              context: 'He did not like the jalapenos in his meal.'
+translation = client.translate_text 'That is hot!', 'EN', 'ES',
+                                    context: 'He did not like the jalapenos in his meal.'
 
 puts translation.text
 # => "¡Eso es picante!"
@@ -220,8 +233,8 @@ puts translation.text
 To specify a type of translation model to use, you can use the `model_type` option:
 
 ```rb
-translation = DeepL.translate 'That is hot!', 'EN', 'DE',
-                              model_type: 'quality_optimized'
+translation = client.translate_text 'That is hot!', 'EN', 'DE',
+                                    model_type: 'quality_optimized'
 ```
 
 This would use next-gen translation models for the translation. The available values are
@@ -233,11 +246,12 @@ This would use next-gen translation models for the translation. The available va
 - `'latency_optimized'`: use a translation model that minimizes response time, at the cost
   of translation quality.
 
-To translate with custom instructions, supply the `custom_instructions` parameter:
+To translate with custom instructions, supply the `custom_instructions` parameter, an array
+of instructions. A single string is sent as one instruction, commas included:
 
 ```rb
-translation = DeepL.translate 'Hello, world!', 'EN', 'DE',
-                              custom_instructions: ['Use informal language', 'Be concise']
+translation = client.translate_text 'Hello, world!', 'EN', 'DE',
+                                    custom_instructions: ['Use informal language', 'Be concise']
 
 puts translation.text
 ```
@@ -258,15 +272,22 @@ The following parameters will be automatically converted:
 | `non_splitting_tags`  | Converts arrays to strings joining by commas
 | `ignore_tags`         | Converts arrays to strings joining by commas
 | `formality`           | No conversion applied
-| `glossary_id`         | No conversion applied
+| `glossary`            | A glossary ID string, a `Glossary` or a `MultilingualGlossary` object, sent as `glossary_id` (see [Glossaries](#glossaries))
+| `glossary_id`         | Deprecated, use `glossary`. No conversion applied
 | `style_rule`          | No conversion applied (can be a string ID or a StyleRule object)
 | `style_profile`       | No conversion applied (can be a string ID or a StyleProfile object, see [Style profiles](#style-profiles))
 | `translation_memory`  | No conversion applied (can be a string ID or a TranslationMemory object)
 | `translation_memory_threshold` | No conversion applied (integer 0-100, recommended minimum 75)
 | `context`             | No conversion applied
-| `custom_instructions` | No conversion applied
-| `tag_handling_version` | No conversion applied
+| `custom_instructions` | An array of strings; a string is sent as a one-element array
+| `tag_handling_version` | No conversion applied (`DeepL::Constants::TagHandlingVersion`)
 | `extra_body_parameters` | Hash of extra parameters to pass in the body of the HTTP request. Can be used to access beta features, or to override built-in parameters for testing purposes. Extra parameters can override keys explicitly set by the client.
+
+`show_billed_characters: true` is always sent.
+
+The deprecated module-level `DeepL.translate(text, source_lang, target_lang, options = {},
+additional_headers = {})` takes the same options. Unlike `translate_text`, it returns a single
+result for a one-element array.
 
 ### Rephrase Text
 
@@ -332,17 +353,19 @@ puts glossary.entry_count
 # => 2
 ```
 
-Created glossaries can be used in the `translate` method by specifying the `glossary_id` option:
+Created glossaries can be used in text and document translation by specifying the
+`glossary` option, a glossary ID or a `Glossary` / `MultilingualGlossary` object. It is sent
+as `glossary_id` and replaces the deprecated `glossary_id` option:
 
 ```rb
-translation = DeepL.translate 'Hello World', 'EN', 'ES', glossary_id: 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+translation = client.translate_text 'Hello World', 'EN', 'ES', glossary: 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
 
 puts translation.class
 # => DeepL::Resources::Text
 puts translation.text
 # => 'Hola Tierra'
 
-translation = DeepL.translate "I wish we had a car.", 'EN', 'ES', glossary_id: 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+translation = client.translate_text "I wish we had a car.", 'EN', 'ES', glossary: glossary
 
 puts translation.class
 # => DeepL::Resources::Text
@@ -352,16 +375,16 @@ puts translation.text
 
 To use more than one glossary at once, specify the `glossary_ids` option with an
 array of up to 5 glossary IDs (as strings or `DeepL::Resources::Glossary`
-objects) instead of `glossary_id`. This works for both text and document
+objects) instead of `glossary`. This works for both text and document
 translation. `glossary_ids` requires `source_lang` to be set, cannot be combined
-with `glossary_id`, and raises `ArgumentError` if these rules are violated or
+with `glossary` or `glossary_id`, and raises `ArgumentError` if these rules are violated or
 more than 5 IDs are provided:
 
 ```rb
 # Text translation with multiple glossaries
-translation = DeepL.translate 'Hello World', 'EN', 'ES',
-                              glossary_ids: ['aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e',
-                                             'bb59d8g1-1e13-524f-9b17-e6ccg1db8b7f']
+translation = client.translate_text 'Hello World', 'EN', 'ES',
+                                    glossary_ids: ['aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e',
+                                                   'bb59d8g1-1e13-524f-9b17-e6ccg1db8b7f']
 
 # Document translation with multiple glossaries
 handle = DeepL.document.upload 'my_document.docx', 'EN', 'ES', 'my_document.docx',
@@ -808,7 +831,7 @@ DeepL.style_profiles.destroy('YOUR_STYLE_PROFILE_ID')
 Pass the `style_profile` option, a style profile ID string or a `StyleProfile` object, to
 `translate`, `document.upload` or `document.translate_document` to apply the profile's
 glossaries, style rule lists and translation memories. A component that does not fit the
-language pair is left out. The option cannot be combined with `glossary_id`,
+language pair is left out. The option cannot be combined with `glossary`, `glossary_id`,
 `glossary_ids`, `style_rule`, `translation_memory`, `translation_memory_threshold` or
 `custom_instructions`; the API rejects such requests.
 
@@ -1140,7 +1163,8 @@ doc_handle = DeepL.document.upload('/path/to/spanish_document.pdf', 'ES', 'EN', 
 Document translation options include:
 
 - `formality`: same as for text translation.
-- `glossary_id` / `glossary_ids`: see the glossary sections above.
+- `glossary` / `glossary_ids`: see the glossary sections above. `glossary_id` is deprecated,
+  use `glossary`.
 - `output_format`: file extension of the desired output format, e.g. `'pdf'` to translate
   a `docx` into a PDF.
 - `enable_watermark`: `true` adds a "Translated by DeepL" watermark to the translated
