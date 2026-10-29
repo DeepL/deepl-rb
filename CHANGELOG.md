@@ -143,11 +143,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Configuration#version=` (the API version is part of each endpoint).
 - The `glossary_id` option of text and document translation, use `glossary` instead. It
   prints a warning once per process and keeps working unchanged.
-
 - `DeepL::Resources::DocumentHandle#wait_until_document_translation_finished`, use
   `DeepL::Client#translate_document_wait_until_done` instead.
 - `DeepL::Configuration#max_doc_status_queries=`, use the `timeout_s:` of
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
+
 ### Fixed
 - `DeepL.document.translate_document` and `DocumentHandle#wait_until_document_translation_finished`
   stopped polling after 11 status requests (about 50 seconds), and `translate_document` then
