@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added translation memories to `DeepL::Client`: `list_translation_memories(page: nil,
+  page_size: nil)`, `get_translation_memory(translation_memory)`,
+  `delete_translation_memory(translation_memory)`,
+  `list_translation_memory_segments(translation_memory, page_size: nil, page_cursor: nil,
+  filter_text: nil, filter_case_sensitive: nil)`, `create_translation_memory_import(file_name,
+  content_length, content_type: nil, display_name: nil, **options)`,
+  `upload_translation_memory_file(translation_memory_import, content, content_type: nil)`,
+  `import_translation_memory_from_filepath(input_path, display_name: nil, content_type: nil,
+  timeout_s: nil, **options)`, `create_translation_memory_export(translation_memory)`,
+  `download_translation_memory_export(job, output_path)`,
+  `export_translation_memory_to_filepath(translation_memory, output_path, timeout_s: nil)`,
+  `get_translation_memory_job(job)` and `wait_until_translation_memory_job_done(job,
+  timeout_s: nil)`. Keywords left `nil` are not sent; the delete and download methods return
+  `nil`. Please refer to the README for usage instructions.
 - `DeepL.translation_memories.import_from_filepath` accepts `content_type:`, declared in the
   import job and sent with the upload, and `extra_body_parameters:`.
   `DeepL.translation_memories.create_import` accepts `extra_body_parameters:`.
@@ -203,6 +217,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Deprecated
+- The methods of `DeepL::TranslationMemoryApi` (`DeepL.translation_memories`), use the
+  translation memory methods of `DeepL::Client` instead (`list` is
+  `list_translation_memories`, `find` is `get_translation_memory`, `segments` is
+  `list_translation_memory_segments`, `find_job` is `get_translation_memory_job`, and so on).
+  They keep working unchanged.
 - The methods of `DeepL::StyleRuleApi` (`DeepL.style_rules`), use the style rule methods of
   `DeepL::Client` instead (`list` is `get_all_style_rules`, `find` is `get_style_rule`,
   `update_name` is `update_style_rule_name`, `destroy` is `delete_style_rule`, and so on).

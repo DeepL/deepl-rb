@@ -733,6 +733,187 @@ module DeepL
       nil
     end
 
+    ##
+    # Lists translation memories, one page at a time. Arguments left +nil+ are not sent.
+    #
+    # @param [Integer, nil] page Index of the page, starting at 0 (API default: 0).
+    # @param [Integer, nil] page_size Translation memories per page (API default: 10).
+    # @return [Array<DeepL::Resources::TranslationMemory>]
+    def list_translation_memories(page: nil, page_size: nil)
+      translation_memories.list({ page: page, page_size: page_size }.compact)
+    end
+
+    ##
+    # Retrieves a translation memory.
+    #
+    # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
+    #   memory.
+    # @return [DeepL::Resources::TranslationMemory]
+    # @raise [DeepL::Exceptions::NotFound] If the translation memory does not exist.
+    def get_translation_memory(translation_memory)
+      translation_memories.find(translation_memory)
+    end
+
+    ##
+    # Deletes a translation memory.
+    #
+    # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
+    #   memory.
+    # @return [nil]
+    def delete_translation_memory(translation_memory)
+      translation_memories.destroy(translation_memory)
+      nil
+    end
+
+    ##
+    # Retrieves one page of the segments of a translation memory. Pagination is cursor-based:
+    # omit +page_cursor+ on the first call, then pass the +next_page_cursor+ of the previous page
+    # until it is +nil+. Arguments left +nil+ are not sent.
+    #
+    # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
+    #   memory.
+    # @param [Integer, nil] page_size Segments per page, 1-100 (API default: 50).
+    # @param [String, nil] page_cursor +next_page_cursor+ of the previous page.
+    # @param [String, nil] filter_text Substring matched against source and target texts, at
+    #   least 2 characters.
+    # @param [Boolean, nil] filter_case_sensitive Whether +filter_text+ is case-sensitive (API
+    #   default: false).
+    # @return [DeepL::Resources::TranslationMemorySegments]
+    def list_translation_memory_segments(translation_memory, page_size: nil, page_cursor: nil,
+                                         filter_text: nil, filter_case_sensitive: nil)
+      options = { page_size: page_size, page_cursor: page_cursor, filter_text: filter_text,
+                  filter_case_sensitive: filter_case_sensitive }.compact
+      translation_memories.segments(translation_memory, options)
+    end
+
+    ##
+    # Creates an import job for a new translation memory. Upload the TMX file to the returned
+    # upload URL with #upload_translation_memory_file, then wait for the job with
+    # #wait_until_translation_memory_job_done. Keywords left +nil+ are not sent.
+    #
+    # @param [String] file_name Name of the TMX file, for example +'legal.tmx'+.
+    # @param [Integer] content_length Size of the file in bytes.
+    # @param [String, nil] content_type MIME type of the file (API default: +application/xml+).
+    # @param [String, nil] display_name Name of the translation memory (API default: the file
+    #   name).
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::TranslationMemoryImport] The job ID and the upload URL.
+    def create_translation_memory_import(file_name, content_length, content_type: nil,
+                                         display_name: nil, **options)
+      translation_memories.create_import(file_name, content_length,
+                                         content_type: content_type, display_name: display_name,
+                                         extra_body_parameters: options[:extra_body_parameters])
+    end
+
+    ##
+    # Uploads a TMX file to the upload URL of an import job, which starts the processing. The
+    # upload URL is a pre-signed storage URL: no +Authorization+ header and no configured
+    # +headers+ are sent to it.
+    #
+    # @param [DeepL::Resources::TranslationMemoryImport, String] translation_memory_import The
+    #   import, or its upload URL.
+    # @param [String] content Content of the TMX file.
+    # @param [String, nil] content_type MIME type of the file, must match the one of the import
+    #   job. +nil+ sends +application/xml+.
+    # @return [nil]
+    def upload_translation_memory_file(translation_memory_import, content, content_type: nil)
+      translation_memories.upload_file(translation_memory_import, content,
+                                       content_type: content_type)
+    end
+
+    ##
+    # Imports a TMX file as a new translation memory: creates the import job, uploads the file
+    # and waits until the job is completed.
+    #
+    # @param [String] input_path Path of the TMX file.
+    # @param [String, nil] display_name Name of the translation memory (API default: the file
+    #   name).
+    # @param [String, nil] content_type MIME type of the file, declared in the import job and
+    #   sent with the upload. +nil+ uses +application/xml+.
+    # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the job, +nil+ to wait
+    #   until it is completed. The API reports +awaiting_input+ for a while after the upload.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the body of the import job
+    #   request last.
+    # @return [DeepL::Resources::TranslationMemoryJob] The completed job; its result carries the
+    #   ID of the new translation memory.
+    # @raise [DeepL::Exceptions::Error] If the file does not exist, the job fails or expires (with
+    #   the API's error message), or +timeout_s+ expires.
+    def import_translation_memory_from_filepath(input_path, display_name: nil, content_type: nil,
+                                                timeout_s: nil, **options)
+      translation_memories.import_from_filepath(
+        input_path, display_name: display_name, content_type: content_type, timeout_s: timeout_s,
+                    extra_body_parameters: options[:extra_body_parameters]
+      )
+    end
+
+    ##
+    # Creates an export job for a translation memory. Wait for it with
+    # #wait_until_translation_memory_job_done, then download the TMX file with
+    # #download_translation_memory_export.
+    #
+    # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
+    #   memory.
+    # @return [DeepL::Resources::TranslationMemoryExport] The job ID, and whether the API reused
+    #   a previously completed export.
+    def create_translation_memory_export(translation_memory)
+      translation_memories.create_export(translation_memory)
+    end
+
+    ##
+    # Downloads the TMX file of a completed export job to +output_path+, overwriting an existing
+    # file. The download URL is a pre-signed storage URL: no +Authorization+ header and no
+    # configured +headers+ are sent to it.
+    #
+    # @param [DeepL::Resources::TranslationMemoryJob, String] job The completed export job, or
+    #   its download URL.
+    # @param [String] output_path Path to write the file to.
+    # @return [nil]
+    # @raise [DeepL::Exceptions::Error] If the job has no download URL, for example because it
+    #   is not completed yet.
+    def download_translation_memory_export(job, output_path)
+      translation_memories.download_export(job, output_path)
+      nil
+    end
+
+    ##
+    # Exports a translation memory to a TMX file: creates the export job, waits until it is
+    # completed and writes the file to +output_path+, overwriting an existing file.
+    #
+    # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
+    #   memory.
+    # @param [String] output_path Path to write the file to.
+    # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the job, +nil+ to wait
+    #   until it is completed.
+    # @return [DeepL::Resources::TranslationMemoryJob] The completed job.
+    # @raise [DeepL::Exceptions::Error] If the job fails or expires (with the API's error
+    #   message), or +timeout_s+ expires.
+    def export_translation_memory_to_filepath(translation_memory, output_path, timeout_s: nil)
+      translation_memories.export_to_filepath(translation_memory, output_path,
+                                              timeout_s: timeout_s)
+    end
+
+    ##
+    # Retrieves the status of a translation memory import or export job once.
+    #
+    # @param [String, DeepL::Resources::TranslationMemoryJob] job ID or job.
+    # @return [DeepL::Resources::TranslationMemoryJob]
+    def get_translation_memory_job(job)
+      translation_memories.find_job(job)
+    end
+
+    ##
+    # Polls a translation memory import or export job every 5 seconds until it is completed.
+    #
+    # @param [String, DeepL::Resources::TranslationMemoryJob] job ID or job.
+    # @param [Numeric, nil] timeout_s Maximum time to wait in seconds, +nil+ to wait until the
+    #   job is completed, failed or expired. A job whose file is never uploaded does not finish.
+    # @return [DeepL::Resources::TranslationMemoryJob] The completed job.
+    # @raise [DeepL::Exceptions::Error] If the job fails or expires (with the API's error
+    #   message), or +timeout_s+ expires.
+    def wait_until_translation_memory_job_done(job, timeout_s: nil)
+      translation_memories.wait_until_job_done(job, timeout_s: timeout_s)
+    end
+
     def inspect
       "#<#{self.class.name} server_url=#{configuration.host}>"
     end
@@ -740,6 +921,12 @@ module DeepL
     private
 
     attr_reader :api
+
+    # The translation memory methods share the request, polling and ID handling of
+    # TranslationMemoryApi.
+    def translation_memories
+      @translation_memories ||= TranslationMemoryApi.new(api)
+    end
 
     def configuration
       api.configuration

@@ -941,37 +941,44 @@ account, each with a source language and one or more target languages.
 Translation memories can also be managed in the DeepL UI via
 https://www.deepl.com/translation-memory.
 
-Every method that takes a translation memory accepts either a string containing
-the translation memory ID or a `TranslationMemory` object.
+`DeepL::Client` manages them with `list_translation_memories`,
+`get_translation_memory`, `list_translation_memory_segments`,
+`import_translation_memory_from_filepath`, `export_translation_memory_to_filepath`
+and `delete_translation_memory`, plus the single steps of an import or export
+described below. Every method that takes a translation memory accepts either a
+string containing the translation memory ID or a `TranslationMemory` object, and
+every method that takes a job accepts its ID or a `TranslationMemoryJob`.
 
 #### Listing translation memories
 
-`translation_memories.list` returns a list of `TranslationMemory` objects
-for your stored translation memories. The method accepts optional parameters:
-`page` (page number for pagination, 0-indexed) and `page_size` (number of items
-per page, max 25).
+`list_translation_memories` returns a list of `TranslationMemory` objects for
+your stored translation memories, one page at a time. It accepts the optional
+keywords `page` (page number for pagination, 0-indexed) and `page_size` (number
+of items per page, max 25). Keywords left `nil` are not sent.
 
 ```rb
+client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
+
 # List translation memories
-translation_memories = DeepL.translation_memories.list
-translation_memories.each do |tm|
+client.list_translation_memories.each do |tm|
   puts "#{tm.name} (#{tm.translation_memory_id})"
   puts "  Source: #{tm.source_language}, Targets: #{tm.target_languages.join(', ')}"
   puts "  Segments: #{tm.segment_count}"
 end
 
 # List with pagination
-translation_memories = DeepL.translation_memories.list(page: 0, page_size: 10)
+translation_memories = client.list_translation_memories(page: 0, page_size: 10)
 ```
 
 #### Retrieving a single translation memory
 
-`translation_memories.find` retrieves one translation memory by ID. In addition
-to the fields returned by `list`, the resource carries the `creation_time` and
-`updated_time` timestamps.
+`get_translation_memory` retrieves one translation memory. In addition to the
+fields returned by `list_translation_memories`, the resource carries the
+`creation_time` and `updated_time` timestamps (`nil` if the API sends none or a
+malformed one).
 
 ```rb
-tm = DeepL.translation_memories.find 'YOUR_TM_ID'
+tm = client.get_translation_memory('YOUR_TM_ID')
 
 puts tm.class
 # => DeepL::Resources::TranslationMemory
@@ -985,7 +992,7 @@ puts tm.creation_time.class
 
 #### Listing the segments of a translation memory
 
-`translation_memories.segments` returns one page of the segments of a
+`list_translation_memory_segments` returns one page of the segments of a
 translation memory as a `TranslationMemorySegments` object. Each segment holds
 the source text and one target per target language of the translation memory.
 
@@ -993,13 +1000,14 @@ Pagination is cursor-based: omit `page_cursor` on the first call, then pass the
 `next_page_cursor` of the previous response until `next_page?` is `false`. The
 method also accepts `page_size` (1-100, defaults to 50), `filter_text` (a
 substring matched against the source and target texts, at least 2 characters)
-and `filter_case_sensitive` (defaults to `false`).
+and `filter_case_sensitive` (defaults to `false`). Keywords left `nil` are not
+sent.
 
 Note that `segment_count` is the number of segments stored in the translation
 memory; a text filter does not reduce it.
 
 ```rb
-page = DeepL.translation_memories.segments 'YOUR_TM_ID', page_size: 50
+page = client.list_translation_memory_segments('YOUR_TM_ID', page_size: 50)
 
 puts page.class
 # => DeepL::Resources::TranslationMemorySegments
@@ -1012,28 +1020,34 @@ puts page.segments.first.targets.first.target_text
 
 # Walk through every page of segments
 while page.next_page?
-  page = DeepL.translation_memories.segments 'YOUR_TM_ID',
-                                             page_size: 50,
-                                             page_cursor: page.next_page_cursor
+  page = client.list_translation_memory_segments('YOUR_TM_ID',
+                                                 page_size: 50,
+                                                 page_cursor: page.next_page_cursor)
 end
 
 # Only the segments matching a text
-page = DeepL.translation_memories.segments 'YOUR_TM_ID',
-                                           filter_text: 'Nummer 1',
-                                           filter_case_sensitive: true
+page = client.list_translation_memory_segments('YOUR_TM_ID',
+                                               filter_text: 'Nummer 1',
+                                               filter_case_sensitive: true)
 ```
 
 #### Importing a translation memory
 
-`translation_memories.import_from_filepath` creates a new translation memory
-from a TMX file. It creates the import job, uploads the file and waits for the
-processing to finish, and returns the finished `TranslationMemoryJob`. Its
-result carries the ID of the newly created translation memory.
+`import_translation_memory_from_filepath` creates a new translation memory from
+a TMX file. It creates the import job, uploads the file and waits until the job
+is completed, and returns the `TranslationMemoryJob`. Its result carries the ID
+of the newly created translation memory. The optional keywords are
+`display_name` (the name of the translation memory, defaults to the file name),
+`content_type` (the MIME type of the file, declared in the job and sent with the
+upload, defaults to `application/xml`), `timeout_s` and `extra_body_parameters`
+(fields added to the body of the import job request). It raises a
+`DeepL::Exceptions::Error` with the API's error message if the job fails or
+expires, and when `timeout_s` expires.
 
 ```rb
-job = DeepL.translation_memories.import_from_filepath 'legal.tmx',
-                                                      display_name: 'Legal',
-                                                      timeout_s: 300
+job = client.import_translation_memory_from_filepath('legal.tmx',
+                                                     display_name: 'Legal',
+                                                     timeout_s: 300)
 
 puts job.class
 # => DeepL::Resources::TranslationMemoryJob
@@ -1045,81 +1059,92 @@ puts job.result.skipped_segment_count
 # => 0
 ```
 
-The three steps can also be performed separately, for example to upload a file
-that is not available on the local file system. The upload URL is a pre-signed
-storage URL outside of the DeepL API, so no authorization header is sent with
-the upload.
+The three steps can also be performed separately with
+`create_translation_memory_import`, `upload_translation_memory_file` and
+`wait_until_translation_memory_job_done`, for example to upload a file that is
+not available on the local file system. `create_translation_memory_import`
+accepts `content_type`, `display_name` and `extra_body_parameters`; keywords left
+`nil` are not sent. The upload URL is a pre-signed storage URL outside of the
+DeepL API, so no authorization header and no configured `headers` are sent with
+the upload; the proxy, SSL and timeout settings of the client apply.
 
 ```rb
-content = File.binread 'legal.tmx'
-created = DeepL.translation_memories.create_import 'legal.tmx', content.bytesize,
-                                                   content_type: 'application/xml',
-                                                   display_name: 'Legal'
+content = File.binread('legal.tmx')
+created = client.create_translation_memory_import('legal.tmx', content.bytesize,
+                                                  content_type: 'application/xml',
+                                                  display_name: 'Legal')
 
 puts created.upload_url
 # => 'https://...'
 
-DeepL.translation_memories.upload_file created, content
-job = DeepL.translation_memories.wait_until_job_done created.job_id
+client.upload_translation_memory_file(created, content, content_type: 'application/xml')
+job = client.wait_until_translation_memory_job_done(created.job_id)
 ```
 
 Until the file is uploaded the job stays in the `awaiting_input` status and
 `result.required_action` describes what is missing. The API detects the upload
 asynchronously, so the job keeps reporting `awaiting_input` for a while
 afterwards, typically around half a minute, before it completes.
-`wait_until_job_done` therefore polls through that status like any other
-non-terminal one. A job whose file is never uploaded does not finish on its own,
-so pass `timeout_s` when that is a possibility.
+`wait_until_translation_memory_job_done` therefore polls through that status
+like any other non-terminal one. A job whose file is never uploaded does not
+finish on its own, so pass `timeout_s` when that is a possibility.
 
 #### Exporting a translation memory
 
-`translation_memories.export_to_filepath` writes a translation memory to a TMX
-file. It creates the export job, waits for it to finish and downloads the
-result, overwriting the output file if it already exists.
+`export_translation_memory_to_filepath` writes a translation memory to a TMX
+file. It creates the export job, waits until it is completed and downloads the
+result, overwriting the output file if it already exists. It accepts
+`timeout_s` and raises a `DeepL::Exceptions::Error` if the job fails or expires.
 
 ```rb
-job = DeepL.translation_memories.export_to_filepath 'YOUR_TM_ID', 'export.tmx'
+job = client.export_translation_memory_to_filepath('YOUR_TM_ID', 'export.tmx')
 
 puts job.status
 # => 'completed'
 ```
 
-The steps can be performed separately as well. Repeating the export of an
-unchanged translation memory reuses the previously completed job instead of
-starting a new one, which `reused_existing?` reports. Just like the upload URL,
-the download URL is a pre-signed storage URL and is requested without an
-authorization header.
+The steps can be performed separately as well, with
+`create_translation_memory_export`, `wait_until_translation_memory_job_done` and
+`download_translation_memory_export`. Repeating the export of an unchanged
+translation memory reuses the previously completed job instead of starting a new
+one, which `reused_existing?` reports. Just like the upload URL, the download URL
+is a pre-signed storage URL and is requested without an authorization header.
 
 ```rb
-created = DeepL.translation_memories.create_export 'YOUR_TM_ID'
+created = client.create_translation_memory_export('YOUR_TM_ID')
 
 puts created.reused_existing?
 # => false
 
-job = DeepL.translation_memories.wait_until_job_done created.job_id
+job = client.wait_until_translation_memory_job_done(created.job_id)
 
 puts job.result.download_url
 # => 'https://...'
 
-DeepL.translation_memories.download_export job, 'export.tmx'
+client.download_translation_memory_export(job, 'export.tmx')
 ```
 
 #### Tracking import and export jobs
 
-`translation_memories.find_job` returns the current status of an import or
-export job, and `translation_memories.wait_until_job_done` polls it every five
-seconds until it finished, raising if the job failed or expired. Pass
-`timeout_s` to give up after a number of seconds instead of waiting forever.
+`get_translation_memory_job` returns the current status of an import or export
+job, and `wait_until_translation_memory_job_done` polls it every five seconds
+until it is completed, raising a `DeepL::Exceptions::Error` with the API's error
+message if the job failed or expired. Pass `timeout_s` to give up after a number
+of seconds instead of waiting forever.
+
+`done?` is `true` once the job is completed, `ok?` is `false` once it failed or
+expired (and `true` while it runs), and `finished?` is `true` for any terminal
+status.
 
 ```rb
-job = DeepL.translation_memories.find_job 'YOUR_JOB_ID'
+job = client.get_translation_memory_job('YOUR_JOB_ID')
 
 puts job.operation
 # => 'import'
 puts job.status
 # => 'processing'
-puts job.finished?
-# => false
+puts [job.done?, job.ok?, job.finished?].inspect
+# => [false, true, false]
 ```
 
 The status is one of `awaiting_input`, `processing`, `completed`, `downloaded`,
@@ -1127,16 +1152,22 @@ The status is one of `awaiting_input`, `processing`, `completed`, `downloaded`,
 
 #### Deleting a translation memory
 
-`translation_memories.destroy` deletes a translation memory and returns its ID.
+`delete_translation_memory` deletes a translation memory. It returns `nil`.
 
 ```rb
-DeepL.translation_memories.destroy 'YOUR_TM_ID'
-# => 'YOUR_TM_ID'
+client.delete_translation_memory('YOUR_TM_ID')
 ```
+
+The deprecated module-level `DeepL.translation_memories` (`list`, `find`,
+`segments`, `destroy`, `create_import`, `upload_file`, `import_from_filepath`,
+`create_export`, `download_export`, `export_to_filepath`, `find_job`,
+`wait_until_job_done`) keeps working unchanged. Its `import_from_filepath` also
+accepts `content_type` and `extra_body_parameters`, and `create_import` accepts
+`extra_body_parameters`.
 
 #### Using a translation memory in translations
 
-Pass the `translation_memory` parameter to `translate` to use a translation
+Pass the `translation_memory` option to `translate_text` to use a translation
 memory. You can pass either a string containing the translation memory ID, or a
 `TranslationMemory` object. Use `translation_memory_threshold` to control the
 minimum matching percentage for fuzzy matches (0-100, recommended minimum of
@@ -1144,25 +1175,25 @@ minimum matching percentage for fuzzy matches (0-100, recommended minimum of
 
 ```rb
 # Using a translation memory ID
-translation = DeepL.translate 'Hello, world!', 'EN', 'DE',
-                              translation_memory: 'YOUR_TM_ID',
-                              translation_memory_threshold: 80
+translation = client.translate_text('Hello, world!', 'EN', 'DE',
+                                    translation_memory: 'YOUR_TM_ID',
+                                    translation_memory_threshold: 80)
 
 # Or using a TranslationMemory object
-translation_memories = DeepL.translation_memories.list
-translation = DeepL.translate 'Hello, world!', 'EN', 'DE',
-                              translation_memory: translation_memories.first
+translation_memories = client.list_translation_memories
+translation = client.translate_text('Hello, world!', 'EN', 'DE',
+                                    translation_memory: translation_memories.first)
 ```
 
 The same `translation_memory` and `translation_memory_threshold` options can be
-passed to document translation via `DeepL.document.upload` (or
-`DeepL.document.translate_document`). The `translation_memory` option accepts
-either a translation memory ID string or a `TranslationMemory` object:
+passed to document translation via `translate_document_upload` (or
+`translate_document`). The `translation_memory` option accepts either a
+translation memory ID string or a `TranslationMemory` object:
 
 ```rb
-handle = DeepL.document.upload 'my_document.docx', 'EN', 'DE', 'my_document.docx',
-                              translation_memory: 'YOUR_TM_ID',
-                              translation_memory_threshold: 80
+handle = client.translate_document_upload('my_document.docx', 'EN', 'DE',
+                                          translation_memory: 'YOUR_TM_ID',
+                                          translation_memory_threshold: 80)
 ```
 
 ### Monitor usage

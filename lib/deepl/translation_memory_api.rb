@@ -4,6 +4,7 @@
 # frozen_string_literal: true
 
 module DeepL
+  # @deprecated Use the translation memory methods of DeepL::Client instead.
   class TranslationMemoryApi # rubocop:disable Metrics/ClassLength
     # Time to wait between two status queries of an import or export job.
     JOB_POLLING_INTERVAL_SECONDS = 5
@@ -19,6 +20,8 @@ module DeepL
     # @param [Hash] options Additional options for the request. Supports `page` (page number for
     #                       pagination, 0-indexed) and `page_size` (number of items per page).
     # @return [Array<DeepL::Resources::TranslationMemory>] The translation memories of the page.
+    #
+    # @deprecated Use DeepL::Client#list_translation_memories instead.
 
     def list(options = {})
       DeepL::Requests::TranslationMemory::List.new(@api, options).request
@@ -31,6 +34,8 @@ module DeepL
     #                                                                         ID or object.
     # @param [Hash] options Additional options for the request.
     # @return [DeepL::Resources::TranslationMemory] The requested translation memory.
+    #
+    # @deprecated Use DeepL::Client#get_translation_memory instead.
 
     def find(translation_memory, options = {})
       DeepL::Requests::TranslationMemory::Find.new(
@@ -52,6 +57,8 @@ module DeepL
     #                       `filter_case_sensitive` (whether the filter is case-sensitive,
     #                       defaults to false).
     # @return [DeepL::Resources::TranslationMemorySegments] The requested page of segments.
+    #
+    # @deprecated Use DeepL::Client#list_translation_memory_segments instead.
 
     def segments(translation_memory, options = {})
       DeepL::Requests::TranslationMemory::Segments.new(
@@ -66,6 +73,8 @@ module DeepL
     #                                                                         ID or object.
     # @param [Hash] options Additional options for the request.
     # @return [String] The ID of the deleted translation memory.
+    #
+    # @deprecated Use DeepL::Client#delete_translation_memory instead.
 
     def destroy(translation_memory, options = {})
       DeepL::Requests::TranslationMemory::Destroy.new(
@@ -87,6 +96,8 @@ module DeepL
     #                                         replace fields of the same name.
     # @param [Hash] additional_headers Additional HTTP headers for the request.
     # @return [DeepL::Resources::TranslationMemoryImport] The job ID and the upload URL.
+    #
+    # @deprecated Use DeepL::Client#create_translation_memory_import instead.
 
     def create_import(file_name, content_length, content_type: nil, display_name: nil,
                       extra_body_parameters: nil, additional_headers: {})
@@ -108,6 +119,8 @@ module DeepL
     # @param [String] content_type MIME type of the file. Must match the `content_type` declared
     #                              when the import job was created.
     # @return [nil]
+    #
+    # @deprecated Use DeepL::Client#upload_translation_memory_file instead.
 
     def upload_file(translation_memory_import, file_content,
                     content_type: Requests::TranslationMemory::UploadFile::DEFAULT_CONTENT_TYPE)
@@ -125,6 +138,8 @@ module DeepL
     # @param [Hash] options Additional options for the request.
     # @return [DeepL::Resources::TranslationMemoryExport] The job ID, and whether the API reused a
     #                                                     previously completed export.
+    #
+    # @deprecated Use DeepL::Client#create_translation_memory_export instead.
 
     def create_export(translation_memory, options = {})
       DeepL::Requests::TranslationMemory::CreateExport.new(
@@ -138,6 +153,8 @@ module DeepL
     # @param [String, DeepL::Resources::TranslationMemoryJob] job Job ID or object.
     # @param [Hash] options Additional options for the request.
     # @return [DeepL::Resources::TranslationMemoryJob] The current status of the job.
+    #
+    # @deprecated Use DeepL::Client#get_translation_memory_job instead.
 
     def find_job(job, options = {})
       DeepL::Requests::TranslationMemory::FindJob.new(@api, extract_job_id(job), options).request
@@ -161,6 +178,8 @@ module DeepL
     #                                 that this is not accurate to the second, the status is only
     #                                 queried every five seconds.
     # @return [DeepL::Resources::TranslationMemoryJob] The finished job.
+    #
+    # @deprecated Use DeepL::Client#wait_until_translation_memory_job_done instead.
 
     def wait_until_job_done(job, options = {}, timeout_s: nil)
       job_status = find_job(job, options)
@@ -188,6 +207,8 @@ module DeepL
     #        the download URL, or the download URL itself.
     # @param [String] output_path Path to the file to write to. Will be overwritten if the file
     #                             already exists.
+    #
+    # @deprecated Use DeepL::Client#download_translation_memory_export instead.
 
     def download_export(job, output_path)
       DeepL::Requests::TranslationMemory::DownloadExport.new(@api, extract_download_url(job),
@@ -212,6 +233,8 @@ module DeepL
     #                                         last; they replace fields of the same name.
     # @return [DeepL::Resources::TranslationMemoryJob] The finished import job, its result carries
     #                                                  the ID of the new translation memory.
+    #
+    # @deprecated Use DeepL::Client#import_translation_memory_from_filepath instead.
 
     def import_from_filepath(input_file_path, display_name: nil, timeout_s: nil,
                              content_type: nil, extra_body_parameters: nil)
@@ -239,6 +262,8 @@ module DeepL
     #                             already exists.
     # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the export to finish.
     # @return [DeepL::Resources::TranslationMemoryJob] The finished export job.
+    #
+    # @deprecated Use DeepL::Client#export_translation_memory_to_filepath instead.
 
     def export_to_filepath(translation_memory, output_path, timeout_s: nil)
       created = create_export(translation_memory)
