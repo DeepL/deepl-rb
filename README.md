@@ -56,7 +56,8 @@ The authentication key is trimmed; an empty key raises `ArgumentError`.
 
 `DeepL::Client` offers text translation (`translate_text`, see [Translate](#translate)) and
 document translation (`translate_document` and its steps, see
-[Translate documents](#translate-documents)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
+[Translate documents](#translate-documents)) and spoken terms (see
+[Spoken terms](#spoken-terms)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
 is deprecated: each method prints a deprecation warning once per process, and it will be
 removed in the next major version.
 
@@ -535,25 +536,28 @@ DeepL.multilingual_glossaries.destroy(glossary.id)
 
 Spoken terms collections improve the transcription of terms such as product
 names. A collection holds one list of terms per language and is managed through
-`DeepL.spoken_terms`. Every method that takes a collection ID also accepts a
+`DeepL::Client`. Every method that takes a collection accepts its ID or a
 `DeepL::Resources::SpokenTerms` object. Terms are passed and returned as arrays
 of strings.
 
 To create a collection, pass a name and one `DeepL::Resources::SpokenTermsEntries`
 (or a hash with `:lang` and `:entries`) per language. Terms are checked like
-glossary terms: `create`, `update` and `replace_term_list` raise `ArgumentError`
-before sending anything if a term is empty or contains a C0 or C1 control
-character (such as a tab or newline), U+2028 or U+2029:
+glossary terms: each term is stripped of surrounding whitespace and sent stripped,
+and `create_spoken_terms`, `update_spoken_terms` and `replace_spoken_terms_list`
+raise `ArgumentError` before sending anything if a term is then empty or contains
+a C0 or C1 control character (such as a tab or newline), U+2028 or U+2029.
+Further options, such as `extra_body_parameters`, are given as additional
+keywords:
 
 ```rb
-spoken_terms = DeepL.spoken_terms.create(
+spoken_terms = client.create_spoken_terms(
   'Product names',
   [DeepL::Resources::SpokenTermsEntries.new('en', ['DeepL', 'webhook'])]
 )
 
 puts spoken_terms.class
 # => DeepL::Resources::SpokenTerms
-puts spoken_terms.id
+puts spoken_terms.spoken_terms_id
 # => 'a74d88fb-ed2a-4943-a664-a4512398b994'
 puts spoken_terms.creation_time.class
 # => Time
@@ -561,52 +565,55 @@ puts spoken_terms.term_lists.first.entry_count
 # => 2
 ```
 
-List all collections or fetch one with `list` and `find`:
+`creation_time` is `nil` if the API returns a malformed timestamp. List all
+collections or fetch one with `list_spoken_terms` and `get_spoken_terms`:
 
 ```rb
-collections = DeepL.spoken_terms.list
-spoken_terms = DeepL.spoken_terms.find 'a74d88fb-ed2a-4943-a664-a4512398b994'
+collections = client.list_spoken_terms
+spoken_terms = client.get_spoken_terms 'a74d88fb-ed2a-4943-a664-a4512398b994'
 ```
 
-`update` renames a collection and/or merges terms into the list of each given
-language. Arguments that are not given are not sent. Further options, such as
-`extra_body_parameters`, are given as additional keywords:
+`update_spoken_terms` renames a collection and/or merges terms into the list of
+each given language. Arguments that are not given are not sent:
 
 ```rb
-DeepL.spoken_terms.update(spoken_terms, name: 'Renamed')
-DeepL.spoken_terms.update(spoken_terms, name: 'Renamed',
-                                        extra_body_parameters: { example_param: 'value' })
-updated = DeepL.spoken_terms.update(
+client.update_spoken_terms(spoken_terms, name: 'Renamed')
+client.update_spoken_terms(spoken_terms, name: 'Renamed',
+                                         extra_body_parameters: { example_param: 'value' })
+updated = client.update_spoken_terms(
   spoken_terms, term_lists: [{ lang: 'en', entries: ['authentication'] }]
 )
 puts updated.term_lists.first.entry_count
 # => 3
 ```
 
-To read the terms of one language, use `entries`:
+To read the terms of one language, use `get_spoken_terms_entries`:
 
 ```rb
-entries = DeepL.spoken_terms.entries(spoken_terms, 'en')
+entries = client.get_spoken_terms_entries(spoken_terms, 'en')
 puts entries.entries.inspect
 # => ["DeepL", "authentication", "webhook"]
 ```
 
-`replace_term_list` replaces the terms of one language, or adds the list if the
-language is new:
+`replace_spoken_terms_list` replaces the terms of one language, or adds the list
+if the language is new. It takes one `DeepL::Resources::SpokenTermsEntries` or a
+hash with `:lang` and `:entries`:
 
 ```rb
-term_list = DeepL.spoken_terms.replace_term_list(spoken_terms, 'en', ['API'])
+term_list = client.replace_spoken_terms_list(
+  spoken_terms, DeepL::Resources::SpokenTermsEntries.new('en', ['API'])
+)
 puts term_list.class
 # => DeepL::Resources::SpokenTermsList
 puts term_list.entry_count
 # => 1
 ```
 
-To delete the list of one language or the entire collection:
+To delete the list of one language or the entire collection (both return `nil`):
 
 ```rb
-DeepL.spoken_terms.destroy_term_list(spoken_terms, 'de')
-DeepL.spoken_terms.destroy(spoken_terms)
+client.delete_spoken_terms_list(spoken_terms, 'de')
+client.delete_spoken_terms(spoken_terms)
 ```
 
 ### Style Rules
