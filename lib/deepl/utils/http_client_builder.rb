@@ -31,10 +31,9 @@ module DeepL
 
       # The proxy is either a URL string, e.g. +http://user:pass@proxy.example:8080+, or a hash
       # with +proxy_addr+ and +proxy_port+. Returns the proxy arguments of +Net::HTTP.new+.
-      def proxy_arguments(proxy) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+      def proxy_arguments(proxy)
         if proxy.is_a?(String) && !proxy.empty?
-          proxy_uri = URI(proxy)
-          raise ArgumentError, "Invalid proxy URL: #{proxy}" if proxy_uri.host.nil?
+          proxy_uri = parse_proxy_url(proxy)
 
           return [proxy_uri.host, proxy_uri.port, decode(proxy_uri.user),
                   decode(proxy_uri.password)]
@@ -45,6 +44,20 @@ module DeepL
         end
 
         [proxy['proxy_addr'], proxy['proxy_port']]
+      end
+
+      # Error messages show the URL without its user info; the URI error, which repeats the URL,
+      # is not kept as cause.
+      def parse_proxy_url(proxy)
+        proxy_uri = begin
+          URI(proxy)
+        rescue URI::InvalidURIError
+          nil
+        end
+        return proxy_uri unless proxy_uri&.host.nil?
+
+        raise ArgumentError, "Invalid proxy URL: #{HTTPClientOptions.redact_proxy(proxy)}",
+              cause: nil
       end
 
       def decode(value)

@@ -164,6 +164,21 @@ describe DeepL::Client do
       expect { http_client(proxy: 'http://proxy.example.test:3128', http_client_options: options) }
         .to raise_error(ArgumentError, /proxy/)
     end
+
+    it 'does not show the proxy credentials in inspect' do
+      client = described_class.new('abc', proxy: 'http://u:secret@proxy.test:3128')
+
+      expect(client.inspect).not_to include('secret')
+      expect(client.send(:api).inspect).not_to include('secret')
+      expect(client.send(:api).http_client_options.inspect).to include('proxy.test:3128')
+    end
+
+    it 'does not show the proxy credentials in the error for an invalid proxy URL' do
+      ['u:secret@proxy.test:3128', 'http://u:secret@proxy test:3128'].each do |proxy|
+        expect { described_class.new('abc', proxy: proxy) }
+          .to raise_error(ArgumentError) { |e| expect(e.full_message).not_to include('secret') }
+      end
+    end
   end
 
   describe '.free_account_auth_key?' do

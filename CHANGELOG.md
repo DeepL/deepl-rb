@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the client options `headers:` (sent with every DeepL API request; a `User-Agent`
   replaces the library's, `Authorization` cannot be replaced), `timeout:` (seconds per
   attempt, default 10, applied to opening, reading and writing) and `proxy:` (a proxy URL,
-  also accepted as the `proxy` of `DeepL::HTTPClientOptions`). The module configuration has
-  `headers` and `timeout` attributes too.
+  also accepted as the `proxy` of `DeepL::HTTPClientOptions`; its user info never shows in
+  `inspect` output or error messages). The module configuration has `headers` and `timeout`
+  attributes too.
 - Added `DeepL::Client.free_account_auth_key?(key)`.
 - Added `DeepL::Exceptions::ConnectionError`, raised for network failures without an HTTP
   response (DNS, connection, TLS, timeout) after the retries; the original exception is its
@@ -136,8 +137,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the HTTP client options set `open_timeout`, and raises `DeepL::Exceptions::ConnectionError`.
 - `DocumentHandle#wait_until_document_translation_finished` polled through the module
   configuration instead of the connection that created the handle.
-- `DocumentHandle#inspect` and `DeepL::Configuration#inspect` showed the auth key. The key
-  is now left out (`[REDACTED]` in the configuration).
+- `DeepL::Configuration#inspect` showed the auth key. It now shows `[REDACTED]`.
 - Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create` and the
   `DeepL.multilingual_glossaries` methods) were sent unchecked, so a term with a tab or newline
   silently corrupted the entries. Such terms now raise `ArgumentError` before any request: a
