@@ -128,6 +128,7 @@ require_relative 'deepl/utils/backoff_timer'
 require_relative 'deepl/utils/time_parser'
 require_relative 'deepl/utils/number_parser'
 require_relative 'deepl/utils/term_validator'
+require_relative 'deepl/utils/document_poller'
 
 # -- Constants
 require_relative 'deepl/constants/base_constant'

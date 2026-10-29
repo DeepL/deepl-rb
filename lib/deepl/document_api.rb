@@ -83,12 +83,13 @@ module DeepL
     end
 
     ##
-    # Translates a document with the DeepL API, `sleep`ing during waiting periods. Returns the
-    # status that was queried last. This can be either because the document translation terminated
-    # (successfully or with an error) or because the maximum number of status requests have been
-    # made. See the parameter `max_doc_status_queries` for details.
+    # Translates a document with the DeepL API, `sleep`ing during waiting periods, and returns
+    # the final status once the translated document is downloaded. Polls until the translation
+    # is done or failed; the deprecated `max_doc_status_queries` limits the number of status
+    # requests if it is configured.
     #
-    # @raise [DocumentTranslationError] If any error occurs during the process.
+    # @raise [DocumentTranslationError] If any error occurs during the process, also when the
+    #   translation fails or is not done after `max_doc_status_queries`.
     #
     # @param [String] input_file Path to the file to be translated
     # @param [String] output_file Path to the file to write to. Will be overwritten if the file
@@ -125,13 +126,23 @@ module DeepL
     private
 
     def translate_document_wait_and_download(document_handle, output_file)
-      doc_status = document_handle.wait_until_document_translation_finished
+      doc_status = Utils::DocumentPoller.wait_until_finished(
+        @api, document_handle, max_queries: @api.configuration.max_doc_status_queries
+      )
+      unless doc_status.successful?
+        raise Exceptions::DocumentTranslationError.new(not_done_message(doc_status),
+                                                       document_handle)
+      end
+
+      download(document_handle, output_file)
+      doc_status
+    end
+
+    def not_done_message(doc_status)
       if doc_status.error?
-        raise Exceptions::DocumentTranslationError.new(
-          "Exception when querying document status #{doc_status.error_message}", document_handle
-        )
+        "Exception when querying document status #{doc_status.error_message}"
       else
-        download(document_handle, output_file)
+        "Document translation not done after max_doc_status_queries (#{doc_status.status})"
       end
     end
   end

@@ -316,6 +316,41 @@ describe DeepL::DocumentApi do
       expect(form_fields(forms.first)).to include('enable_watermark' => 'true')
     end
 
+    it 'returns the final status' do
+      input, output = create_text_document(temp_dir)
+      stub_upload.to_return(upload_reply)
+      stub_status(status_reply('done', billed_characters: 11))
+      stub_request(:post, url('/v2/document/doc-1/result')).to_return(status: 200, body: 'x')
+
+      status = documents.translate_document(input, output, 'EN', 'DE')
+
+      expect([status.class, status.status, status.billed_characters])
+        .to eq([DeepL::Resources::DocumentTranslationStatus, 'done', 11])
+    end
+
+    it 'polls until the translation is done, beyond the former limit of 11 status requests' do
+      allow(DeepL::Utils::DocumentPoller).to receive(:sleep)
+      input, output = create_text_document(temp_dir)
+      stub_upload.to_return(upload_reply)
+      replies = Array.new(12) { status_reply('translating') } << status_reply('done')
+      stub = stub_status(*replies)
+      stub_request(:post, url('/v2/document/doc-1/result')).to_return(status: 200, body: 'x')
+
+      documents.translate_document(input, output, 'EN', 'DE')
+
+      expect(stub).to have_been_requested.times(13)
+    end
+
+    it 'raises DocumentTranslationError instead of downloading after max_doc_status_queries' do
+      DeepL.configuration.max_doc_status_queries = 0
+      input, output = create_text_document(temp_dir)
+      stub_upload.to_return(upload_reply)
+      stub_status(status_reply('translating'))
+
+      expect { documents.translate_document(input, output, 'EN', 'DE') }
+        .to raise_error(DeepL::Exceptions::DocumentTranslationError, /not done/)
+    end
+
     it 'raises IOError and keeps the file when the output file already exists' do
       input, output = create_text_document(temp_dir)
       File.write(output, 'keep me')
