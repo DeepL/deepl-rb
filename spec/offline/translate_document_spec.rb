@@ -16,7 +16,7 @@ describe DeepL::DocumentApi do
 
   def stub_upload
     stub_request(:post, url('/v2/document')).with(
-      headers: { 'Authorization' => 'DeepL-Auth-Key k',
+      headers: { 'Authorization' => json_headers['Authorization'],
                  'Content-Type' => %r{\Amultipart/form-data} }
     )
   end
@@ -427,9 +427,19 @@ describe DeepL::DocumentApi do
     end
   end
 
+  # The client has its own key and server, different from the module configuration, so a
+  # request that falls back to module state hits no stub.
   describe 'DeepL::Client document translation' do
-    let(:client) { DeepL::Client.new(OfflineHelper::AUTH_KEY) }
+    let(:client) { DeepL::Client.new('client-key', server_url: 'https://client.example.test') }
     let(:poller) { DeepL::Utils::DocumentPoller }
+
+    def url(path)
+      "https://client.example.test#{path}"
+    end
+
+    def json_headers
+      { 'Authorization' => 'DeepL-Auth-Key client-key', 'Content-Type' => 'application/json' }
+    end
 
     def stub_download(body = 'Protonenstrahl')
       stub_request(:post, url('/v2/document/doc-1/result'))
