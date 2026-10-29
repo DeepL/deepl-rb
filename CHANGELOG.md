@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- `DeepL.translation_memories.import_from_filepath` accepts `content_type:`, declared in the
+  import job and sent with the upload, and `extra_body_parameters:`.
+  `DeepL.translation_memories.create_import` accepts `extra_body_parameters:`.
 - Added `DeepL::Resources::TranslationMemoryJob#done?` (the status is `completed`) and `#ok?`
   (the status is not `failed` or `expired`, also true while the job runs). `finished?` stays
   true for any terminal status.

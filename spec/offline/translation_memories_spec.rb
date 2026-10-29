@@ -138,6 +138,20 @@ describe DeepL::TranslationMemoryApi do
     end
   end
 
+  describe '#create_import with extra_body_parameters' do
+    it 'adds them to the request body last' do
+      stub_request(:post, url('/v3/translation_memories/import'))
+        .with(body: { source_file: { file_name: 'a.tmx', content_length: 12 },
+                      parameters: { display_name: 'replaced' }, extra: 1 })
+        .to_return(reply({ job_id: 'j-1', upload_url: upload_url }, 201))
+
+      memories.create_import('a.tmx', 12, display_name: 'My memory',
+                                          extra_body_parameters: {
+                                            parameters: { display_name: 'replaced' }, extra: 1
+                                          })
+    end
+  end
+
   describe '#upload_file' do
     it 'sends the content as the PUT body without credentials' do
       stub_request(:put, upload_url)
@@ -301,6 +315,22 @@ describe DeepL::TranslationMemoryApi do
       job = memories.import_from_filepath(path, display_name: 'imported')
 
       expect(job.finished?).to be(true)
+    end
+
+    it 'imports a file with a content type and extra body parameters' do # rubocop:disable RSpec/ExampleLength
+      path = File.join(temp_dir, 'memory.tmx')
+      File.write(path, Fixtures::EXAMPLE_TMX)
+      stub_request(:post, url('/v3/translation_memories/import'))
+        .with(body: { source_file: { file_name: 'memory.tmx',
+                                     content_length: Fixtures::EXAMPLE_TMX.bytesize,
+                                     content_type: 'text/xml' }, extra: 'x' })
+        .to_return(reply({ job_id: 'j-1', upload_url: upload_url }, 201))
+      stub_request(:put, upload_url).with(headers: { 'Content-Type' => 'text/xml' })
+                                    .to_return(status: 200)
+      stub_job(reply(job_json('completed')))
+
+      memories.import_from_filepath(path, content_type: 'text/xml',
+                                          extra_body_parameters: { extra: 'x' })
     end
 
     it 'raises Error for a missing import file without sending a request' do

@@ -83,14 +83,17 @@ module DeepL
     # @param [String, nil] content_type MIME type of the file, defaults to "application/xml".
     # @param [String, nil] display_name Name of the resulting translation memory, defaults to the
     #                                   file name.
+    # @param [Hash, nil] extra_body_parameters Fields added to the request body last; they
+    #                                         replace fields of the same name.
     # @param [Hash] additional_headers Additional HTTP headers for the request.
     # @return [DeepL::Resources::TranslationMemoryImport] The job ID and the upload URL.
 
     def create_import(file_name, content_length, content_type: nil, display_name: nil,
-                      additional_headers: {})
+                      extra_body_parameters: nil, additional_headers: {})
+      options = { content_type: content_type, display_name: display_name,
+                  extra_body_parameters: extra_body_parameters }.compact
       DeepL::Requests::TranslationMemory::CreateImport.new(
-        @api, file_name, content_length,
-        { content_type: content_type, display_name: display_name }.compact, additional_headers
+        @api, file_name, content_length, options, additional_headers
       ).request
     end
 
@@ -203,18 +206,24 @@ module DeepL
     # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the import to finish.
     #                                 Note that the API keeps reporting `awaiting_input` for a
     #                                 while after the upload, so allow for a generous timeout.
+    # @param [String, nil] content_type MIME type of the file, declared in the import job and sent
+    #                                   with the upload. Defaults to "application/xml".
+    # @param [Hash, nil] extra_body_parameters Fields added to the body of the import job request
+    #                                         last; they replace fields of the same name.
     # @return [DeepL::Resources::TranslationMemoryJob] The finished import job, its result carries
     #                                                  the ID of the new translation memory.
 
-    def import_from_filepath(input_file_path, display_name: nil, timeout_s: nil)
+    def import_from_filepath(input_file_path, display_name: nil, timeout_s: nil,
+                             content_type: nil, extra_body_parameters: nil)
       unless File.exist?(input_file_path)
         raise Exceptions::Error, "No file found at #{input_file_path}"
       end
 
       file_content = File.binread(input_file_path)
       created = create_import(File.basename(input_file_path), file_content.bytesize,
-                              display_name: display_name)
-      upload_file(created, file_content)
+                              content_type: content_type, display_name: display_name,
+                              extra_body_parameters: extra_body_parameters)
+      upload_file(created, file_content, content_type: content_type)
       wait_until_job_done(created.job_id, timeout_s: timeout_s)
     end
 
