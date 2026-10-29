@@ -81,7 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Time` when the timestamp has no offset and `nil` when it is malformed.
 - Added `DeepL::AdminClient` for the Admin API. It must be created with an admin
   API key, accepts the options of `DeepL::Client` and supports managing developer keys
-  (`create_developer_key`, `get_developer_keys`, `deactivate_developer_key`, `rename_developer_key`,
+  (`create_developer_key`, `list_developer_keys`, `deactivate_developer_key`, `rename_developer_key`,
   `set_developer_key_usage_limits`) and retrieving usage analytics
   (`get_usage_analytics`, `get_custom_tag_usage_analytics`).
   `set_developer_key_usage_limits` changes only the given limits, including

@@ -1266,7 +1266,7 @@ admin_client = DeepL::AdminClient.new('YOUR_ADMIN_KEY')
 key = admin_client.create_developer_key('Staging Team Key')
 puts "Created #{key.label} (#{key.key_id})"
 
-admin_client.get_developer_keys.each do |developer_key|
+admin_client.list_developer_keys.each do |developer_key|
   puts "#{developer_key.label}: deactivated=#{developer_key.deactivated?}"
 end
 

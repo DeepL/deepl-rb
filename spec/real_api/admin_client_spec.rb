@@ -22,7 +22,7 @@ describe DeepL::AdminClient do
 
   def key_listed?(client, key_id)
     5.times do |attempt|
-      return true if client.get_developer_keys.map(&:key_id).include?(key_id)
+      return true if client.list_developer_keys.map(&:key_id).include?(key_id)
 
       sleep 1 unless attempt == 4
     end

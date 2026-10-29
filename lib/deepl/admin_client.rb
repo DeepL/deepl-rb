@@ -104,7 +104,7 @@ module DeepL
     # Retrieves all developer keys of the organization, including deactivated ones.
     #
     # @return [Array<DeepL::Resources::DeveloperKey>]
-    def get_developer_keys # rubocop:disable Naming/AccessorMethodName
+    def list_developer_keys
       Requests::Admin::ListDeveloperKeys.new(api).request
     end
 

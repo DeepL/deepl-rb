@@ -42,8 +42,8 @@ describe DeepL::AdminClient do
                                                            .to_return(reply([]))
         stub_request(:get, 'http://localhost:3000/v2/admin/developer-keys').to_return(reply([]))
 
-        client.get_developer_keys
-        described_class.new(admin_key, server_url: 'http://localhost:3000').get_developer_keys
+        client.list_developer_keys
+        described_class.new(admin_key, server_url: 'http://localhost:3000').list_developer_keys
       ensure
         %w[DEEPL_AUTH_KEY DEEPL_SERVER_URL].each { |name| ENV.delete(name) }
         ENV.update(env)
@@ -54,7 +54,7 @@ describe DeepL::AdminClient do
       stub_request(:get, url('/v2/admin/developer-keys')).with(headers: admin_headers)
                                                          .to_return(reply([]))
 
-      described_class.new("  #{admin_key}\n").get_developer_keys
+      described_class.new("  #{admin_key}\n").list_developer_keys
     end
 
     it 'sends the app info and the configured headers' do
@@ -66,7 +66,7 @@ describe DeepL::AdminClient do
       described_class.new(admin_key, send_platform_info: false, headers: { 'X-Custom' => 'v' },
                                      app_info: DeepL::AppInfo.new(app_name: 'my-app',
                                                                   app_version: '1.2'))
-                     .get_developer_keys
+                     .list_developer_keys
     end
 
     it 'applies the HTTP client options' do
@@ -377,7 +377,7 @@ describe DeepL::AdminClient do
     end
   end
 
-  describe '#get_developer_keys' do
+  describe '#list_developer_keys' do
     it 'parses all keys and retries a 500 reply' do
       deactivated = developer_key_json.merge(is_deactivated: true,
                                              deactivated_time: '2025-07-09T08:15:29Z')
@@ -385,7 +385,7 @@ describe DeepL::AdminClient do
              .with(body: nil, headers: admin_headers)
              .to_return(reply({}, 500), reply([developer_key_json, deactivated]))
 
-      keys = client.get_developer_keys
+      keys = client.list_developer_keys
 
       expect(stub).to have_been_requested.twice
       expect(keys.map(&:deactivated?)).to eq([false, true])
@@ -401,7 +401,7 @@ describe DeepL::AdminClient do
               developer_key_json.merge(key_id: 'second', label: 'ok', is_deactivated: nil)]
       stub_request(:get, url('/v2/admin/developer-keys')).to_return(reply(body))
 
-      keys = client.get_developer_keys
+      keys = client.list_developer_keys
 
       expect(keys.map(&:label)).to eq(['', 'ok'])
       expect(keys.first).to have_attributes(key_id: key_id, creation_time: nil,
@@ -414,7 +414,7 @@ describe DeepL::AdminClient do
     it 'raises when the list is not an array' do
       stub_request(:get, url('/v2/admin/developer-keys')).to_return(reply(developer_key_json))
 
-      expect { client.get_developer_keys }.to raise_error(DeepL::Exceptions::Error)
+      expect { client.list_developer_keys }.to raise_error(DeepL::Exceptions::Error)
     end
 
     it 'raises when an analytics response is not a JSON object' do
@@ -465,6 +465,6 @@ describe DeepL::AdminClient do
     stub_request(:get, url('/v2/admin/developer-keys'))
       .to_return(reply({ message: 'Forbidden' }, 403))
 
-    expect { client.get_developer_keys }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
+    expect { client.list_developer_keys }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
   end
 end
