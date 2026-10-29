@@ -245,6 +245,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
+  proxy, SSL verification, certificate file and timeouts set with `proxy:` or
+  `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API
+  connection, still without the `Authorization` header.
 - A malformed timestamp in a translation memory, segment, import or job response raised a raw
   `ArgumentError`, and a timestamp without a zone offset was read as local time. A malformed
   timestamp is now `nil`, and one without an offset is read as UTC.

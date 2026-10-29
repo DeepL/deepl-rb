@@ -182,4 +182,36 @@ describe 'DeepL::Client translation memories' do
         .to raise_error(DeepL::Exceptions::Error, /timeout of 0s exceeded/)
     end
   end
+
+  describe 'storage connection' do
+    it 'uses the proxy of the client for the pre-signed URLs' do
+      client = DeepL::Client.new('client-key', server_url: 'https://client.example.test',
+                                               proxy: 'http://proxy.example.test:8080')
+      stub_request(:put, upload_url).to_return(status: 200)
+
+      expect(Net::HTTP).to receive(:new)
+        .with('storage.example.test', 443, 'proxy.example.test', 8080, nil, nil)
+        .and_call_original
+
+      client.upload_translation_memory_file(upload_url, 'tmx')
+    end
+
+    it 'applies the timeouts and SSL verification of the http_client_options' do # rubocop:disable RSpec/ExampleLength
+      options = DeepL::HTTPClientOptions.new({}, nil, enable_ssl_verification: false,
+                                                      read_timeout: 33)
+      client = DeepL::Client.new('client-key', server_url: 'https://client.example.test',
+                                               http_client_options: options)
+      connections = []
+      allow(Net::HTTP).to receive(:new).and_wrap_original do |original, *args|
+        original.call(*args).tap { |connection| connections << connection }
+      end
+      stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
+
+      client.download_translation_memory_export(download_url, File::NULL)
+
+      expect(connections.last)
+        .to have_attributes(address: 'storage.example.test', read_timeout: 33,
+                            verify_mode: OpenSSL::SSL::VERIFY_NONE)
+    end
+  end
 end

@@ -143,15 +143,20 @@ module DeepL
 
       # Per attempt, the timeout is the configured timeout or, if longer, the time until the
       # backoff deadline. Timeouts given in HTTPClientOptions take precedence.
-      def apply_request_timeout(client) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity
+      def apply_request_timeout(client) # rubocop:disable Metrics/AbcSize
         timeout = api.configuration.timeout
         return if timeout.nil? || !client.respond_to?(:read_timeout=)
 
         timeout = [timeout.to_f, @backoff_timer.time_until_deadline].max
-        options = client.equal?(api.http_client) ? api.http_client_options : nil
+        options = http_client_options_of(client)
         client.open_timeout = timeout if options&.open_timeout.nil?
         client.read_timeout = timeout if options&.read_timeout.nil?
         client.write_timeout = timeout if options&.write_timeout.nil?
+      end
+
+      # The HTTPClientOptions +client+ was built with, if any.
+      def http_client_options_of(client)
+        client.equal?(api.http_client) ? api.http_client_options : nil
       end
 
       def wait_before_retry(error, files_to_reset)

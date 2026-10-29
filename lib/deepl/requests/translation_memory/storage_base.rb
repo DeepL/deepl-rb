@@ -10,7 +10,8 @@ module DeepL
       # Common behaviour of the requests to a pre-signed storage URL handed out by the API, such
       # as a translation memory upload or download URL. Those URLs point outside of the DeepL
       # API, so they are requested over their own connection and the DeepL `Authorization` header
-      # is deliberately not sent.
+      # is deliberately not sent. That connection uses the same proxy, SSL and timeout options as
+      # the API connection.
 
       class StorageBase < DeepL::Requests::Base
         attr_reader :storage_url
@@ -27,11 +28,21 @@ module DeepL
         private
 
         def http_client
-          @http_client ||= begin
-            client = Net::HTTP.new(uri.host, uri.port)
-            client.use_ssl = uri.scheme == 'https'
-            client
-          end
+          @http_client ||= if api.http_client_options
+                             Utils::HTTPClientBuilder.build(storage_url, api.http_client_options)
+                           else
+                             default_http_client
+                           end
+        end
+
+        def http_client_options_of(_client)
+          api.http_client_options
+        end
+
+        def default_http_client
+          client = Net::HTTP.new(uri.host, uri.port)
+          client.use_ssl = uri.scheme == 'https'
+          client
         end
 
         def uri
