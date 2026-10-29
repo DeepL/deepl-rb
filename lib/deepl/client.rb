@@ -184,6 +184,95 @@ module DeepL
       nil
     end
 
+    ##
+    # Creates a spoken terms collection, which improves the transcription of the given terms.
+    #
+    # @param [String] name Name of the collection.
+    # @param [Array<DeepL::Resources::SpokenTermsEntries, Hash>] term_lists One entry per
+    #   language. A hash needs the keys +:lang+ and +:entries+ (an array of terms).
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::SpokenTerms] The created collection.
+    # @raise [ArgumentError] If a term is empty after stripping surrounding whitespace or
+    #   contains a control character.
+    def create_spoken_terms(name, term_lists, **options)
+      Requests::SpokenTerms::Create.new(api, name, term_lists, options).request
+    end
+
+    ##
+    # Lists all spoken terms collections.
+    #
+    # @return [Array<DeepL::Resources::SpokenTerms>]
+    def list_spoken_terms
+      Requests::SpokenTerms::List.new(api).request
+    end
+
+    ##
+    # Retrieves a spoken terms collection.
+    #
+    # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
+    # @return [DeepL::Resources::SpokenTerms]
+    # @raise [DeepL::Exceptions::NotFound] If the collection does not exist.
+    def get_spoken_terms(spoken_terms)
+      Requests::SpokenTerms::Find.new(api, spoken_terms).request
+    end
+
+    ##
+    # Renames a collection and/or merges terms into its lists. Arguments left +nil+ are not
+    # sent; without any, an empty object is sent.
+    #
+    # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
+    # @param [String, nil] name New name.
+    # @param [Array<DeepL::Resources::SpokenTermsEntries, Hash>, nil] term_lists Terms to merge
+    #   into the list of each language; a new language adds a list.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::SpokenTerms] The updated collection.
+    # @raise [ArgumentError] If a term is empty after stripping or contains a control character.
+    def update_spoken_terms(spoken_terms, name: nil, term_lists: nil, **options)
+      Requests::SpokenTerms::Update.new(api, spoken_terms, name, term_lists, options).request
+    end
+
+    ##
+    # Deletes a spoken terms collection.
+    #
+    # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
+    # @return [nil]
+    def delete_spoken_terms(spoken_terms)
+      Requests::SpokenTerms::Destroy.new(api, spoken_terms).request
+    end
+
+    ##
+    # Retrieves the terms of one language of a collection.
+    #
+    # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
+    # @param [String] lang Language code, for example +'en'+.
+    # @return [DeepL::Resources::SpokenTermsEntries]
+    def get_spoken_terms_entries(spoken_terms, lang)
+      Requests::SpokenTerms::Entries.new(api, spoken_terms, lang).request
+    end
+
+    ##
+    # Replaces the terms of one language, or adds the list if the language is new.
+    #
+    # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
+    # @param [DeepL::Resources::SpokenTermsEntries, Hash] entries The language and its terms; a
+    #   hash needs the keys +:lang+ and +:entries+.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::SpokenTermsList]
+    # @raise [ArgumentError] If a term is empty after stripping or contains a control character.
+    def replace_spoken_terms_list(spoken_terms, entries, **options)
+      Requests::SpokenTerms::ReplaceTermList.new(api, spoken_terms, entries, options).request
+    end
+
+    ##
+    # Deletes the term list of one language of a collection.
+    #
+    # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
+    # @param [String] lang Language code, for example +'en'+.
+    # @return [nil]
+    def delete_spoken_terms_list(spoken_terms, lang)
+      Requests::SpokenTerms::DestroyTermList.new(api, spoken_terms, lang).request
+    end
+
     def inspect
       "#<#{self.class.name} server_url=#{configuration.host}>"
     end

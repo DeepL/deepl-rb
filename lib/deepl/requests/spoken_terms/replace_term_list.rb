@@ -9,17 +9,16 @@ module DeepL
       class ReplaceTermList < Base
         include Helpers
 
-        attr_reader :id, :lang, :entries
+        attr_reader :id, :entries
 
-        def initialize(api, id, lang, entries, options = {})
+        def initialize(api, id, entries, options = {})
           super(api, options)
           @id = spoken_terms_id(id)
-          @lang = lang
           @entries = entries
         end
 
         def request
-          payload = { lang: lang, entries: entries_to_string(entries) }
+          payload = term_list_payload(entries)
           build_term_list(*execute_request_with_retries(put_request(payload)))
         end
 
@@ -34,7 +33,7 @@ module DeepL
         end
 
         def path
-          "spoken-terms/#{id}/term-lists"
+          spoken_terms_path(id, 'term-lists')
         end
       end
     end

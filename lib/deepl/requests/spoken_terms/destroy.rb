@@ -11,14 +11,14 @@ module DeepL
 
         attr_reader :id
 
-        def initialize(api, id, options = {})
-          super(api, options)
+        def initialize(api, id)
+          super(api)
           @id = spoken_terms_id(id)
         end
 
         def request
           execute_request_with_retries(delete_request)
-          id
+          nil
         end
 
         def to_s
@@ -28,7 +28,7 @@ module DeepL
         private
 
         def path
-          "spoken-terms/#{id}"
+          spoken_terms_path(id)
         end
       end
     end

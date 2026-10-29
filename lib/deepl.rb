@@ -156,7 +156,6 @@ require_relative 'deepl/configuration'
 require_relative 'deepl/document_api'
 require_relative 'deepl/glossary_api'
 require_relative 'deepl/multilingual_glossary_api'
-require_relative 'deepl/spoken_terms_api'
 require_relative 'deepl/style_profile_api'
 require_relative 'deepl/style_rule_api'
 require_relative 'deepl/translation_memory_api'
@@ -265,17 +264,6 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     deprecated(:multilingual_glossaries, 'DeepL::Client')
     ensure_configured
     MultilingualGlossaryApi.new(module_api, options)
-  end
-
-  ##
-  # Manages spoken terms collections, which improve the transcription of the given terms.
-  #
-  # @return [DeepL::SpokenTermsApi]
-  # @deprecated Use DeepL::Client instead.
-  def spoken_terms(options = {})
-    deprecated(:spoken_terms, 'DeepL::Client')
-    ensure_configured
-    SpokenTermsApi.new(module_api, options)
   end
 
   ##

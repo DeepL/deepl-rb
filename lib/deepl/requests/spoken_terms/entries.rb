@@ -11,8 +11,8 @@ module DeepL
 
         attr_reader :id, :lang
 
-        def initialize(api, id, lang, options = {})
-          super(api, options)
+        def initialize(api, id, lang)
+          super(api)
           @id = spoken_terms_id(id)
           @lang = lang
         end
@@ -27,10 +27,6 @@ module DeepL
 
         private
 
-        def get_request # rubocop:disable Naming/AccessorMethodName
-          Net::HTTP::Get.new(uri.request_uri, add_json_content_type(headers))
-        end
-
         def build_entries(request, response)
           data = JSON.parse(response.body)
           Resources::SpokenTermsEntries.new(data['lang'], entries_from_string(data['entries']),
@@ -42,7 +38,7 @@ module DeepL
         end
 
         def path
-          "spoken-terms/#{id}/entries"
+          spoken_terms_path(id, 'entries')
         end
       end
     end

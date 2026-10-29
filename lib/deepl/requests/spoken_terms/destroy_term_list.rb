@@ -11,15 +11,15 @@ module DeepL
 
         attr_reader :id, :lang
 
-        def initialize(api, id, lang, options = {})
-          super(api, options)
+        def initialize(api, id, lang)
+          super(api)
           @id = spoken_terms_id(id)
           @lang = lang
         end
 
         def request
           execute_request_with_retries(delete_request)
-          lang
+          nil
         end
 
         def to_s
@@ -28,16 +28,12 @@ module DeepL
 
         private
 
-        def delete_request
-          Net::HTTP::Delete.new(uri.request_uri, add_json_content_type(headers))
-        end
-
         def uri
           @uri ||= URI("#{host}/v3/#{path}?#{URI.encode_www_form(lang: lang)}")
         end
 
         def path
-          "spoken-terms/#{id}/term-lists"
+          spoken_terms_path(id, 'term-lists')
         end
       end
     end

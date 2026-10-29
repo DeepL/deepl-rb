@@ -62,11 +62,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keywords left `nil` are not sent; an empty string clears `description` or `industry`,
   and an empty array unlinks all components of that kind. Please refer to the README for
   usage instructions.
-- Added support for spoken terms collections (`/v3/spoken-terms`) via
-  `DeepL.spoken_terms`, which exposes `create`, `list`, `find`, `update`, `entries`,
-  `replace_term_list`, `destroy`, and `destroy_term_list`. Terms are passed and returned
-  as arrays of strings and are checked like glossary terms before they are sent. Please
-  refer to the README for usage instructions.
+- Added support for spoken terms collections (`/v3/spoken-terms`) to `DeepL::Client`:
+  `create_spoken_terms(name, term_lists, **options)`, `list_spoken_terms`,
+  `get_spoken_terms(spoken_terms)`, `update_spoken_terms(spoken_terms, name:, term_lists:,
+  **options)`, `delete_spoken_terms(spoken_terms)`, `get_spoken_terms_entries(spoken_terms,
+  lang)`, `replace_spoken_terms_list(spoken_terms, entries, **options)` and
+  `delete_spoken_terms_list(spoken_terms, lang)`. A collection is given as its ID or a
+  `DeepL::Resources::SpokenTerms` (`spoken_terms_id`, `name`, `creation_time`, `term_lists`);
+  the terms of a language as a `DeepL::Resources::SpokenTermsEntries` or a hash with `:lang`
+  and `:entries`. Terms are arrays of strings and are checked like glossary terms before they
+  are sent. The delete methods return `nil`. Please refer to the README for usage
+  instructions.
 - Added `DeepL::AdminClient` for the Admin API. It must be created with an admin
   API key, accepts the options of `DeepL::Client` and supports managing developer keys
   (`create_developer_key`, `get_developer_keys`, `deactivate_developer_key`, `rename_developer_key`,
@@ -136,8 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   next major version: `DeepL.configure`, `DeepL.configuration`, `DeepL.api`, `DeepL.translate`,
   `DeepL.rephrase`, `DeepL.correct`, `DeepL.usage`, `DeepL.languages`,
   `DeepL.languages_for_resource`, `DeepL.language_resources`, `DeepL.document`,
-  `DeepL.glossaries`, `DeepL.multilingual_glossaries`, `DeepL.spoken_terms`,
-  `DeepL.style_rules`, `DeepL.style_profiles`, `DeepL.translation_memories`,
+  `DeepL.glossaries`, `DeepL.multilingual_glossaries`, `DeepL.style_rules`,
+  `DeepL.style_profiles`, `DeepL.translation_memories`,
   `DeepL.with_session` and `DeepL.http_client`. Each prints a warning once per process and
   keeps working unchanged.
 - `DeepL::Configuration#version=` (the API version is part of each endpoint).

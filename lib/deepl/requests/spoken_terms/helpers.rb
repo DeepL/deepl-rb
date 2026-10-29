@@ -12,9 +12,13 @@ module DeepL
         private
 
         def spoken_terms_id(spoken_terms)
-          return spoken_terms.id if spoken_terms.is_a?(DeepL::Resources::SpokenTerms)
+          return spoken_terms.spoken_terms_id if spoken_terms.is_a?(DeepL::Resources::SpokenTerms)
 
           spoken_terms.to_s
+        end
+
+        def spoken_terms_path(id, suffix = nil)
+          ["spoken-terms/#{id}", suffix].compact.join('/')
         end
 
         def entries_to_string(entries)
@@ -25,17 +29,19 @@ module DeepL
           (entries || '').split("\n").reject(&:empty?)
         end
 
-        # Accepts SpokenTermsEntries objects or hashes with +:lang+ and +:entries+.
         def term_lists_payload(term_lists)
-          term_lists.map do |term_list|
-            lang, entries = if term_list.is_a?(DeepL::Resources::SpokenTermsEntries)
-                              [term_list.lang, term_list.entries]
-                            else
-                              [term_list[:lang] || term_list['lang'],
-                               term_list[:entries] || term_list['entries']]
-                            end
-            { lang: lang, entries: entries_to_string(entries) }
-          end
+          term_lists.map { |term_list| term_list_payload(term_list) }
+        end
+
+        # Accepts a SpokenTermsEntries object or a hash with +:lang+ and +:entries+.
+        def term_list_payload(term_list)
+          lang, entries = if term_list.is_a?(DeepL::Resources::SpokenTermsEntries)
+                            [term_list.lang, term_list.entries]
+                          else
+                            [term_list[:lang] || term_list['lang'],
+                             term_list[:entries] || term_list['entries']]
+                          end
+          { lang: lang, entries: entries_to_string(entries) }
         end
 
         def build_spoken_terms(request, response)
@@ -44,6 +50,15 @@ module DeepL
 
         def uri
           @uri ||= URI("#{host}/v3/#{path}")
+        end
+
+        # GET and DELETE send no body.
+        def get_request # rubocop:disable Naming/AccessorMethodName
+          Net::HTTP::Get.new(uri.request_uri, add_json_content_type(headers))
+        end
+
+        def delete_request
+          Net::HTTP::Delete.new(uri.request_uri, add_json_content_type(headers))
         end
       end
     end

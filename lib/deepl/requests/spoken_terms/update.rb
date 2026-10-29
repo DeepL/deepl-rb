@@ -32,7 +32,7 @@ module DeepL
         private
 
         def path
-          "spoken-terms/#{id}"
+          spoken_terms_path(id)
         end
       end
     end

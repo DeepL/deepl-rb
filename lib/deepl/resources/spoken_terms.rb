@@ -21,8 +21,9 @@ module DeepL
       end
     end
 
-    # The terms of one language. Used as input for +create+, +update+ and +replace_term_list+,
-    # and returned by +entries+.
+    # The terms of one language. Used as input for +create_spoken_terms+,
+    # +update_spoken_terms+ and +replace_spoken_terms_list+, and returned by
+    # +get_spoken_terms_entries+.
     class SpokenTermsEntries < Base
       attr_reader :lang, :entries
 
@@ -39,12 +40,12 @@ module DeepL
 
     # A spoken terms collection.
     class SpokenTerms < Base
-      attr_reader :id, :name, :creation_time, :term_lists
+      attr_reader :spoken_terms_id, :name, :creation_time, :term_lists
 
       def initialize(spoken_terms, *args)
         super(*args)
 
-        @id = spoken_terms['spoken_terms_id']
+        @spoken_terms_id = spoken_terms['spoken_terms_id']
         @name = spoken_terms['name']
         @creation_time = Utils::TimeParser.parse_optional_time(spoken_terms['creation_time'])
         @term_lists = (spoken_terms['term_lists'] || []).map do |term_list|
@@ -53,7 +54,7 @@ module DeepL
       end
 
       def to_s
-        "#{id} - #{name}"
+        "#{spoken_terms_id} - #{name}"
       end
     end
   end
