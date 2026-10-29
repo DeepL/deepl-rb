@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepL::Resources::TranslationMemoryJob#done?` (the status is `completed`) and `#ok?`
+  (the status is not `failed` or `expired`, also true while the job runs). `finished?` stays
+  true for any terminal status.
 - Added style rule lists (`/v3/style_rules`) to `DeepL::Client`:
   `get_all_style_rules(page: nil, page_size: nil, detailed: nil)`,
   `create_style_rule(name, language, configured_rules: nil, custom_instructions: nil,

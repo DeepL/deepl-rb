@@ -110,6 +110,26 @@ module DeepL
         result ? result.error? : false
       end
 
+      ##
+      # Checks if the job succeeded: its status is +completed+. Unlike +finished?+, this is
+      # false for a failed or expired job.
+      #
+      # @return [Boolean]
+
+      def done?
+        status == TranslationMemoryJobResult::STATUS_COMPLETED
+      end
+
+      ##
+      # Checks if the job has not failed: its status is not +failed+ or +expired+. Also true
+      # while the job is still running.
+      #
+      # @return [Boolean]
+
+      def ok?
+        !error?
+      end
+
       def error_message
         result&.error_message
       end

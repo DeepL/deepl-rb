@@ -171,19 +171,20 @@ describe DeepL::TranslationMemoryApi do
     end
 
     {
-      'awaiting_input' => [false, true, false],
-      'processing' => [false, false, false],
-      'completed' => [true, false, false],
-      'downloaded' => [true, false, false],
-      'failed' => [true, false, true],
-      'expired' => [true, false, true]
+      'awaiting_input' => [false, true, false, false, true],
+      'processing' => [false, false, false, false, true],
+      'completed' => [true, false, false, true, true],
+      'downloaded' => [true, false, false, false, true],
+      'failed' => [true, false, true, false, false],
+      'expired' => [true, false, true, false, false]
     }.each do |status, flags|
-      it "parses the #{status} status as finished, awaiting input, error: #{flags.inspect}" do
+      it "parses the #{status} status as finished, awaiting input, error, done, ok: " \
+         "#{flags.inspect}" do
         stub_job(reply(job_json(status)))
 
         job = memories.find_job('j-1')
 
-        expect([job.finished?, job.awaiting_input?, job.error?]).to eq(flags)
+        expect([job.finished?, job.awaiting_input?, job.error?, job.done?, job.ok?]).to eq(flags)
       end
     end
 
