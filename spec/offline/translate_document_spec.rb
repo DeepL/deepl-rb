@@ -151,6 +151,13 @@ describe DeepL::DocumentApi do
       expect(form_fields(sent_form(glossary: glossary))).to include('glossary_id' => 'g-ml')
     end
 
+    it 'treats glossary_id: nil as unset next to glossary or glossary_ids' do
+      expect(form_fields(sent_form(glossary: 'g-1', glossary_id: nil)))
+        .to include('glossary_id' => 'g-1')
+      expect(form_fields(sent_form(glossary_ids: %w[g-1 g-2], glossary_id: nil)))
+        .to include('glossary_ids' => 'g-1,g-2').and(satisfy { |f| !f.key?('glossary_id') })
+    end
+
     it 'lets extra_body_parameters add a field and override an existing one' do
       form = sent_form(formality: 'more', extra_body_parameters: { formality: 'less', beta: true })
 

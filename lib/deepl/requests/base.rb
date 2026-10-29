@@ -275,13 +275,13 @@ module DeepL
       # @return [String, nil] The glossary ID, or nil if the +glossary+ option is unset.
       # @raise [ArgumentError] If +glossary+ is combined with +glossary_id+.
       def build_glossary_param
-        warn_glossary_id_deprecated if option?(:glossary_id)
+        warn_glossary_id_deprecated unless option(:glossary_id).nil?
         return nil unless option?(:glossary)
 
         glossary = delete_option(:glossary)
         return nil if glossary.nil?
 
-        if option?(:glossary_id)
+        unless option(:glossary_id).nil?
           raise ArgumentError,
                 'The `glossary` option cannot be used together with the `glossary_id` option'
         end
@@ -315,7 +315,7 @@ module DeepL
 
       def validate_no_single_glossary!
         single = if !option(:glossary).nil? then 'glossary'
-                 elsif option?(:glossary_id) then 'glossary_id'
+                 elsif !option(:glossary_id).nil? then 'glossary_id'
                  end
         return unless single
 

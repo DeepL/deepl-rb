@@ -132,6 +132,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `translation_memory: nil` sent an empty `translation_memory_id`, and
   `translation_memory_threshold: nil` sent `null` (text) or an empty field (documents). Both
   are now treated as unset and not sent.
+- Document translation (`DeepL.document.upload` and `translate_document`) treated an option
+  set to `nil` as set: `glossary_ids` with `glossary_id: nil` raised `ArgumentError`. Options
+  set to `nil` are now treated as unset and not sent, as in text translation.
 - A `custom_instructions` string was split at commas into several instructions. It is now
   sent as one instruction.
 - `DeepL.configure { |c| c.auth_key = '...:fx' }` kept `https://api.deepl.com`, because the
