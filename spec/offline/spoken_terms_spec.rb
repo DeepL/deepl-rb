@@ -62,6 +62,21 @@ describe 'DeepL::Client spoken terms' do
     end
   end
 
+  describe 'SpokenTerms#creation_time' do
+    it 'is nil for a malformed timestamp' do
+      expect(collection(collection_json.merge(creation_time: 'yesterday')).creation_time).to be_nil
+    end
+
+    it 'reads a timestamp without an offset as UTC, not local time' do
+      original_tz = ENV.fetch('TZ', nil)
+      ENV['TZ'] = 'America/New_York'
+      expect(collection(collection_json.merge(creation_time: '2026-10-23T17:15:53')).creation_time)
+        .to eq(Time.utc(2026, 10, 23, 17, 15, 53))
+    ensure
+      ENV['TZ'] = original_tz
+    end
+  end
+
   describe 'term check' do
     it 'strips surrounding whitespace from each term before sending it' do
       stub_request(:post, url('/v3/spoken-terms'))

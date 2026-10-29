@@ -47,7 +47,7 @@ module DeepL
 
         @spoken_terms_id = spoken_terms['spoken_terms_id']
         @name = spoken_terms['name']
-        @creation_time = Utils::TimeParser.parse_optional_time(spoken_terms['creation_time'])
+        @creation_time = Utils::TimeParser.parse_optional_utc_time(spoken_terms['creation_time'])
         @term_lists = (spoken_terms['term_lists'] || []).map do |term_list|
           SpokenTermsList.new(term_list, *args)
         end
