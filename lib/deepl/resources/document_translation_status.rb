@@ -29,7 +29,7 @@ module DeepL
       # @return [true] if so
 
       def successful?
-        status == 'done'
+        status == Constants::DocumentStatusCode::DONE
       end
 
       ##
@@ -38,7 +38,15 @@ module DeepL
       # @return [true] if so
 
       def error?
-        status == 'error'
+        status == Constants::DocumentStatusCode::ERROR
+      end
+
+      ##
+      # Checks that the translation has not failed. Also true while it is queued or translating.
+      #
+      # @return [Boolean] +true+ unless the status is +error+.
+      def ok?
+        !error?
       end
 
       ##

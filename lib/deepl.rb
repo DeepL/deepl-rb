@@ -133,6 +133,7 @@ require_relative 'deepl/utils/document_poller'
 
 # -- Constants
 require_relative 'deepl/constants/base_constant'
+require_relative 'deepl/constants/document_status_code'
 require_relative 'deepl/constants/formality'
 require_relative 'deepl/constants/model_type'
 require_relative 'deepl/constants/split_sentences'

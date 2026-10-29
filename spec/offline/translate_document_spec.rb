@@ -205,6 +205,19 @@ describe DeepL::DocumentApi do
         .to eq([[true, false, true], [false, true, true]])
     end
 
+    it 'derives ok? as not failed, also while queued or translating' do
+      codes = DeepL::Constants::DocumentStatusCode
+      stub_status(*[codes::QUEUED, codes::TRANSLATING, codes::DONE, codes::ERROR].map do |code|
+        status_reply(code)
+      end)
+
+      statuses = Array.new(4) { documents.get_status(handle) }
+
+      expect(statuses.map { |s| [s.status, s.ok?] }).to eq(
+        [['queued', true], ['translating', true], ['done', true], ['error', false]]
+      )
+    end
+
     it 'URL-encodes the document ID in the path' do
       stub_request(:post, url('/v2/document/a%20b%2Fc')).to_return(status_reply('done'))
 
@@ -396,7 +409,9 @@ describe DeepL::DocumentApi do
       stub_status(status_reply('error', error_message: 'Unsupported file'))
 
       expect { documents.translate_document(input, output, 'EN', 'DE') }
-        .to raise_error(DeepL::Exceptions::DocumentTranslationError, /Unsupported file/)
+        .to raise_error(DeepL::Exceptions::DocumentTranslationError, /Unsupported file/) { |e|
+          expect(e.document_handle.document_id).to eq('doc-1')
+        }
     end
 
     it 'raises DocumentTranslationError and leaves no output file when the download fails' do
