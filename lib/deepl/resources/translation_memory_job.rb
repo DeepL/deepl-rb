@@ -26,7 +26,7 @@ module DeepL
         @status = result['status']
         @required_action = status_metadata['required_action']
         @download_url = result['download_url']
-        @expires_at = Utils::TimeParser.parse_optional_time(result['expires_at'])
+        @expires_at = Utils::TimeParser.parse_optional_utc_time(result['expires_at'])
         @error_message = error['message']
         @translation_memory_id = result['translation_memory_id']
         @skipped_segment_count = result['skipped_segment_count']
@@ -144,8 +144,8 @@ module DeepL
         @job_id = job['job_id']
         @product = job['product']
         @operation = job['operation']
-        @creation_time = Utils::TimeParser.parse_optional_time(job['creation_time'])
-        @updated_time = Utils::TimeParser.parse_optional_time(job['updated_time'])
+        @creation_time = Utils::TimeParser.parse_optional_utc_time(job['creation_time'])
+        @updated_time = Utils::TimeParser.parse_optional_utc_time(job['updated_time'])
       end
 
       def extract_parameters(job)

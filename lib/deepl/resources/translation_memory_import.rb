@@ -16,7 +16,7 @@ module DeepL
         super(*args)
         @job_id = translation_memory_import['job_id']
         @upload_url = translation_memory_import['upload_url']
-        @expires_at = Utils::TimeParser.parse_optional_time(
+        @expires_at = Utils::TimeParser.parse_optional_utc_time(
           translation_memory_import['expires_at']
         )
       end

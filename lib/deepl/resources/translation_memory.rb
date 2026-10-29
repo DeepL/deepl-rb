@@ -16,12 +16,18 @@ module DeepL
         @source_language = translation_memory['source_language']
         @target_languages = translation_memory['target_languages'] || []
         @segment_count = translation_memory['segment_count'] || 0
-        @creation_time = Utils::TimeParser.parse_optional_time(translation_memory['creation_time'])
-        @updated_time = Utils::TimeParser.parse_optional_time(translation_memory['updated_time'])
+        @creation_time = parse_time(translation_memory['creation_time'])
+        @updated_time = parse_time(translation_memory['updated_time'])
       end
 
       def to_s
         "#{translation_memory_id} - #{name}"
+      end
+
+      private
+
+      def parse_time(value)
+        Utils::TimeParser.parse_optional_utc_time(value)
       end
     end
   end

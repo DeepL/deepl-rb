@@ -103,6 +103,23 @@ describe DeepL::TranslationMemoryApi do
     end
   end
 
+  describe 'timestamps' do
+    it 'are read as UTC without an offset and as nil when malformed' do # rubocop:disable RSpec/ExampleLength
+      times = { 'creation_time' => '2026-01-02T03:04:05', 'updated_time' => 'not a time',
+                'last_used_time' => 'not a time', 'expires_at' => '2026-01-02T03:04:05' }
+      job = DeepL::Resources::TranslationMemoryJob.new(times.merge('results' => [times]), nil,
+                                                       nil)
+      parsed = [DeepL::Resources::TranslationMemory.new(times, nil, nil),
+                DeepL::Resources::TranslationMemorySegment.new(times),
+                DeepL::Resources::TranslationMemoryTargetSegment.new(times), job]
+
+      expect(parsed.map { |resource| [resource.creation_time, resource.updated_time] })
+        .to all(eq([Time.utc(2026, 1, 2, 3, 4, 5), nil]))
+      expect([DeepL::Resources::TranslationMemoryImport.new(times, nil, nil).expires_at,
+              job.result.expires_at]).to all(eq(Time.utc(2026, 1, 2, 3, 4, 5)))
+    end
+  end
+
   describe '#segments' do
     let(:segments_json) do
       { segment_count: 7, next_page_cursor: 'c-2',

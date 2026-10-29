@@ -245,6 +245,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- A malformed timestamp in a translation memory, segment, import or job response raised a raw
+  `ArgumentError`, and a timestamp without a zone offset was read as local time. A malformed
+  timestamp is now `nil`, and one without an offset is read as UTC.
 - `DeepL.translation_memories.list` and `segments` sent an option set to `nil` as an empty
   query parameter (`page=`). Such options are no longer sent.
 - Translation memory and job IDs were inserted into the request path without URL encoding:

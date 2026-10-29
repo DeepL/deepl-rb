@@ -13,9 +13,11 @@ module DeepL
         @target_segment_id = target_segment['target_segment_id']
         @target_language = target_segment['target_language']
         @target_text = target_segment['target_text']
-        @creation_time = Utils::TimeParser.parse_optional_time(target_segment['creation_time'])
-        @updated_time = Utils::TimeParser.parse_optional_time(target_segment['updated_time'])
-        @last_used_time = Utils::TimeParser.parse_optional_time(target_segment['last_used_time'])
+        @creation_time = Utils::TimeParser.parse_optional_utc_time(target_segment['creation_time'])
+        @updated_time = Utils::TimeParser.parse_optional_utc_time(target_segment['updated_time'])
+        @last_used_time = Utils::TimeParser.parse_optional_utc_time(
+          target_segment['last_used_time']
+        )
       end
 
       def to_s
@@ -33,9 +35,9 @@ module DeepL
         @targets = (segment['targets'] || []).map do |target|
           TranslationMemoryTargetSegment.new(target)
         end
-        @creation_time = Utils::TimeParser.parse_optional_time(segment['creation_time'])
-        @updated_time = Utils::TimeParser.parse_optional_time(segment['updated_time'])
-        @last_used_time = Utils::TimeParser.parse_optional_time(segment['last_used_time'])
+        @creation_time = Utils::TimeParser.parse_optional_utc_time(segment['creation_time'])
+        @updated_time = Utils::TimeParser.parse_optional_utc_time(segment['updated_time'])
+        @last_used_time = Utils::TimeParser.parse_optional_utc_time(segment['last_used_time'])
       end
 
       def to_s
