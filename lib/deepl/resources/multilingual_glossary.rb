@@ -21,16 +21,33 @@ module DeepL
       end
     end
 
+    # The entries of one dictionary. Used as input for +create_multilingual_glossary+,
+    # +update_multilingual_glossary+, +update_multilingual_glossary_dictionary+ and
+    # +replace_multilingual_glossary_dictionary+, and returned by
+    # +get_multilingual_glossary_dictionary_entries+.
     class MultilingualGlossaryDictionaryEntries < Base
-      attr_reader :source_lang, :target_lang, :entries, :entries_format
+      attr_reader :source_lang, :target_lang, :entries
 
-      def initialize(dictionary, *args)
-        super(*args)
+      ##
+      # @param [String] source_lang Source language code, for example +'en'+.
+      # @param [String] target_lang Target language code, for example +'de'+.
+      # @param [Array<Array(String, String)>, Hash{String => String}] entries Source/target term
+      #   pairs.
+      def initialize(source_lang, target_lang, entries, request = nil, response = nil)
+        super(request, response)
 
-        @source_lang = dictionary['source_lang']
-        @target_lang = dictionary['target_lang']
-        @entries = dictionary['entries']
-        @entries_format = dictionary['entries_format']
+        @source_lang = source_lang
+        @target_lang = target_lang
+        @entries = entries.is_a?(Hash) ? entries.to_a : entries
+      end
+
+      # @api private
+      # Builds the entries from a dictionary of the API, whose entries are a TSV string.
+      def self.from_response(dictionary, request, response)
+        entries = (dictionary['entries'] || '').split(/\r?\n/).reject(&:empty?).map do |line|
+          line.split("\t", 2)
+        end
+        new(dictionary['source_lang'], dictionary['target_lang'], entries, request, response)
       end
     end
 
@@ -42,7 +59,7 @@ module DeepL
 
         @id = glossary['glossary_id']
         @name = glossary['name']
-        @creation_time = glossary['creation_time']
+        @creation_time = Utils::TimeParser.parse_optional_utc_time(glossary['creation_time'])
         @dictionaries = (glossary['dictionaries'] || []).map do |dictionary|
           MultilingualGlossaryDictionary.new(dictionary, *args)
         end

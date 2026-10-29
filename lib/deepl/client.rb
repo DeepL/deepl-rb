@@ -264,6 +264,179 @@ module DeepL
     end
 
     ##
+    # Creates a multilingual glossary with one dictionary per language pair.
+    #
+    # @param [String] name Name of the glossary.
+    # @param [Array<DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash>] dictionaries
+    #   One entry per language pair. A hash needs the keys +:source_lang+, +:target_lang+ and
+    #   +:entries+ (source/target pairs, or a TSV string; +:entries_format+ +'csv'+ for CSV).
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
+    # @raise [ArgumentError] If a term is empty after stripping surrounding whitespace or
+    #   contains a control character.
+    def create_multilingual_glossary(name, dictionaries, **options)
+      Requests::MultilingualGlossary::Create.new(api, name, dictionaries, options).request
+    end
+
+    ##
+    # Creates a multilingual glossary with one dictionary from CSV content.
+    #
+    # @param [String] name Name of the glossary.
+    # @param [String] source_lang Source language of the dictionary.
+    # @param [String] target_lang Target language of the dictionary.
+    # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
+    def create_multilingual_glossary_from_csv(name, source_lang, target_lang, csv, **options)
+      dictionary = csv_dictionary(source_lang, target_lang, csv)
+      Requests::MultilingualGlossary::Create.new(api, name, [dictionary], options).request
+    end
+
+    ##
+    # Lists all multilingual glossaries.
+    #
+    # @return [Array<DeepL::Resources::MultilingualGlossary>]
+    def list_multilingual_glossaries
+      Requests::MultilingualGlossary::List.new(api).request
+    end
+
+    ##
+    # Retrieves a multilingual glossary, without its entries.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @return [DeepL::Resources::MultilingualGlossary]
+    # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist.
+    def get_multilingual_glossary(glossary)
+      Requests::MultilingualGlossary::Find.new(api, glossary).request
+    end
+
+    ##
+    # Renames a glossary and/or merges entries into its dictionaries. Arguments left +nil+ are
+    # not sent; without any, an empty object is sent.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [String, nil] name New name.
+    # @param [Array<DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash>, nil]
+    #   dictionaries Entries to merge into the dictionary of each language pair; a new language
+    #   pair adds a dictionary.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
+    # @raise [ArgumentError] If a term is empty after stripping or contains a control character.
+    def update_multilingual_glossary(glossary, name: nil, dictionaries: nil, **options)
+      Requests::MultilingualGlossary::Update.new(api, glossary, name, dictionaries,
+                                                 options).request
+    end
+
+    ##
+    # Renames a multilingual glossary.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [String] name New name.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
+    def update_multilingual_glossary_name(glossary, name, **options)
+      Requests::MultilingualGlossary::Update.new(api, glossary, name, nil, options).request
+    end
+
+    ##
+    # Merges entries into the dictionary of one language pair, or adds the dictionary if the
+    # language pair is new.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash] dictionary The
+    #   language pair and its entries, see #create_multilingual_glossary.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
+    # @raise [ArgumentError] If a term is empty after stripping or contains a control character.
+    def update_multilingual_glossary_dictionary(glossary, dictionary, **options)
+      Requests::MultilingualGlossary::Update.new(api, glossary, nil, [dictionary],
+                                                 options).request
+    end
+
+    ##
+    # Merges CSV entries into the dictionary of one language pair, or adds the dictionary if
+    # the language pair is new.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [String] source_lang Source language of the dictionary.
+    # @param [String] target_lang Target language of the dictionary.
+    # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
+    def update_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
+                                                         **options)
+      dictionary = csv_dictionary(source_lang, target_lang, csv)
+      Requests::MultilingualGlossary::Update.new(api, glossary, nil, [dictionary],
+                                                 options).request
+    end
+
+    ##
+    # Replaces the entries of the dictionary of one language pair, or adds the dictionary if
+    # the language pair is new.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash] dictionary The
+    #   language pair and its entries, see #create_multilingual_glossary.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
+    # @raise [ArgumentError] If a term is empty after stripping or contains a control character.
+    def replace_multilingual_glossary_dictionary(glossary, dictionary, **options)
+      Requests::MultilingualGlossary::ReplaceDictionary.new(api, glossary, dictionary,
+                                                            options).request
+    end
+
+    ##
+    # Replaces the entries of the dictionary of one language pair with CSV content.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [String] source_lang Source language of the dictionary.
+    # @param [String] target_lang Target language of the dictionary.
+    # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
+    def replace_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
+                                                          **options)
+      dictionary = csv_dictionary(source_lang, target_lang, csv)
+      Requests::MultilingualGlossary::ReplaceDictionary.new(api, glossary, dictionary,
+                                                            options).request
+    end
+
+    ##
+    # Retrieves the entries of the dictionary of one language pair.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [String] source_lang Source language of the dictionary.
+    # @param [String] target_lang Target language of the dictionary.
+    # @return [DeepL::Resources::MultilingualGlossaryDictionaryEntries] The entries as
+    #   source/target pairs.
+    # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist or has no dictionary
+    #   for the language pair.
+    def get_multilingual_glossary_dictionary_entries(glossary, source_lang, target_lang)
+      Requests::MultilingualGlossary::Entries.new(api, glossary, source_lang, target_lang).request
+    end
+
+    ##
+    # Deletes the dictionary of one language pair from a multilingual glossary.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @param [String] source_lang Source language of the dictionary.
+    # @param [String] target_lang Target language of the dictionary.
+    # @return [nil]
+    def delete_multilingual_glossary_dictionary(glossary, source_lang, target_lang)
+      Requests::MultilingualGlossary::DestroyDictionary.new(api, glossary, source_lang,
+                                                            target_lang).request
+    end
+
+    ##
+    # Deletes a multilingual glossary.
+    #
+    # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
+    # @return [nil]
+    def delete_multilingual_glossary(glossary)
+      Requests::MultilingualGlossary::Destroy.new(api, glossary).request
+    end
+
+    ##
     # Creates a spoken terms collection, which improves the transcription of the given terms.
     #
     # @param [String] name Name of the collection.
@@ -442,6 +615,11 @@ module DeepL
 
     def configuration
       api.configuration
+    end
+
+    def csv_dictionary(source_lang, target_lang, csv)
+      csv = csv.read if csv.respond_to?(:read)
+      { source_lang: source_lang, target_lang: target_lang, entries: csv, entries_format: 'csv' }
     end
   end
 end

@@ -7,11 +7,13 @@ module DeepL
   module Requests
     module MultilingualGlossary
       class Entries < Base
+        include Helpers
+
         attr_reader :id, :source_lang, :target_lang
 
         def initialize(api, id, source_lang, target_lang, options = {})
           super(api, options)
-          @id = id
+          @id = glossary_id(id)
           @source_lang = source_lang
           @target_lang = target_lang
         end
@@ -31,11 +33,20 @@ module DeepL
           Net::HTTP::Get.new(uri.request_uri, http_headers)
         end
 
+        # The API wraps the dictionary in a list, which is empty if the glossary has no
+        # dictionary for the language pair.
         def build_entries(request, response)
-          data = JSON.parse(response.body)
-          (data['dictionaries'] || []).map do |dictionary|
-            Resources::MultilingualGlossaryDictionaryEntries.new(dictionary, request, response)
+          dictionary = (JSON.parse(response.body)['dictionaries'] || []).first
+          if dictionary.nil?
+            raise Exceptions::NotFound.new(
+              response, request,
+              "Glossary #{id} has no dictionary for #{source_lang} -> #{target_lang}"
+            )
           end
+
+          Resources::MultilingualGlossaryDictionaryEntries.from_response(
+            dictionary, request, response
+          )
         end
 
         def uri
@@ -47,7 +58,7 @@ module DeepL
         end
 
         def path
-          "glossaries/#{id}/entries"
+          glossary_path(id, 'entries')
         end
       end
     end

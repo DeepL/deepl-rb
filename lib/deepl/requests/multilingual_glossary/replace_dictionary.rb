@@ -7,25 +7,18 @@ module DeepL
   module Requests
     module MultilingualGlossary
       class ReplaceDictionary < Base
-        include EntriesSerializer
+        include Helpers
 
-        attr_reader :id, :source_lang, :target_lang, :entries, :entries_format
+        attr_reader :id, :dictionary
 
-        def initialize(api, id, source_lang, target_lang, entries, options = {})
+        def initialize(api, id, dictionary, options = {})
           super(api, options)
-          @id = id
-          @source_lang = source_lang
-          @target_lang = target_lang
-          @entries_format = delete_option(:entries_format) || 'tsv'
-          @entries = entries
+          @id = glossary_id(id)
+          @dictionary = dictionary_payload(dictionary)
         end
 
         def request
-          payload = {
-            source_lang: source_lang, target_lang: target_lang,
-            entries: entries_to_string(entries), entries_format: entries_format
-          }
-          build_dictionary(*execute_request_with_retries(put_request(payload)))
+          build_dictionary(*execute_request_with_retries(put_request(dictionary)))
         end
 
         def to_s
@@ -39,12 +32,8 @@ module DeepL
           Resources::MultilingualGlossaryDictionary.new(data, request, response)
         end
 
-        def uri
-          @uri ||= URI("#{host}/v3/#{path}")
-        end
-
         def path
-          "glossaries/#{id}/dictionaries"
+          glossary_path(id, 'dictionaries')
         end
       end
     end

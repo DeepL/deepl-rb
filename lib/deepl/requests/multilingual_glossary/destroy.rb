@@ -7,15 +7,18 @@ module DeepL
   module Requests
     module MultilingualGlossary
       class Destroy < Base
+        include Helpers
+
         attr_reader :id
 
         def initialize(api, id, options = {})
           super(api, options)
-          @id = id
+          @id = glossary_id(id)
         end
 
         def request
-          build_response(*execute_request_with_retries(delete_request))
+          execute_request_with_retries(delete_request)
+          nil
         end
 
         def to_s
@@ -24,16 +27,8 @@ module DeepL
 
         private
 
-        def build_response(_, _)
-          id
-        end
-
-        def uri
-          @uri ||= URI("#{host}/v3/#{path}")
-        end
-
         def path
-          "glossaries/#{id}"
+          glossary_path(id)
         end
       end
     end

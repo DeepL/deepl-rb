@@ -112,12 +112,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Resources::CustomTagUsageBreakdown`, `DeepL::Resources::CustomTagUsage`,
   `DeepL::Constants::AdminUsageGroupBy` and `DeepL::Constants::CustomTagUsageAggregateBy`.
   The usage breakdown includes `speech_to_speech_minutes`.
-- Added support for multilingual glossaries via the v3 glossary API.
-  `DeepL.multilingual_glossaries` exposes `create`, `create_with_csv`, `find`,
+- Added support for multilingual glossaries (`/v3/glossaries`) to `DeepL::Client`:
+  `create_multilingual_glossary(name, dictionaries, **options)`,
+  `create_multilingual_glossary_from_csv(name, source_lang, target_lang, csv, **options)`,
+  `list_multilingual_glossaries`, `get_multilingual_glossary(glossary)`,
+  `update_multilingual_glossary(glossary, name: nil, dictionaries: nil, **options)` (sends
+  only the keywords given, `{}` without any), `update_multilingual_glossary_name`,
+  `update_multilingual_glossary_dictionary(glossary, dictionary, **options)`,
+  `update_multilingual_glossary_dictionary_from_csv`,
+  `replace_multilingual_glossary_dictionary(glossary, dictionary, **options)`,
+  `replace_multilingual_glossary_dictionary_from_csv`,
+  `get_multilingual_glossary_dictionary_entries(glossary, source_lang, target_lang)`,
+  `delete_multilingual_glossary_dictionary(glossary, source_lang, target_lang)` and
+  `delete_multilingual_glossary(glossary)`. A glossary is given as its ID or a
+  `DeepL::Resources::MultilingualGlossary`; the ID is URL-encoded in the request paths. A
+  dictionary is a `DeepL::Resources::MultilingualGlossaryDictionaryEntries` (`source_lang`,
+  `target_lang` and `entries` as source/target pairs, constructible with `.new`) or a hash
+  with the same keys. `get_multilingual_glossary_dictionary_entries` returns one dictionary
+  and raises `DeepL::Exceptions::NotFound` if the glossary has none for the language pair;
+  the delete methods return `nil`. `creation_time` is a UTC `Time`, `nil` when malformed.
+  The module-level `DeepL.multilingual_glossaries` (`create`, `create_with_csv`, `find`,
   `list`, `entries`, `destroy`, `destroy_dictionary`, `replace_dictionary`,
-  `replace_dictionary_with_csv`, `update_name`, `update_dictionary`, and
-  `update_dictionary_with_csv`. Please refer to the README for usage
-  instructions.
+  `replace_dictionary_with_csv`, `update_name`, `update_dictionary` and
+  `update_dictionary_with_csv`) sends the same requests and returns the same objects. Please
+  refer to the README for usage instructions.
 - Added `DeepL.correct(text, target_lang = nil)` to correct grammar and spelling via
   `POST /v2/write/correct`. It accepts a string or an array of strings and returns a
   `DeepL::Resources::Text` or an array of them, respectively.

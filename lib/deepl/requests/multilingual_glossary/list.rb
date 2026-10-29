@@ -7,6 +7,8 @@ module DeepL
   module Requests
     module MultilingualGlossary
       class List < Base
+        include Helpers
+
         def initialize(api, options = {})
           super
         end
@@ -26,10 +28,6 @@ module DeepL
           data['glossaries'].map do |glossary|
             Resources::MultilingualGlossary.new(glossary, request, response)
           end
-        end
-
-        def uri
-          @uri ||= URI("#{host}/v3/#{path}")
         end
 
         def path

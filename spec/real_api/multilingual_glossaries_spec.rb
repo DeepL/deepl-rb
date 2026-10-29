@@ -5,38 +5,49 @@
 
 require_relative 'real_api_helper'
 
-describe 'DeepL.multilingual_glossaries' do
-  it 'sends the v3 glossary requests: create, get, list, entries, rename, replace and delete' do
-    glossaries = DeepL.multilingual_glossaries
+describe 'DeepL::Client multilingual glossaries' do
+  let(:client) do
+    DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), server_url: ENV.fetch('DEEPL_SERVER_URL', nil))
+  end
+
+  def pairs_of(glossary)
+    glossary.dictionaries.map { |d| "#{d.source_lang}-#{d.target_lang}" }
+  end
+
+  it 'creates, reads, updates, replaces and deletes a multilingual glossary' do
     name = unique_name('glossary-v3')
     dictionaries = [
-      { source_lang: 'EN', target_lang: 'DE', entries: [%w[Apple Apfel]] },
+      DeepL::Resources::MultilingualGlossaryDictionaryEntries.new('EN', 'DE', [%w[Apple Apfel]]),
       { source_lang: 'EN', target_lang: 'FR', entries: [%w[Apple Pomme]] }
     ]
 
-    glossary = glossaries.create(name, dictionaries)
+    glossary = client.create_multilingual_glossary(name, dictionaries)
     begin
       expect(glossary.name).to eq(name)
-      expect(glossary.dictionaries.map { |d| "#{d.source_lang}-#{d.target_lang}" })
-        .to contain_exactly('en-de', 'en-fr')
+      expect(glossary.creation_time).to be_a(Time)
+      expect(pairs_of(glossary)).to contain_exactly('en-de', 'en-fr')
 
-      fetched = retry_while_not_found { glossaries.find(glossary.id) }
+      fetched = retry_while_not_found { client.get_multilingual_glossary(glossary) }
       expect([fetched.id, fetched.name]).to eq([glossary.id, name])
-      expect(glossaries.list.map(&:id)).to include(glossary.id)
+      expect(client.list_multilingual_glossaries.map(&:id)).to include(glossary.id)
 
-      dictionary = glossaries.entries(glossary.id, 'EN', 'DE').first
-      expect(dictionary.entries.split("\n")).to eq(["Apple\tApfel"])
+      entries = client.get_multilingual_glossary_dictionary_entries(glossary, 'EN', 'DE')
+      expect(entries.entries).to eq([%w[Apple Apfel]])
 
-      renamed = glossaries.update_name(glossary.id, "#{name}-renamed")
-      expect(renamed.name).to eq("#{name}-renamed")
+      pear = { source_lang: 'EN', target_lang: 'DE', entries: [%w[Pear Birne]] }
+      updated = client.update_multilingual_glossary(glossary, name: "#{name}-renamed",
+                                                              dictionaries: [pear])
+      expect(updated.name).to eq("#{name}-renamed")
 
-      replaced = glossaries.replace_dictionary(glossary.id, 'EN', 'DE', [%w[Cherry Kirsche]])
+      replaced = client.replace_multilingual_glossary_dictionary(
+        glossary, { source_lang: 'EN', target_lang: 'DE', entries: [%w[Cherry Kirsche]] }
+      )
       expect([replaced.source_lang, replaced.target_lang, replaced.entry_count])
         .to eq(['en', 'de', 1])
 
-      glossaries.destroy_dictionary(glossary.id, 'EN', 'FR')
+      expect(client.delete_multilingual_glossary_dictionary(glossary, 'EN', 'FR')).to be_nil
     ensure
-      delete_quietly { glossaries.destroy(glossary.id) }
+      delete_quietly { client.delete_multilingual_glossary(glossary) }
     end
   end
 end

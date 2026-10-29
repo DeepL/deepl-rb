@@ -7,11 +7,13 @@ module DeepL
   module Requests
     module MultilingualGlossary
       class Find < Base
+        include Helpers
+
         attr_reader :id
 
         def initialize(api, id, options = {})
           super(api, options)
-          @id = id
+          @id = glossary_id(id)
         end
 
         def request
@@ -24,17 +26,8 @@ module DeepL
 
         private
 
-        def build_glossary(request, response)
-          data = JSON.parse(response.body)
-          Resources::MultilingualGlossary.new(data, request, response)
-        end
-
-        def uri
-          @uri ||= URI("#{host}/v3/#{path}")
-        end
-
         def path
-          "glossaries/#{id}"
+          glossary_path(id)
         end
       end
     end

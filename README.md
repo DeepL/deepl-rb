@@ -57,7 +57,8 @@ The authentication key is trimmed; an empty key raises `ArgumentError`.
 `DeepL::Client` offers text translation (`translate_text`, see [Translate](#translate)),
 document translation (`translate_document` and its steps, see
 [Translate documents](#translate-documents)), rephrasing and correction (`rephrase_text` and
-`correct_text`, see [Rephrase Text](#rephrase-text) and [Correct Text](#correct-text)) and
+`correct_text`, see [Rephrase Text](#rephrase-text) and [Correct Text](#correct-text)),
+multilingual glossaries (see [Multilingual glossaries](#multilingual-glossaries)) and
 spoken terms (see
 [Spoken terms](#spoken-terms)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
 is deprecated: each method prints a deprecation warning once per process, and it will be
@@ -483,84 +484,102 @@ puts language_pairs.first.target_lang
 
 ### Multilingual glossaries
 
-Multilingual glossaries (v3) let you group multiple language-pair dictionaries
-under a single glossary. They are accessed through
-`DeepL.multilingual_glossaries`.
+Multilingual glossaries (v3) group several language-pair dictionaries under one
+glossary and are managed through `DeepL::Client`. Every method that takes a
+glossary accepts its ID or a `DeepL::Resources::MultilingualGlossary` object; the
+ID is URL-encoded in the request path. A dictionary's entries are source/target
+term pairs.
 
-To create a multilingual glossary, pass a name and an array of dictionaries.
-Each dictionary contains its source language, target language, and entries
-(either as an array of source/target pairs or as a TSV string):
+To create a multilingual glossary, pass a name and one
+`DeepL::Resources::MultilingualGlossaryDictionaryEntries` (or a hash with
+`:source_lang`, `:target_lang` and `:entries`) per language pair. A hash may also
+give its entries as a TSV string, or as CSV with `entries_format: 'csv'`. Terms
+given as pairs are checked like v2 glossary terms: each term is stripped of
+surrounding whitespace, and an empty term or one with a control character raises
+`ArgumentError` before anything is sent. Further options, such as
+`extra_body_parameters`, are given as additional keywords:
 
 ```rb
-dictionaries = [
-  {
-    source_lang: 'EN',
-    target_lang: 'DE',
-    entries: [['Hello', 'Hallo'], ['World', 'Welt']]
-  },
-  {
-    source_lang: 'EN',
-    target_lang: 'FR',
-    entries: [['Hello', 'Bonjour']]
-  }
-]
-glossary = DeepL.multilingual_glossaries.create 'My Glossary', dictionaries
+glossary = client.create_multilingual_glossary(
+  'My Glossary',
+  [
+    DeepL::Resources::MultilingualGlossaryDictionaryEntries.new(
+      'EN', 'DE', [['Hello', 'Hallo'], ['World', 'Welt']]
+    ),
+    { source_lang: 'EN', target_lang: 'FR', entries: [['Hello', 'Bonjour']] }
+  ]
+)
 
 puts glossary.class
 # => DeepL::Resources::MultilingualGlossary
 puts glossary.id
 # => 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+puts glossary.creation_time.class
+# => Time
 puts glossary.dictionaries.first.entry_count
 # => 2
 ```
 
-To create a multilingual glossary from CSV content, use `create_with_csv`:
+To create a multilingual glossary with one dictionary from CSV content (a string
+or an IO), use `create_multilingual_glossary_from_csv`:
 
 ```rb
-csv_content = File.read('entries.csv')
-glossary = DeepL.multilingual_glossaries.create_with_csv(
-  'My Glossary', 'EN', 'DE', csv_content
+glossary = client.create_multilingual_glossary_from_csv(
+  'My Glossary', 'EN', 'DE', File.read('entries.csv')
 )
 ```
 
-List or fetch multilingual glossaries with `list` and `find`:
+List or fetch multilingual glossaries with `list_multilingual_glossaries` and
+`get_multilingual_glossary`. The glossary does not include the entries; fetch the
+entries of one language pair with `get_multilingual_glossary_dictionary_entries`,
+which raises `DeepL::Exceptions::NotFound` if the glossary has no dictionary for
+that pair. The returned object can be passed to the create, update and replace
+methods:
 
 ```rb
-glossaries = DeepL.multilingual_glossaries.list
-glossary = DeepL.multilingual_glossaries.find 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+glossaries = client.list_multilingual_glossaries
+glossary = client.get_multilingual_glossary 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+
+dictionary = client.get_multilingual_glossary_dictionary_entries(glossary, 'EN', 'DE')
+puts dictionary.entries.inspect
+# => [["Hello", "Hallo"], ["World", "Welt"]]
 ```
 
-To fetch the entries for a specific language pair, use `entries`:
+`update_multilingual_glossary` renames the glossary and/or merges entries into
+its dictionaries (a new language pair adds a dictionary). Keywords left `nil` are
+not sent. `update_multilingual_glossary_name`,
+`update_multilingual_glossary_dictionary` and
+`update_multilingual_glossary_dictionary_from_csv` do one of these at a time. To
+replace the entries of a dictionary instead, use
+`replace_multilingual_glossary_dictionary` (or
+`replace_multilingual_glossary_dictionary_from_csv`):
 
 ```rb
-dictionaries = DeepL.multilingual_glossaries.entries(
-  'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e', 'EN', 'DE'
+client.update_multilingual_glossary(
+  glossary, name: 'Renamed Glossary',
+            dictionaries: [{ source_lang: 'EN', target_lang: 'FR', entries: [['World', 'Monde']] }]
 )
-puts dictionaries.first.entries
-# => "Hello\tHallo\nWorld\tWelt\n"
-```
-
-To update the glossary name, use `update_name`. To update or add a dictionary
-for a language pair, use `update_dictionary` (or
-`update_dictionary_with_csv`). To replace the entries of an existing dictionary,
-use `replace_dictionary` (or `replace_dictionary_with_csv`):
-
-```rb
-DeepL.multilingual_glossaries.update_name(glossary.id, 'Renamed Glossary')
-DeepL.multilingual_glossaries.update_dictionary(
-  glossary.id, 'EN', 'FR', [['Hello', 'Bonjour'], ['World', 'Monde']]
+client.update_multilingual_glossary_name(glossary, 'Renamed Glossary')
+client.update_multilingual_glossary_dictionary(
+  glossary, { source_lang: 'EN', target_lang: 'FR', entries: [['World', 'Monde']] }
 )
-DeepL.multilingual_glossaries.replace_dictionary(
-  glossary.id, 'EN', 'DE', [['Hello', 'Hallo'], ['car', 'Auto']]
+client.replace_multilingual_glossary_dictionary(
+  glossary, { source_lang: 'EN', target_lang: 'DE', entries: [['Hello', 'Hallo'], ['car', 'Auto']] }
 )
 ```
 
-To delete an entire multilingual glossary or just one of its dictionaries:
+To delete one dictionary or the entire glossary (both return `nil`):
 
 ```rb
-DeepL.multilingual_glossaries.destroy_dictionary(glossary.id, 'EN', 'FR')
-DeepL.multilingual_glossaries.destroy(glossary.id)
+client.delete_multilingual_glossary_dictionary(glossary, 'EN', 'FR')
+client.delete_multilingual_glossary(glossary)
 ```
+
+The module-level `DeepL.multilingual_glossaries` (`create`, `create_with_csv`,
+`find`, `list`, `entries`, `update_name`, `update_dictionary`,
+`update_dictionary_with_csv`, `replace_dictionary`, `replace_dictionary_with_csv`,
+`destroy_dictionary`, `destroy`) is deprecated; it sends the same requests and
+returns the same objects as the methods above.
 
 ### Spoken terms
 

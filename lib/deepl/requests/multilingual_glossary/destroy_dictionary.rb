@@ -7,17 +7,20 @@ module DeepL
   module Requests
     module MultilingualGlossary
       class DestroyDictionary < Base
+        include Helpers
+
         attr_reader :id, :source_lang, :target_lang
 
         def initialize(api, id, source_lang, target_lang, options = {})
           super(api, options)
-          @id = id
+          @id = glossary_id(id)
           @source_lang = source_lang
           @target_lang = target_lang
         end
 
         def request
-          build_response(*execute_request_with_retries(delete_request))
+          execute_request_with_retries(delete_request)
+          nil
         end
 
         def to_s
@@ -31,10 +34,6 @@ module DeepL
           Net::HTTP::Delete.new(uri.request_uri, http_headers)
         end
 
-        def build_response(_, _)
-          { source_lang: source_lang, target_lang: target_lang }
-        end
-
         def uri
           @uri ||= begin
             base_uri = URI("#{host}/v3/#{path}")
@@ -44,7 +43,7 @@ module DeepL
         end
 
         def path
-          "glossaries/#{id}/dictionaries"
+          glossary_path(id, 'dictionaries')
         end
       end
     end

@@ -6,17 +6,22 @@
 module DeepL
   module Requests
     module MultilingualGlossary
-      class UpdateName < Base
-        attr_reader :id, :name
+      class Update < Base
+        include Helpers
 
-        def initialize(api, id, name, options = {})
+        attr_reader :id, :name, :dictionaries
+
+        def initialize(api, id, name, dictionaries, options = {})
           super(api, options)
-          @id = id
+          @id = glossary_id(id)
           @name = name
+          @dictionaries = dictionaries&.map { |dictionary| dictionary_payload(dictionary) }
         end
 
         def request
-          payload = { name: name }
+          payload = {}
+          payload[:name] = name unless name.nil?
+          payload[:dictionaries] = dictionaries unless dictionaries.nil?
           build_glossary(*execute_request_with_retries(patch_request(payload)))
         end
 
@@ -26,17 +31,8 @@ module DeepL
 
         private
 
-        def build_glossary(request, response)
-          data = JSON.parse(response.body)
-          Resources::MultilingualGlossary.new(data, request, response)
-        end
-
-        def uri
-          @uri ||= URI("#{host}/v3/#{path}")
-        end
-
         def path
-          "glossaries/#{id}"
+          glossary_path(id)
         end
       end
     end
