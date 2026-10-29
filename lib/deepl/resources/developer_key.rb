@@ -20,6 +20,9 @@ module DeepL
       end
     end
 
+    ##
+    # A developer key. +label+ and +usage_limits+ are +nil+ when the response does not contain
+    # them.
     class DeveloperKey < Base
       attr_reader :key_id, :label, :creation_time, :deactivated_time, :is_deactivated,
                   :usage_limits
@@ -28,12 +31,12 @@ module DeepL
         super(*args)
         developer_key = {} unless developer_key.is_a?(Hash)
         @key_id = developer_key['key_id'].is_a?(String) ? developer_key['key_id'] : ''
-        @label = developer_key['label'].is_a?(String) ? developer_key['label'] : ''
+        @label = developer_key['label'].is_a?(String) ? developer_key['label'] : nil
         @creation_time = Utils::TimeParser.parse_optional_utc_time(developer_key['creation_time'])
         @deactivated_time =
           Utils::TimeParser.parse_optional_utc_time(developer_key['deactivated_time'])
         @is_deactivated = developer_key['is_deactivated'] == true
-        @usage_limits = DeveloperKeyUsageLimits.new(developer_key['usage_limits'])
+        @usage_limits = parse_usage_limits(developer_key['usage_limits'])
       end
 
       def deactivated?
@@ -41,7 +44,13 @@ module DeepL
       end
 
       def to_s
-        "#{label} (#{key_id})"
+        label.nil? ? key_id : "#{label} (#{key_id})"
+      end
+
+      private
+
+      def parse_usage_limits(usage_limits)
+        usage_limits.is_a?(Hash) ? DeveloperKeyUsageLimits.new(usage_limits) : nil
       end
     end
   end

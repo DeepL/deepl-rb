@@ -23,13 +23,14 @@ module DeepL
     end
 
     ##
-    # Usage of a single API key. +usage_date+ is only set when grouped by key and day.
+    # Usage of a single API key. +usage_date+ is only set when grouped by key and day;
+    # +api_key_label+ is +nil+ when the response does not contain it.
     class KeyUsage
       attr_reader :api_key, :api_key_label, :usage, :usage_date
 
       def initialize(key_usage)
         @api_key = key_usage['api_key'].is_a?(String) ? key_usage['api_key'] : ''
-        @api_key_label = key_usage['api_key_label'].is_a?(String) ? key_usage['api_key_label'] : ''
+        @api_key_label = key_usage['api_key_label'].is_a?(String) ? key_usage['api_key_label'] : nil
         @usage = AdminUsageBreakdown.new(key_usage['usage'])
         @usage_date = Utils::TimeParser.parse_optional_utc_time(key_usage['usage_date'])
       end

@@ -210,8 +210,9 @@ describe DeepL::AdminClient do
                                         key_usages: [])
       expect(report.total_usage).to have_attributes(total_characters: 12,
                                                     speech_to_text_minutes: 0.0)
-      expect(report.key_and_day_usages.map { |usage| [usage.api_key, usage.usage_date] })
+      expect(report.key_and_day_usages.map { |usage| [usage.api_key, usage.api_key_label] })
         .to eq([['', nil], ['dc88****3a2c', nil]])
+      expect(report.key_and_day_usages.map(&:usage_date)).to eq([nil, nil])
       expect(report.key_and_day_usages.last.usage.total_characters).to eq(3)
     end
 
@@ -411,10 +412,9 @@ describe DeepL::AdminClient do
 
       keys = client.list_developer_keys
 
-      expect(keys.map(&:label)).to eq(['', 'ok'])
+      expect(keys.map(&:label)).to eq([nil, 'ok'])
       expect(keys.first).to have_attributes(key_id: key_id, creation_time: nil,
-                                            is_deactivated: false)
-      expect(keys.first.usage_limits).to have_attributes(characters: nil)
+                                            is_deactivated: false, usage_limits: nil)
       expect(keys.last).to have_attributes(is_deactivated: false)
       expect(keys.last.creation_time).to eq(Time.utc(2025, 7, 8, 8, 15, 29.362r))
     end

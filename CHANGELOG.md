@@ -85,6 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `rename_developer_key`, `set_developer_key_usage_limits`) and retrieving usage analytics
   (`get_usage_analytics`, `get_custom_tag_usage_analytics`). The four methods that send a
   body accept `extra_body_parameters:`, added to the request body last.
+  `DeveloperKey#label`, `DeveloperKey#usage_limits` and `KeyUsage#api_key_label` are `nil`
+  when the response does not contain them.
   `set_developer_key_usage_limits` changes only the given limits, including
   `speech_to_speech_milliseconds`. New public types: `DeepL::AdminClient`,
   `DeepL::Resources::DeveloperKey`, `DeepL::Resources::DeveloperKeyUsageLimits`,
