@@ -112,6 +112,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL.configure { |c| c.auth_key = '...:fx' }` kept `https://api.deepl.com`, because the
   default server was chosen before the block set the key. Without a configured host, the
   server is now chosen from the final key.
+- A Free key with surrounding whitespace (`'abc:fx '`) selected `https://api.deepl.com`
+  although the trimmed key was sent. The Free check now trims the key too.
 - The auth key was sent with surrounding whitespace, and a whitespace-only key passed
   `DeepL.configure`. The key is now trimmed, and a blank key raises
   `DeepL::Exceptions::Error`.

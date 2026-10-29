@@ -62,8 +62,9 @@ module DeepL
       attributes == other.attributes
     end
 
+    # The key is trimmed like the one sent in the Authorization header.
     def self.free_account_auth_key?(key)
-      key&.end_with?(':fx')
+      key.to_s.strip.end_with?(':fx')
     end
 
     def construct_user_agent(send_platform_info, app_info_name, app_info_version)

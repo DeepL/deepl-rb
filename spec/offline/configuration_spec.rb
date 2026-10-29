@@ -81,6 +81,14 @@ describe DeepL::Configuration do
       end
     end
 
+    context 'when the free key has surrounding whitespace' do
+      let(:attributes) { { auth_key: 'abc:fx ' } }
+
+      it 'uses the free API URL' do
+        expect(config.host).to eq('https://api-free.deepl.com')
+      end
+    end
+
     context 'when using a pro key' do
       let(:attributes) { { auth_key: '123e4567-e89b-12d3-a456-426614174000' } }
 
