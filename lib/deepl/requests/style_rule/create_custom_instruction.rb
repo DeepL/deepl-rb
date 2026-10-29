@@ -7,6 +7,8 @@ module DeepL
   module Requests
     module StyleRule
       class CreateCustomInstruction < Base
+        include Helpers
+
         def initialize(api, style_id, label, prompt, source_language = nil, options = {})
           super(api, options)
           @style_id = style_id
@@ -37,7 +39,7 @@ module DeepL
         end
 
         def path
-          "style_rules/#{@style_id}/custom_instructions"
+          style_rule_path(@style_id, 'custom_instructions')
         end
       end
     end

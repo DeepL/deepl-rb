@@ -7,6 +7,8 @@ module DeepL
   module Requests
     module StyleRule
       class DestroyCustomInstruction < Base
+        include Helpers
+
         def initialize(api, style_id, instruction_id, options = {})
           super(api, options)
           @style_id = style_id
@@ -32,7 +34,7 @@ module DeepL
         end
 
         def path
-          "style_rules/#{@style_id}/custom_instructions/#{@instruction_id}"
+          style_rule_path(@style_id, 'custom_instructions', @instruction_id)
         end
       end
     end

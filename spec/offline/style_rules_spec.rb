@@ -80,6 +80,17 @@ describe DeepL::StyleRuleApi do
     end
   end
 
+  describe 'IDs in the path' do
+    it 'URL-encodes the style rule ID and the custom instruction ID' do
+      stub_request(:get, url('/v3/style_rules/a%2Fb%20c')).to_return(reply(style_json))
+      stub_request(:delete, url('/v3/style_rules/a%2Fb%20c/custom_instructions/i%2F1%20x'))
+        .to_return(status: 204)
+
+      style_rules.find('a/b c')
+      style_rules.destroy_custom_instruction('a/b c', 'i/1 x')
+    end
+  end
+
   describe '#update_name' do
     it 'sends a PATCH with the name' do
       stub_request(:patch, url('/v3/style_rules/s-1'))

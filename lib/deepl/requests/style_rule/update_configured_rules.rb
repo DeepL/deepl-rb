@@ -7,6 +7,8 @@ module DeepL
   module Requests
     module StyleRule
       class UpdateConfiguredRules < Base
+        include Helpers
+
         def initialize(api, style_id, configured_rules, options = {})
           super(api, options)
           @style_id = style_id
@@ -33,7 +35,7 @@ module DeepL
         end
 
         def path
-          "style_rules/#{@style_id}/configured_rules"
+          style_rule_path(@style_id, 'configured_rules')
         end
       end
     end

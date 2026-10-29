@@ -7,6 +7,8 @@ module DeepL
   module Requests
     module StyleRule
       class UpdateCustomInstruction < Base
+        include Helpers
+
         def initialize(api, style_id, instruction_id, label, prompt, # rubocop:disable Metrics/ParameterLists
                        source_language = nil, options = {})
           super(api, options)
@@ -39,7 +41,7 @@ module DeepL
         end
 
         def path
-          "style_rules/#{@style_id}/custom_instructions/#{@instruction_id}"
+          style_rule_path(@style_id, 'custom_instructions', @instruction_id)
         end
       end
     end
