@@ -37,6 +37,12 @@ module DeepL
           File.binwrite(@output_file, response.body)
         end
 
+        def validate_response!(response, request = nil)
+          raise Exceptions::DocumentNotReadyError.new(response, request) if response.code == '503'
+
+          super
+        end
+
         def escaped_document_id
           URI.encode_www_form_component(document_id).gsub('+', '%20')
         end

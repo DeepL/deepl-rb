@@ -244,6 +244,18 @@ describe DeepL::DocumentApi do
       documents.download(DeepL::Resources::DocumentHandle.new('a b/c', 'key-1', nil, nil),
                          File.join(temp_dir, 'result.txt'))
     end
+
+    it 'raises DocumentNotReadyError, a ServerError, for a 503 reply' do
+      stub = stub_request(:post, url('/v2/document/doc-1/result'))
+             .to_return(reply({ message: 'not ready' }, 503))
+      DeepL.configuration.max_network_retries = 0
+
+      expect { documents.download(handle, File.join(temp_dir, 'result.txt')) }
+        .to raise_error(DeepL::Exceptions::DocumentNotReadyError, /not ready/) { |e|
+          expect([e, e.http_status_code]).to match([be_a(DeepL::Exceptions::ServerError), 503])
+        }
+      expect(stub).to have_been_requested.once
+    end
   end
 
   describe DeepL::Resources::DocumentHandle, '#wait_until_document_translation_finished' do

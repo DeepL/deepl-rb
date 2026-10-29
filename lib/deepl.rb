@@ -23,6 +23,7 @@ require_relative 'deepl/exceptions/not_supported'
 require_relative 'deepl/exceptions/request_entity_too_large'
 require_relative 'deepl/exceptions/document_translation_error'
 require_relative 'deepl/exceptions/server_error'
+require_relative 'deepl/exceptions/document_not_ready_error'
 require_relative 'deepl/exceptions/connection_error'
 
 # -- Requests
