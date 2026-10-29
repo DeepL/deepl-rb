@@ -526,6 +526,134 @@ module DeepL
     end
 
     ##
+    # Lists style rule lists, one page at a time. Arguments left +nil+ are not sent.
+    #
+    # @param [Integer, nil] page Index of the page, starting at 0 (API default: 0).
+    # @param [Integer, nil] page_size Style rule lists per page (API default: 10).
+    # @param [Boolean, nil] detailed Whether to include +configured_rules+ and
+    #   +custom_instructions+.
+    # @return [Array<DeepL::Resources::StyleRule>]
+    def get_all_style_rules(page: nil, page_size: nil, detailed: nil)
+      options = { page: page, page_size: page_size, detailed: detailed }.compact
+      Requests::StyleRule::List.new(api, options).request
+    end
+
+    ##
+    # Creates a style rule list. Keywords left +nil+ are not sent.
+    #
+    # @param [String] name Name of the style rule list.
+    # @param [String] language Language the rules apply to, for example +'en'+.
+    # @param [Hash, nil] configured_rules Category -> rule -> value, sent as given.
+    # @param [Array<Hash>, nil] custom_instructions Instructions in the wire shape
+    #   (+label+, +prompt+ and optionally +source_language+), sent as given.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::StyleRule] The created style rule list.
+    def create_style_rule(name, language, configured_rules: nil, custom_instructions: nil,
+                          **options)
+      options = options.merge(configured_rules: configured_rules,
+                              custom_instructions: custom_instructions).compact
+      Requests::StyleRule::Create.new(api, name, language, options).request
+    end
+
+    ##
+    # Retrieves a style rule list, including its configured rules and custom instructions.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @return [DeepL::Resources::StyleRule]
+    # @raise [DeepL::Exceptions::NotFound] If the style rule list does not exist.
+    def get_style_rule(style_rule)
+      Requests::StyleRule::Find.new(api, style_rule).request
+    end
+
+    ##
+    # Renames a style rule list.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @param [String] name New name.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::StyleRule] The updated style rule list.
+    def update_style_rule_name(style_rule, name, **options)
+      Requests::StyleRule::Update.new(api, style_rule, name, options).request
+    end
+
+    ##
+    # Replaces the configured rules of a style rule list.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @param [Hash] configured_rules Category -> rule -> value, sent as the request body.
+    # @param [Hash] options +:extra_body_parameters+, added to the body as further keys.
+    # @return [DeepL::Resources::StyleRule] The updated style rule list.
+    def update_style_rule_configured_rules(style_rule, configured_rules, **options)
+      Requests::StyleRule::UpdateConfiguredRules.new(api, style_rule, configured_rules,
+                                                     options).request
+    end
+
+    ##
+    # Deletes a style rule list.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @return [nil]
+    def delete_style_rule(style_rule)
+      Requests::StyleRule::Destroy.new(api, style_rule).request
+      nil
+    end
+
+    ##
+    # Adds a custom instruction to a style rule list. +source_language+ is not sent if +nil+.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @param [String] label Label of the instruction.
+    # @param [String] prompt The instruction.
+    # @param [String, nil] source_language Source language the instruction applies to.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::CustomInstruction] The created instruction.
+    def create_style_rule_custom_instruction(style_rule, label, prompt, source_language: nil,
+                                             **options)
+      Requests::StyleRule::CreateCustomInstruction.new(api, style_rule, label, prompt,
+                                                       source_language, options).request
+    end
+
+    ##
+    # Retrieves a custom instruction of a style rule list.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @param [String, DeepL::Resources::CustomInstruction] instruction_id ID or instruction.
+    # @return [DeepL::Resources::CustomInstruction]
+    # @raise [DeepL::Exceptions::NotFound] If the instruction does not exist.
+    def get_style_rule_custom_instruction(style_rule, instruction_id)
+      Requests::StyleRule::FindCustomInstruction.new(api, style_rule, instruction_id).request
+    end
+
+    ##
+    # Replaces a custom instruction of a style rule list. +source_language+ is not sent if
+    # +nil+.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @param [String, DeepL::Resources::CustomInstruction] instruction_id ID or instruction.
+    # @param [String] label Label of the instruction.
+    # @param [String] prompt The instruction.
+    # @param [String, nil] source_language Source language the instruction applies to.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::CustomInstruction] The updated instruction.
+    def update_style_rule_custom_instruction(style_rule, instruction_id, label, prompt,
+                                             source_language: nil, **options)
+      Requests::StyleRule::UpdateCustomInstruction.new(api, style_rule, instruction_id, label,
+                                                       prompt, source_language,
+                                                       options).request
+    end
+
+    ##
+    # Deletes a custom instruction of a style rule list.
+    #
+    # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
+    # @param [String, DeepL::Resources::CustomInstruction] instruction_id ID or instruction.
+    # @return [nil]
+    def delete_style_rule_custom_instruction(style_rule, instruction_id)
+      Requests::StyleRule::DestroyCustomInstruction.new(api, style_rule, instruction_id).request
+      nil
+    end
+
+    ##
     # Lists style profiles, one page at a time. Arguments left +nil+ are not sent.
     #
     # @param [Integer, nil] page Index of the page, starting at 0 (API default: 0).

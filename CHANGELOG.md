@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added style rule lists (`/v3/style_rules`) to `DeepL::Client`:
+  `get_all_style_rules(page: nil, page_size: nil, detailed: nil)`,
+  `create_style_rule(name, language, configured_rules: nil, custom_instructions: nil,
+  **options)`, `get_style_rule(style_rule)`, `update_style_rule_name(style_rule, name,
+  **options)`, `update_style_rule_configured_rules(style_rule, configured_rules, **options)`,
+  `delete_style_rule(style_rule)`, `create_style_rule_custom_instruction(style_rule, label,
+  prompt, source_language: nil, **options)`, `get_style_rule_custom_instruction(style_rule,
+  instruction_id)`, `update_style_rule_custom_instruction(style_rule, instruction_id, label,
+  prompt, source_language: nil, **options)` and
+  `delete_style_rule_custom_instruction(style_rule, instruction_id)`. Keywords left `nil` are
+  not sent; the delete methods return `nil`. Please refer to the README for usage
+  instructions.
+- The style rule operations, in `DeepL::Client` and in `DeepL.style_rules`, take a style rule
+  list as its ID or a `DeepL::Resources::StyleRule`, and a custom instruction as its ID or a
+  `DeepL::Resources::CustomInstruction`.
 - Added the language operations to `DeepL::Client`: `get_source_languages`,
   `get_target_languages`, `get_language_resources` and `get_languages_for_resource(resource,
   include: nil)`. `include:` takes one value or an array and is sent as one `include` query
@@ -182,6 +197,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Deprecated
+- The methods of `DeepL::StyleRuleApi` (`DeepL.style_rules`), use the style rule methods of
+  `DeepL::Client` instead (`list` is `get_all_style_rules`, `find` is `get_style_rule`,
+  `update_name` is `update_style_rule_name`, `destroy` is `delete_style_rule`, and so on).
+  They keep working unchanged.
 - `DeepL::Exceptions::NotSupported` is deprecated: the library no longer raises it. Creating
   one prints a deprecation warning once per process.
 - The module-level API is deprecated in favour of `DeepL::Client` and will be removed in the
@@ -201,6 +220,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- Style rule list and custom instruction IDs were inserted into the request path without
+  URL encoding: an ID containing `/` changed the path and a space raised
+  `URI::InvalidURIError`. They are now URL-encoded.
+- A malformed `creation_time` or `updated_time` of a style rule list raised a raw
+  `ArgumentError`. It now raises `DeepL::Exceptions::Error`.
+- Creating a style rule list removed `configured_rules` and `custom_instructions` from the
+  options hash passed in, so reusing the hash for another create sent neither. The hash is no
+  longer changed.
 - `DeepL::Resources::Language#supports_formality?` raised `DeepL::Exceptions::NotSupported`
   for source languages. It now returns `nil` for them.
 - `DeepL.document.translate_document` and `DocumentHandle#wait_until_document_translation_finished`
