@@ -204,6 +204,12 @@ describe DeepL::DocumentApi do
       expect(statuses.map { |s| [s.successful?, s.error?, s.finished?] })
         .to eq([[true, false, true], [false, true, true]])
     end
+
+    it 'URL-encodes the document ID in the path' do
+      stub_request(:post, url('/v2/document/a%20b%2Fc')).to_return(status_reply('done'))
+
+      documents.get_status(DeepL::Resources::DocumentHandle.new('a b/c', 'key-1', nil, nil))
+    end
   end
 
   describe '#download' do
@@ -230,6 +236,13 @@ describe DeepL::DocumentApi do
       expect(File.binread(output)).to eq(Fixtures::BINARY_CONTENT)
     ensure
       Encoding.default_internal = previous
+    end
+
+    it 'URL-encodes the document ID in the path' do
+      stub_request(:post, url('/v2/document/a%20b%2Fc/result')).to_return(status: 200, body: 'x')
+
+      documents.download(DeepL::Resources::DocumentHandle.new('a b/c', 'key-1', nil, nil),
+                         File.join(temp_dir, 'result.txt'))
     end
   end
 

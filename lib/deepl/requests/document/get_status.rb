@@ -35,8 +35,12 @@ module DeepL
           Resources::DocumentTranslationStatus.new(document_translation_status, request, response)
         end
 
+        def escaped_document_id
+          URI.encode_www_form_component(document_id).gsub('+', '%20')
+        end
+
         def path
-          "document/#{document_id}"
+          "document/#{escaped_document_id}"
         end
       end
     end

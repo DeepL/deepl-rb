@@ -37,8 +37,12 @@ module DeepL
           File.binwrite(@output_file, response.body)
         end
 
+        def escaped_document_id
+          URI.encode_www_form_component(document_id).gsub('+', '%20')
+        end
+
         def path
-          "document/#{document_id}/result"
+          "document/#{escaped_document_id}/result"
         end
       end
     end
