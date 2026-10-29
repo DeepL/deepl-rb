@@ -119,8 +119,8 @@ puts DeepL.languages(type: :target).count
 All languages are also defined on the
 [official API documentation](https://developers.deepl.com/docs/api-reference/translate).
 
-Note that target languages may include the `supports_formality` flag, which may be checked
-using the `DeepL::Resources::Language#supports_formality?`.
+`DeepL::Resources::Language#supports_formality?` is `true` or `false` for target languages and
+`nil` for source languages.
 
 #### Languages per resource
 
@@ -1369,7 +1369,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
 | `DeepL::Exceptions::QuotaExceeded` | You've reached the API's character limit. |
 | `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |
-| `DeepL::Exceptions::NotSupported` | The requested method or API endpoint is not supported. |
+| `DeepL::Exceptions::NotSupported` | Deprecated, no longer raised by the library. |
 | `DeepL::Exceptions::RequestEntityTooLarge` | Your request is too large, reduce the amount of data you are sending. The API has a request size limit of 128 KiB. |
 | `DeepL::Exceptions::ServerError` | An error occured in the DeepL API (HTTP 5xx), raised after all retries. |
 

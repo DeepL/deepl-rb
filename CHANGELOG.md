@@ -155,6 +155,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Deprecated
+- `DeepL::Exceptions::NotSupported` is deprecated: the library no longer raises it. Creating
+  one prints a deprecation warning once per process.
 - The module-level API is deprecated in favour of `DeepL::Client` and will be removed in the
   next major version: `DeepL.configure`, `DeepL.configuration`, `DeepL.api`, `DeepL.translate`,
   `DeepL.rephrase`, `DeepL.correct`, `DeepL.usage`, `DeepL.languages`,
@@ -172,6 +174,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- `DeepL::Resources::Language#supports_formality?` raised `DeepL::Exceptions::NotSupported`
+  for source languages. It now returns `nil` for them.
 - `DeepL.document.translate_document` and `DocumentHandle#wait_until_document_translation_finished`
   stopped polling after 11 status requests (about 50 seconds), and `translate_document` then
   downloaded the unfinished document. They now poll until the translation is done or failed;

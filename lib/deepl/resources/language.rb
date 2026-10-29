@@ -20,10 +20,12 @@ module DeepL
         "#{code} - #{name}"
       end
 
+      # Whether the target language supports the +formality+ option.
+      #
+      # @return [Boolean, nil] +true+ or +false+ for a target language, +nil+ for a source
+      #   language.
       def supports_formality?
-        return @supports_formality unless @supports_formality.nil?
-
-        raise Exceptions::NotSupported, 'Support formality is only available on target languages'
+        @supports_formality
       end
     end
   end
