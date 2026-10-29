@@ -235,9 +235,9 @@ module DeepL # rubocop:disable Metrics/ModuleLength
   #     object. Applies the profile's glossaries, style rule lists and translation memories.
   # @param [Hash] additional_headers Additional HTTP headers for the translation.
   # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] Translated text resource(s).
-  # @deprecated Use DeepL::Client instead.
+  # @deprecated Use DeepL::Client#translate_text instead.
   def translate(text, source_lang, target_lang, options = {}, additional_headers = {})
-    deprecated(:translate, 'DeepL::Client')
+    deprecated(:translate, 'DeepL::Client#translate_text')
     ensure_configured
     Requests::Translate.new(module_api, text, source_lang, target_lang, options,
                             additional_headers).request

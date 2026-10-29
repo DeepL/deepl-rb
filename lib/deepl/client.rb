@@ -61,6 +61,33 @@ module DeepL
       )
     end
 
+    ##
+    # Translates +text+ from +source_lang+ into +target_lang+. Always requests the billed
+    # characters; options set to +nil+ are not sent.
+    #
+    # @param [String, Array<String>] text Text or texts to translate.
+    # @param [String, nil] source_lang Source language, +nil+ to detect it.
+    # @param [String] target_lang Target language.
+    # @param [Hash] options Translation options, sent as given unless listed here:
+    #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
+    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
+    #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Requires +source_lang+ and
+    #     cannot be combined with +:glossary+.
+    #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
+    #   * +:split_sentences+ - +true+/+false+ are sent as +'1'+/+'0'+.
+    #   * +:custom_instructions+ - An array of instructions; a string is one instruction.
+    #   * +:extra_body_parameters+ - A hash added to the request body last; replaces fields of
+    #     the same name.
+    #   Other options (+:formality+, +:tag_handling+, +:tag_handling_version+, +:context+,
+    #   +:model_type+, ...) are sent unchanged.
+    # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
+    #   an array for an array (also for a one-element array).
+    # @raise [ArgumentError] If the glossary options are combined or more than 5 are given.
+    def translate_text(text, source_lang, target_lang, **options)
+      result = Requests::Translate.new(api, text, source_lang, target_lang, options).request
+      text.is_a?(Array) && !result.is_a?(Array) ? [result] : result
+    end
+
     def inspect
       "#<#{self.class.name} server_url=#{configuration.host}>"
     end

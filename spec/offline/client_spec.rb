@@ -188,4 +188,32 @@ describe DeepL::Client do
       expect(described_class.free_account_auth_key?(nil)).to be(false)
     end
   end
+
+  describe '#translate_text' do
+    let(:client) { described_class.new(OfflineHelper::AUTH_KEY) }
+
+    def stub_translate(body, translations)
+      stub_request(:post, url('/v2/translate'))
+        .with(body: body, headers: json_headers)
+        .to_return(reply(translations: translations))
+    end
+
+    it 'sends the text, the options and show_billed_characters and returns one result' do
+      stub_translate({ text: ['Hello'], target_lang: 'DE', show_billed_characters: true,
+                       formality: 'less', glossary_id: 'g-1', split_sentences: '0' },
+                     [{ text: 'Hallo', billed_characters: 5 }])
+
+      result = client.translate_text('Hello', nil, 'DE', formality: 'less', glossary: 'g-1',
+                                                         split_sentences: false, context: nil)
+      expect([result.class, result.text, result.billed_characters])
+        .to eq([DeepL::Resources::Text, 'Hallo', 5])
+    end
+
+    it 'returns an array for a one-element array' do
+      stub_translate({ text: ['Hello'], source_lang: 'EN', target_lang: 'DE',
+                       show_billed_characters: true }, [{ text: 'Hallo' }])
+
+      expect(client.translate_text(['Hello'], 'EN', 'DE').map(&:text)).to eq(['Hallo'])
+    end
+  end
 end
