@@ -300,9 +300,9 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     Requests::Correct.new(module_api, text, target_lang, options, additional_headers).request
   end
 
-  # @deprecated Use DeepL::Client instead.
+  # @deprecated Use DeepL::Client#get_usage instead.
   def usage(options = {})
-    deprecated(:usage, 'DeepL::Client')
+    deprecated(:usage, 'DeepL::Client#get_usage')
     ensure_configured
     Requests::Usage.new(module_api, options).request
   end

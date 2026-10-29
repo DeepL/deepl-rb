@@ -5,12 +5,16 @@
 
 require_relative 'real_api_helper'
 
-describe 'DeepL.usage' do
-  it 'sends GET /v2/usage and parses the usage' do
-    usage = DeepL.usage
+describe 'DeepL::Client#get_usage' do
+  let(:client) do
+    DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), server_url: ENV.fetch('DEEPL_SERVER_URL', nil))
+  end
 
-    expect(usage.character_count).to be_an(Integer)
-    expect(usage.character_limit).to be_an(Integer)
-    expect(usage.quota_exceeded?).to be(true).or be(false)
+  it 'sends GET /v2/usage and parses the usage' do
+    usage = client.get_usage
+
+    expect(usage.character.count).to be_an(Integer)
+    expect(usage.character.limit).to be_an(Integer)
+    expect(usage.any_limit_reached?).to be(true).or be(false)
   end
 end

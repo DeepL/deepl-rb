@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepL::Client#get_usage`, which returns the same `DeepL::Resources::Usage` as
+  `DeepL.usage`. Please refer to the README for usage instructions.
 - Added translation memories to `DeepL::Client`: `list_translation_memories(page: nil,
   page_size: nil)`, `get_translation_memory(translation_memory)`,
   `delete_translation_memory(translation_memory)`,
@@ -217,6 +219,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Deprecated
+- `DeepL::Resources::Usage#character_count`, `#character_limit` and `#quota_exceeded?`, use
+  `character.count`, `character.limit` and `character.limit_reached?` (or
+  `any_limit_reached?`) instead. Each prints a warning once per process and keeps working
+  unchanged. `DeepL.usage` now names `DeepL::Client#get_usage` as its replacement.
 - The methods of `DeepL::TranslationMemoryApi` (`DeepL.translation_memories`), use the
   translation memory methods of `DeepL::Client` instead (`list` is
   `list_translation_memories`, `find` is `get_translation_memory`, `segments` is

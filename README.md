@@ -58,9 +58,9 @@ The authentication key is trimmed; an empty key raises `ArgumentError`.
 document translation (`translate_document` and its steps, see
 [Translate documents](#translate-documents)), rephrasing and correction (`rephrase_text` and
 `correct_text`, see [Rephrase Text](#rephrase-text) and [Correct Text](#correct-text)),
-multilingual glossaries (see [Multilingual glossaries](#multilingual-glossaries)) and
+multilingual glossaries (see [Multilingual glossaries](#multilingual-glossaries)),
 spoken terms (see
-[Spoken terms](#spoken-terms)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
+[Spoken terms](#spoken-terms)) and usage (`get_usage`, see [Monitor usage](#monitor-usage)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
 is deprecated: each method prints a deprecation warning once per process, and it will be
 removed in the next major version.
 
@@ -1198,28 +1198,26 @@ handle = client.translate_document_upload('my_document.docx', 'EN', 'DE',
 
 ### Monitor usage
 
-To check current API usage, use:
+To check current API usage, call `get_usage`. It returns a `DeepL::Resources::Usage`. Each
+usage type is a `DeepL::Resources::Usage::Detail` with `count`, `limit` and `limit_reached?`:
+`character`, plus `document` and `team_document` for accounts with a document limit.
+`any_limit_reached?` checks `character`, `document` and `team_document`:
 
 ```rb
-usage = DeepL.usage
+usage = client.get_usage
 
-puts usage.character_count
+puts usage.character.count
 # => 180118
-puts usage.character_limit
+puts usage.character.limit
 # => 1250000
-```
-
-Each usage type is also available as a `DeepL::Resources::Usage::Detail` with `count`,
-`limit` and `limit_reached?`: `character`, plus `document` and `team_document` for accounts with
-a document limit. `any_limit_reached?` checks `character`, `document` and `team_document`:
-
-```rb
-usage = DeepL.usage
-
 puts 'Translation limit reached.' if usage.any_limit_reached?
 puts "Document usage: #{usage.document}" if usage.document
 # => Document usage: 5 of 10
 ```
+
+`DeepL.usage` and the `Usage` readers `character_count`, `character_limit` and
+`quota_exceeded?` are deprecated. Use `client.get_usage`, `character.count`,
+`character.limit` and `character.limit_reached?` (or `any_limit_reached?`) instead.
 
 For API Pro users, the response also contains this API key's usage, speech usage, the billing
 period and a per-product breakdown. These fields are `nil` when the response does not contain
@@ -1227,7 +1225,7 @@ them (e.g. for API Free users). `any_limit_reached?` does not consider them; cal
 `limit_reached?` on them directly, e.g. `usage.api_key_character.limit_reached?`:
 
 ```rb
-usage = DeepL.usage
+usage = client.get_usage
 
 # Characters used by the whole account vs. by this API key
 puts "account: #{usage.character}"

@@ -29,7 +29,7 @@ module DeepL
                         speech_to_speech_minutes].freeze
       KEYWORD_FIELDS = (DETAIL_TYPES + %i[products start_time end_time]).freeze
 
-      attr_reader :character_count, :character_limit, :character, *KEYWORD_FIELDS
+      attr_reader :character, *KEYWORD_FIELDS
 
       ##
       # Each keyword argument is nil when the response does not contain the field.
@@ -56,12 +56,29 @@ module DeepL
         KEYWORD_FIELDS.each { |field| instance_variable_set("@#{field}", fields[field]) }
       end
 
-      def to_s
-        "#{character_count} / #{character_limit}"
+      ##
+      # @deprecated Use +character.count+ instead.
+      def character_count
+        deprecated(:character_count, 'character.count')
+        @character_count
       end
 
+      ##
+      # @deprecated Use +character.limit+ instead.
+      def character_limit
+        deprecated(:character_limit, 'character.limit')
+        @character_limit
+      end
+
+      def to_s
+        "#{@character_count} / #{@character_limit}"
+      end
+
+      ##
+      # @deprecated Use +character.limit_reached?+ or +any_limit_reached?+ instead.
       def quota_exceeded?
-        character_count >= character_limit
+        deprecated(:quota_exceeded?, 'character.limit_reached? or any_limit_reached?')
+        @character_count >= @character_limit
       end
 
       ##
@@ -70,6 +87,14 @@ module DeepL
       # limit_reached? on them directly.
       def any_limit_reached?
         [character, document, team_document].compact.any?(&:limit_reached?)
+      end
+
+      private
+
+      def deprecated(name, replacement)
+        Deprecation.warn_once("DeepL::Resources::Usage##{name}",
+                              "[DEPRECATION] DeepL::Resources::Usage##{name} is deprecated, " \
+                              "use #{replacement} instead.", uplevel: 3)
       end
     end
 

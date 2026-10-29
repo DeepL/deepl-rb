@@ -264,6 +264,14 @@ module DeepL
     end
 
     ##
+    # Retrieves the usage and limits of the account and, for API Pro, of this API key.
+    #
+    # @return [DeepL::Resources::Usage] Usage per type; a type absent from the response is +nil+.
+    def get_usage # rubocop:disable Naming/AccessorMethodName
+      Requests::Usage.new(api).request
+    end
+
+    ##
     # Creates a multilingual glossary with one dictionary per language pair.
     #
     # @param [String] name Name of the glossary.
