@@ -167,4 +167,26 @@ describe 'DeepL::Client spoken terms' do
       expect(client.delete_spoken_terms('st-1')).to be_nil
     end
   end
+
+  describe 'collection IDs' do
+    before do
+      encoded = url('/v3/spoken-terms/a%20b%2Fc')
+      stub_request(:get, encoded).to_return(reply(collection_json))
+      stub_request(:patch, encoded).to_return(reply(collection_json))
+      stub_request(:delete, encoded).to_return(status: 204)
+      stub_request(:get, "#{encoded}/entries?lang=en").to_return(reply(lang: 'en', entries: ''))
+      stub_request(:put, "#{encoded}/term-lists").to_return(reply(lang: 'en', entry_count: 0))
+      stub_request(:delete, "#{encoded}/term-lists?lang=en").to_return(status: 204)
+    end
+
+    it 'are URL-encoded in every path' do
+      id = 'a b/c'
+      client.get_spoken_terms(id)
+      client.update_spoken_terms(id, name: 'x')
+      client.delete_spoken_terms(id)
+      client.get_spoken_terms_entries(id, 'en')
+      client.replace_spoken_terms_list(id, { lang: 'en', entries: ['x'] })
+      client.delete_spoken_terms_list(id, 'en')
+    end
+  end
 end

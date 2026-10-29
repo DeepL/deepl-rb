@@ -17,8 +17,9 @@ module DeepL
           spoken_terms.to_s
         end
 
+        # The path of a collection, with its ID URL-encoded.
         def spoken_terms_path(id, suffix = nil)
-          ["spoken-terms/#{id}", suffix].compact.join('/')
+          ["spoken-terms/#{escape_path_segment(id)}", suffix].compact.join('/')
         end
 
         def entries_to_string(entries)

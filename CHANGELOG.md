@@ -72,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the terms of a language as a `DeepL::Resources::SpokenTermsEntries` or a hash with `:lang`
   and `:entries`. Terms are arrays of strings and are checked like glossary terms before they
   are sent. The delete methods return `nil`. Please refer to the README for usage
-  instructions.
+  instructions. Collection IDs are URL-encoded in the request paths.
 - Added `DeepL::AdminClient` for the Admin API. It must be created with an admin
   API key, accepts the options of `DeepL::Client` and supports managing developer keys
   (`create_developer_key`, `get_developer_keys`, `deactivate_developer_key`, `rename_developer_key`,
