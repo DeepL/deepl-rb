@@ -8,7 +8,9 @@ module DeepL
     ATTRIBUTES = %i[auth_key host logger max_doc_status_queries max_network_retries user_agent
                     version headers timeout].freeze
 
-    attr_accessor(*ATTRIBUTES)
+    # max_doc_status_queries= is defined below, with its deprecation warning.
+    attr_accessor(*(ATTRIBUTES - %i[max_doc_status_queries]))
+    attr_reader :max_doc_status_queries
 
     DEEPL_SERVER_URL = 'https://api.deepl.com'
     DEEPL_SERVER_URL_FREE = 'https://api-free.deepl.com'

@@ -327,6 +327,11 @@ module DeepL
         raise NotImplementedError
       end
 
+      # URL-encodes a value for use as one path segment (a space as %20, not +).
+      def escape_path_segment(value)
+        URI.encode_www_form_component(value.to_s).gsub('+', '%20')
+      end
+
       def url
         "#{host}/#{api.configuration.version}/#{path}"
       end

@@ -43,12 +43,8 @@ module DeepL
           super
         end
 
-        def escaped_document_id
-          URI.encode_www_form_component(document_id).gsub('+', '%20')
-        end
-
         def path
-          "document/#{escaped_document_id}/result"
+          "document/#{escape_path_segment(document_id)}/result"
         end
       end
     end
