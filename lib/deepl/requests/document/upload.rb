@@ -68,7 +68,12 @@ module DeepL
         # comma-separated `glossary_ids` field. Requires `source_lang`, cannot be combined with
         # the singular `glossary_id` option, and allows at most 5 IDs.
         def add_glossary_ids_to_form(form_data)
-          glossary_ids = build_glossary_ids_param(source_lang)
+          glossary_ids = build_glossary_ids_param
+          # Text translation detects the source language for glossaries; documents do not.
+          if !glossary_ids.nil? && source_lang.nil?
+            raise ArgumentError, 'The `glossary_ids` option requires `source_lang` to be set'
+          end
+
           form_data.push(['glossary_ids', glossary_ids.join(',')]) unless glossary_ids.nil?
         end
 

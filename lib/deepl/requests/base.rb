@@ -251,7 +251,6 @@ module DeepL
       # The +glossary_ids+ option accepts an array of up to `MAX_GLOSSARY_IDS` glossary
       # identifiers. Each entry may be a glossary ID string, a
       # `DeepL::Resources::Glossary` or a `DeepL::Resources::MultilingualGlossary` object. It:
-      # * requires +source_lang+ to be set,
       # * cannot be combined with the singular +glossary+ or +glossary_id+ option,
       # * allows at most `MAX_GLOSSARY_IDS` identifiers.
       #
@@ -259,17 +258,16 @@ module DeepL
       # Callers sending multipart/form-data (e.g. document upload) should join the returned
       # array into a comma-separated string.
       #
-      # @param [String, nil] source_lang The source language for the request.
       # @return [Array<String>, nil] The list of glossary IDs, or nil if the +glossary_ids+
       #                              option was not provided.
       # @raise [ArgumentError] If any of the validation rules above are violated.
-      def build_glossary_ids_param(source_lang)
+      def build_glossary_ids_param
         return nil unless option?(:glossary_ids)
 
         ids = Array(delete_option(:glossary_ids))
         return nil if ids.empty?
 
-        validate_glossary_ids!(ids, source_lang)
+        validate_glossary_ids!(ids)
         ids.map { |glossary| glossary_id_string(glossary) }
       end
 
@@ -307,11 +305,8 @@ module DeepL
         glossary.to_s
       end
 
-      def validate_glossary_ids!(ids, source_lang)
+      def validate_glossary_ids!(ids)
         validate_no_single_glossary!
-        if source_lang.nil?
-          raise ArgumentError, 'The `glossary_ids` option requires `source_lang` to be set'
-        end
         return unless ids.size > MAX_GLOSSARY_IDS
 
         raise ArgumentError,

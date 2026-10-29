@@ -238,9 +238,10 @@ describe 'DeepL.translate' do
       DeepL.translate('a', 'EN', 'DE', glossary_ids: ['g-1', glossary, multilingual])
     end
 
-    it 'raises ArgumentError without a source language' do
-      expect { DeepL.translate('a', nil, 'DE', glossary_ids: ['g-1']) }
-        .to raise_error(ArgumentError, /requires `source_lang`/)
+    it 'sends glossary_ids without a source language' do
+      expect_body(text: ['a'], target_lang: 'DE', glossary_ids: ['g-1'])
+
+      DeepL.translate('a', nil, 'DE', glossary_ids: ['g-1'])
     end
 
     it 'raises ArgumentError together with glossary_id' do

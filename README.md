@@ -409,9 +409,12 @@ puts translation.text
 To use more than one glossary at once, specify the `glossary_ids` option with an
 array of up to 5 glossary IDs (as strings or `DeepL::Resources::Glossary`
 objects) instead of `glossary`. This works for both text and document
-translation. `glossary_ids` requires `source_lang` to be set, cannot be combined
-with `glossary` or `glossary_id`, and raises `ArgumentError` if these rules are violated or
-more than 5 IDs are provided:
+translation. `glossary_ids` cannot be combined with `glossary` or `glossary_id`,
+and raises `ArgumentError` if this rule is violated or more than 5 IDs are
+provided. For text translation, a glossary (`glossary` or `glossary_ids`) can be
+used without `source_lang`: the API detects the source language and uses the
+glossary's dictionary for the detected language pair. Document translation with
+`glossary_ids` requires `source_lang` and raises `ArgumentError` without it:
 
 ```rb
 # Text translation with multiple glossaries

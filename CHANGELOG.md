@@ -197,6 +197,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `quota_exceeded?` and `to_s` are unchanged.
 
 ### Changed
+- Text translation accepts a glossary without a source language: the `glossary_ids`
+  option no longer requires `source_lang`, and the API detects the source language.
+  Document translation with `glossary_ids` still requires `source_lang`.
 - `DeepL.document.translate_document` now returns the final
   `DeepL::Resources::DocumentTranslationStatus`, as documented, instead of the number of bytes
   written.

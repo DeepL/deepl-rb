@@ -71,8 +71,8 @@ module DeepL
     # @param [Hash] options Translation options, sent as given unless listed here:
     #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
     #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
-    #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Requires +source_lang+ and
-    #     cannot be combined with +:glossary+.
+    #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Cannot be combined with
+    #     +:glossary+. Without +source_lang+, the API detects it.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
     #   * +:split_sentences+ - +true+/+false+ are sent as +'1'+/+'0'+.
     #   * +:custom_instructions+ - An array of instructions; a string is one instruction.

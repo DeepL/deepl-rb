@@ -87,7 +87,7 @@ module DeepL
           payload[:translation_memory_threshold] = threshold unless threshold.nil?
         end
 
-        glossary_ids = build_glossary_ids_param(source_lang)
+        glossary_ids = build_glossary_ids_param
         payload[:glossary_ids] = glossary_ids unless glossary_ids.nil?
         glossary_id = build_glossary_param
         payload[:glossary_id] = glossary_id unless glossary_id.nil?
