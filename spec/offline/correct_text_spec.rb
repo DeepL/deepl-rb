@@ -39,6 +39,12 @@ describe 'DeepL.correct' do
     expect(DeepL.correct('Helo')).to be_a(DeepL::Resources::Text)
   end
 
+  it 'parses the target language of each improvement' do
+    stub_correct.to_return(reply(improvements: [{ text: 'Hello', target_language: 'en-US' }]))
+
+    expect(DeepL.correct('Helo').target_language).to eq('en-US')
+  end
+
   it 'returns an array of texts for an array, even for a single element' do
     stub_correct.to_return(reply(improvements: [{ text: 'Hello' }]))
 

@@ -47,6 +47,15 @@ describe 'DeepL.rephrase' do
     expect(DeepL.rephrase('Hello')).to be_a(DeepL::Resources::Text)
   end
 
+  it 'parses the target language of each improvement' do
+    stub_rephrase.to_return(reply(improvements: [
+                                    { text: 'x', detected_source_language: 'en',
+                                      target_language: 'en-GB' }, { text: 'y', target_language: 1 }
+                                  ]))
+
+    expect(DeepL.rephrase(%w[a b]).map(&:target_language)).to eq(['en-GB', nil])
+  end
+
   it 'returns an array of texts for an array' do
     stub_rephrase.to_return(reply(improvements: [{ text: 'x' }, { text: 'y' }]))
 

@@ -12,12 +12,16 @@ module DeepL
       # @return [String, nil] Tag handling algorithm version used (see
       #   +DeepL::Constants::TagHandlingVersion+), +nil+ if the response does not contain it.
       attr_reader :tag_handling_version
+      # @return [String, nil] Target language of a rephrase or correct result, +nil+ for text
+      #   translation results and if the response does not contain it.
+      attr_reader :target_language
       attr_reader :text, :detected_source_language, :model_type_used
 
       # Positional, not keyword, parameters: Ruby 2.7 would read the response (it has +to_hash+)
       # as keywords.
       def initialize(text, detected_source_language, model_type_used, request = nil, # rubocop:disable Metrics/ParameterLists
-                     response = nil, billed_characters = nil, tag_handling_version = nil)
+                     response = nil, billed_characters = nil, tag_handling_version = nil,
+                     target_language = nil)
         super(request, response)
 
         @text = text
@@ -25,6 +29,7 @@ module DeepL
         @model_type_used = model_type_used
         @billed_characters = billed_characters
         @tag_handling_version = tag_handling_version
+        @target_language = target_language
       end
 
       def to_s
