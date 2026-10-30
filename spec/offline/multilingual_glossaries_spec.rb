@@ -39,6 +39,18 @@ describe 'multilingual glossaries' do
                                       'entries' => "a\tb" }])
       end
 
+      it 'trims the terms of a TSV string of entries and skips blank lines' do
+        stub_request(:post, url('/v3/glossaries')).with(
+          body: { name: 'terms',
+                  dictionaries: [{ source_lang: 'EN', target_lang: 'DE',
+                                   entries: "Apple\tApfel\nBanana\tBanane",
+                                   entries_format: 'tsv' }] }
+        ).to_return(reply(glossary_json, 201))
+
+        glossaries.create('terms', [{ source_lang: 'EN', target_lang: 'DE',
+                                      entries: " Apple \t Apfel\r\n\n  Banana\tBanane \n" }])
+      end
+
       it 'parses the dictionaries of the glossary' do
         stub_request(:post, url('/v3/glossaries')).to_return(reply(glossary_json, 201))
 
@@ -48,7 +60,8 @@ describe 'multilingual glossaries' do
     end
 
     describe '#create with invalid terms' do
-      [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]]].each do |entries|
+      [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]], "Apple\tApfel\tKuchen", "Apple\n",
+       " \tApfel", "Apple\tAp\u0001fel", "Apple\tAp\u2028fel"].each do |entries|
         it "raises ArgumentError for #{entries.inspect} and sends no request" do
           dictionaries = [{ source_lang: 'EN', target_lang: 'DE', entries: entries }]
 
@@ -201,6 +214,18 @@ describe 'multilingual glossaries' do
         ).to_return(reply(glossary_json, 201))
 
         client.create_multilingual_glossary('terms', [apple], extra_body_parameters: { beta: true })
+      end
+
+      it 'trims the terms of MultilingualGlossaryDictionaryEntries given as a TSV string' do
+        dictionary = { source_lang: 'EN', target_lang: 'DE', entries: "Apple\tApfel",
+                       entries_format: 'tsv' }
+        stub_request(:post, url('/v3/glossaries'))
+          .with(body: { name: 'terms', dictionaries: [dictionary] })
+          .to_return(reply(glossary_json, 201))
+        entries_class = DeepL::Resources::MultilingualGlossaryDictionaryEntries
+        entries = entries_class.new('EN', 'DE', "Apple \tApfel\n")
+
+        client.create_multilingual_glossary('terms', [entries])
       end
 
       it 'parses the creation time as a UTC Time' do

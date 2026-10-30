@@ -496,10 +496,12 @@ term pairs.
 To create a multilingual glossary, pass a name and one
 `DeepL::Resources::MultilingualGlossaryDictionaryEntries` (or a hash with
 `:source_lang`, `:target_lang` and `:entries`) per language pair. A hash may also
-give its entries as a TSV string, or as CSV with `entries_format: 'csv'`. Terms
-given as pairs are checked like v2 glossary terms: each term is stripped of
-surrounding whitespace, and an empty term or one with a control character raises
-`ArgumentError` before anything is sent. Further options, such as
+give its entries as a TSV string (one source/target pair per line, separated by a
+tab), or as CSV with `entries_format: 'csv'`. Terms given as pairs or as TSV are
+checked like v2 glossary terms: each term is stripped of surrounding whitespace,
+and an empty term, one with a control character or a TSV line that is not exactly
+two terms raises `ArgumentError` before anything is sent. CSV content is sent as
+given. Further options, such as
 `extra_body_parameters`, are given as additional keywords:
 
 ```rb

@@ -30,20 +30,35 @@ module DeepL
           end
 
           value = ->(key) { dictionary[key] || dictionary[key.to_s] }
+          format = value.call(:entries_format) || 'tsv'
+          entries = value.call(:entries)
+          # CSV content is sent as given; TSV content is parsed so its terms are checked too.
+          entries = entries_to_string(entries) unless format == 'csv' && entries.is_a?(String)
           { source_lang: value.call(:source_lang), target_lang: value.call(:target_lang),
-            entries: entries_to_string(value.call(:entries)),
-            entries_format: value.call(:entries_format) || 'tsv' }
+            entries: entries, entries_format: format }
         end
 
-        # Source/target pairs are checked and joined as TSV; a TSV or CSV string is sent as given.
+        # Source/target pairs, or a TSV string of them, are checked and joined as TSV.
         def entries_to_string(entries)
-          return entries if entries.is_a?(String)
-
+          entries = tsv_to_pairs(entries) if entries.is_a?(String)
           entries.map do |entry|
             source = Utils::TermValidator.validate!(entry.first)
             target = Utils::TermValidator.validate!(entry.last)
             "#{source}\t#{target}"
           end.join("\n")
+        end
+
+        # One source/target pair per non-blank line, separated by a single tab.
+        def tsv_to_pairs(tsv)
+          tsv.split(/\r?\n/).reject { |line| line.strip.empty? }.map do |line|
+            pair = line.split("\t", -1)
+            unless pair.size == 2
+              raise ArgumentError, "TSV entry #{line.inspect} must be a source and a target term " \
+                                   'separated by one tab'
+            end
+
+            pair
+          end
         end
 
         def build_glossary(request, response)

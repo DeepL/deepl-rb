@@ -280,6 +280,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   existing file is overwritten.
 - `DeepL::Client#translate_document` raises `ArgumentError` for a missing input file before
   any request, instead of wrapping the `Errno::ENOENT` in `DocumentTranslationError`.
+- Multilingual glossary entries given as a TSV string are parsed into pairs, and each term is
+  stripped and checked like terms given as pairs, before anything is sent. A line that is not
+  exactly two tab-separated terms raises `ArgumentError`. CSV content is still sent as given.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

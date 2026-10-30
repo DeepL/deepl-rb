@@ -31,8 +31,8 @@ module DeepL
       ##
       # @param [String] source_lang Source language code, for example +'en'+.
       # @param [String] target_lang Target language code, for example +'de'+.
-      # @param [Array<Array(String, String)>, Hash{String => String}] entries Source/target term
-      #   pairs.
+      # @param [Array<Array(String, String)>, Hash{String => String}, String] entries Source/target
+      #   term pairs, or a TSV string of them; terms are stripped and checked when sent.
       def initialize(source_lang, target_lang, entries, request = nil, response = nil)
         super(request, response)
 

@@ -282,11 +282,12 @@ module DeepL
     # @param [String] name Name of the glossary.
     # @param [Array<DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash>] dictionaries
     #   One entry per language pair. A hash needs the keys +:source_lang+, +:target_lang+ and
-    #   +:entries+ (source/target pairs, or a TSV string; +:entries_format+ +'csv'+ for CSV).
+    #   +:entries+ (source/target pairs, or a TSV string; +:entries_format+ +'csv'+ for CSV,
+    #   which is sent as given).
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
     # @raise [ArgumentError] If a term is empty after stripping surrounding whitespace or
-    #   contains a control character.
+    #   contains a control character, or a TSV line is not exactly two terms.
     def create_multilingual_glossary(name, dictionaries, **options)
       Requests::MultilingualGlossary::Create.new(api, name, dictionaries, options).request
     end
