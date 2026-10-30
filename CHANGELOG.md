@@ -223,6 +223,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Exceptions::BadRequest`, since the value is now validated client-side.
 - Language lists returned by `DeepL.languages` and `DeepL.glossaries.language_pairs` may now
   include additional languages that the v2 endpoints did not list.
+- `import_translation_memory_from_filepath` (and `DeepL.translation_memories.import_from_filepath`)
+  raises `ArgumentError` instead of `DeepL::Exceptions::Error` when the input file does not
+  exist, before any request is sent.
+- `export_translation_memory_to_filepath` (and `DeepL.translation_memories.export_to_filepath`)
+  raises `DeepL::Exceptions::Error` before creating the export job if the output directory does
+  not exist.
 - Reworked the test suite so that it no longer needs the `deepl-mock` server. The offline specs
   assert the exact outgoing requests with WebMock, and one real-API spec per resource calls each
   endpoint once. `webmock` and `webrick` are test dependencies again.
@@ -288,6 +294,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raised the error class of the DeepL API status, for example `AuthorizationFailed` asking for a
   valid `auth_key` for an expired URL (403). It now raises a plain `DeepL::Exceptions::Error`
   with `http_status_code`; `should_retry?` is true for 429 and 5xx.
+- The translation memory file helpers raised raw `Errno::*` and `IOError` errors for local file
+  failures, such as an input path that is a directory or unreadable, or an output path that
+  cannot be written. They now raise `DeepL::Exceptions::Error` with the original error as
+  `cause`.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

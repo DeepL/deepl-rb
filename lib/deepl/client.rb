@@ -852,8 +852,9 @@ module DeepL
     #   request last.
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job; its result carries the
     #   ID of the new translation memory.
-    # @raise [DeepL::Exceptions::Error] If the file does not exist, the job fails or expires (with
-    #   the API's error message), or +timeout_s+ expires.
+    # @raise [ArgumentError] If the file does not exist, before any request is sent.
+    # @raise [DeepL::Exceptions::Error] If the file cannot be read, the upload fails, the job fails
+    #   or expires (with the API's error message), or +timeout_s+ expires.
     def import_translation_memory_from_filepath(input_path, display_name: nil, content_type: nil,
                                                 timeout_s: nil, **options)
       translation_memories.import_from_filepath(
@@ -885,7 +886,7 @@ module DeepL
     # @param [String] output_path Path to write the file to.
     # @return [nil]
     # @raise [DeepL::Exceptions::Error] If the job has no download URL, for example because it
-    #   is not completed yet.
+    #   is not completed yet, the download fails or the file cannot be written.
     def download_translation_memory_export(job, output_path)
       translation_memories.download_export(job, output_path)
       nil
@@ -901,8 +902,9 @@ module DeepL
     # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the job, +nil+ to wait
     #   until it is completed.
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job.
-    # @raise [DeepL::Exceptions::Error] If the job fails or expires (with the API's error
-    #   message), or +timeout_s+ expires.
+    # @raise [DeepL::Exceptions::Error] If the directory of +output_path+ does not exist (checked
+    #   before the job is created), the job fails or expires (with the API's error message),
+    #   +timeout_s+ expires, the download fails or the file cannot be written.
     def export_translation_memory_to_filepath(translation_memory, output_path, timeout_s: nil)
       translation_memories.export_to_filepath(translation_memory, output_path,
                                               timeout_s: timeout_s)

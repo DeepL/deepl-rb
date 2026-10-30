@@ -1045,9 +1045,10 @@ of the newly created translation memory. The optional keywords are
 `display_name` (the name of the translation memory, defaults to the file name),
 `content_type` (the MIME type of the file, declared in the job and sent with the
 upload, defaults to `application/xml`), `timeout_s` and `extra_body_parameters`
-(fields added to the body of the import job request). It raises a
-`DeepL::Exceptions::Error` with the API's error message if the job fails or
-expires, and when `timeout_s` expires.
+(fields added to the body of the import job request). It raises an
+`ArgumentError` before any request if the file does not exist, and a
+`DeepL::Exceptions::Error` if the file cannot be read, with the API's error
+message if the job fails or expires, and when `timeout_s` expires.
 
 ```rb
 job = client.import_translation_memory_from_filepath('legal.tmx',
@@ -1102,7 +1103,9 @@ finish on its own, so pass `timeout_s` when that is a possibility.
 `export_translation_memory_to_filepath` writes a translation memory to a TMX
 file. It creates the export job, waits until it is completed and downloads the
 result, overwriting the output file if it already exists. It accepts
-`timeout_s` and raises a `DeepL::Exceptions::Error` if the job fails or expires.
+`timeout_s` and raises a `DeepL::Exceptions::Error` if the job fails or expires,
+if the output directory does not exist (checked before the job is created), and
+if the file cannot be written.
 
 ```rb
 job = client.export_translation_memory_to_filepath('YOUR_TM_ID', 'export.tmx')

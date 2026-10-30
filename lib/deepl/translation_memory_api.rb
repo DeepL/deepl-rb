@@ -205,7 +205,9 @@ module DeepL
     # URL outside of the DeepL API, so no authorization header is sent with this request.
     #
     # @raise [DeepL::Exceptions::Error] If the job carries no download URL, for example because
-    #                                   it has not completed yet.
+    #                                   it has not completed yet, if the storage URL replies with
+    #                                   a non-2xx status (with `http_status_code`, `should_retry?`
+    #                                   true for 429 and 5xx), or if the file cannot be written.
     #
     # @param [DeepL::Resources::TranslationMemoryJob, String] job Completed export job carrying
     #        the download URL, or the download URL itself.
@@ -223,7 +225,8 @@ module DeepL
     # Imports a TMX file as a new translation memory: creates the import job, uploads the file
     # and waits for the processing to finish.
     #
-    # @raise [DeepL::Exceptions::Error] If the import fails.
+    # @raise [ArgumentError] If no file exists at `input_file_path`, before any request is sent.
+    # @raise [DeepL::Exceptions::Error] If the file cannot be read or the import fails.
     #
     # @param [String] input_file_path Path to the TMX file to import.
     # @param [String, nil] display_name Name of the resulting translation memory, defaults to the
@@ -242,11 +245,9 @@ module DeepL
 
     def import_from_filepath(input_file_path, display_name: nil, timeout_s: nil,
                              content_type: nil, extra_body_parameters: nil)
-      unless File.exist?(input_file_path)
-        raise Exceptions::Error, "No file found at #{input_file_path}"
-      end
+      raise ArgumentError, "No file found at #{input_file_path}" unless File.exist?(input_file_path)
 
-      file_content = File.binread(input_file_path)
+      file_content = read_input_file(input_file_path)
       created = create_import(File.basename(input_file_path), file_content.bytesize,
                               content_type: content_type, display_name: display_name,
                               extra_body_parameters: extra_body_parameters)
@@ -258,7 +259,9 @@ module DeepL
     # Exports a translation memory to a TMX file: creates the export job, waits for it to finish
     # and writes the result to +output_path+.
     #
-    # @raise [DeepL::Exceptions::Error] If the export fails.
+    # @raise [DeepL::Exceptions::Error] If the directory of `output_path` does not exist (checked
+    #                                   before the export job is created), the export fails or
+    #                                   the file cannot be written.
     #
     # @param [String, DeepL::Resources::TranslationMemory] translation_memory Translation memory
     #                                                                         ID or object.
@@ -270,6 +273,7 @@ module DeepL
     # @deprecated Use DeepL::Client#export_translation_memory_to_filepath instead.
 
     def export_to_filepath(translation_memory, output_path, timeout_s: nil)
+      check_output_directory(output_path)
       created = create_export(translation_memory)
       job = wait_until_job_done(created.job_id, timeout_s: timeout_s)
       download_export(job, output_path)
@@ -318,6 +322,19 @@ module DeepL
 
     def blank?(value)
       value.nil? || value.empty?
+    end
+
+    def read_input_file(input_file_path)
+      File.binread(input_file_path)
+    rescue SystemCallError, IOError => e
+      raise Exceptions::Error, "Could not read #{input_file_path}: #{e.message}"
+    end
+
+    def check_output_directory(output_path)
+      directory = File.dirname(output_path)
+      return if File.directory?(directory)
+
+      raise Exceptions::Error, "Output directory #{directory} does not exist"
     end
 
     def log_job_polling
