@@ -1449,7 +1449,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | --------------- | ----------- |
 | `DeepL::Exceptions::AuthorizationFailed` | The authorization process has failed. Check your `auth_key` value. |
 | `DeepL::Exceptions::BadRequest` | Something is wrong in your request. Check `exception.message` for more information. |
-| `DeepL::Exceptions::ConnectionError` | No HTTP response: a DNS, connection or timeout failure after all retries (`should_retry?` is true), or a TLS failure or malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
+| `DeepL::Exceptions::ConnectionError` | No HTTP response from the API: a DNS, connection or timeout failure after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed; `http_status_code` and `should_retry?` are those of the DeepL error that caused it, if any. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
@@ -1499,8 +1499,8 @@ or reset connection, broken pipe, unreachable host, timeout) are retried up to `
 times (default 5) with exponential backoff; a request is sent at most `max_retries:` + 1 times.
 Each attempt has a timeout of `timeout:` seconds (default 10). After the last retry, network
 failures raise `DeepL::Exceptions::ConnectionError`. TLS failures (including certificate
-verification) and malformed responses are not retried and raise
-`DeepL::Exceptions::ConnectionError` at once.
+verification), proxy failures (the proxy refuses `CONNECT`, e.g. with 407) and malformed
+responses are not retried and raise `DeepL::Exceptions::ConnectionError` at once.
 `AdminClient#create_developer_key` is only retried when the request was not sent (HTTP 429,
 DNS failure, refused connection or connection timeout). With the module-level API, set
 `config.max_network_retries` and `config.timeout`.

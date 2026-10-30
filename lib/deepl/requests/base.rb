@@ -14,10 +14,11 @@ module DeepL
       # broken pipes and unreachable hosts (SystemCallError), and connections closed early.
       RETRYABLE_NETWORK_ERRORS = [Timeout::Error, SocketError, SystemCallError, EOFError].freeze
 
-      # Network failures without an HTTP response. TLS failures and malformed responses are not
-      # transient and are raised without retrying.
+      # Network failures without an HTTP response from the API. TLS failures, malformed responses
+      # and proxy failures (Net::ProtocolError, raised when a proxy refuses CONNECT, e.g. with 407)
+      # are not transient and are raised without retrying.
       NETWORK_ERRORS = [*RETRYABLE_NETWORK_ERRORS, Net::HTTPBadResponse,
-                        OpenSSL::SSL::SSLError].freeze
+                        OpenSSL::SSL::SSLError, Net::ProtocolError].freeze
 
       # Errors raised while building the result from a received response: the response has an
       # unexpected format.

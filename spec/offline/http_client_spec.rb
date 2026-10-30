@@ -59,6 +59,16 @@ describe 'DeepL HTTP client' do
       end
     end
 
+    it 'raises a failed proxy CONNECT as a ConnectionError without retrying' do
+      error = Net::HTTPClientException.new('407 "Proxy Authentication Required"', nil)
+      stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
+
+      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |e|
+        expect([e.cause, e.should_retry?]).to match([be_a(Net::HTTPClientException), false])
+      }
+      expect(stub).to have_been_requested.once
+    end
+
     it 'does not let Net::HTTP re-send a request outside max_network_retries' do # rubocop:disable RSpec/ExampleLength
       clients = []
       allow(Net::HTTP).to receive(:new).and_wrap_original do |new, *args|
@@ -77,7 +87,7 @@ describe 'DeepL HTTP client' do
 
     it 'trims the auth key' do
       DeepL.configuration.auth_key = " k \n"
-      stub_request(:get, url('/v2/usage')).with(headers: json_headers).to_return(usage_reply)
+      stub_request(:get, url('/v2/usage')).with(headers: auth_headers).to_return(usage_reply)
 
       DeepL.usage
     end
