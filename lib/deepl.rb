@@ -366,7 +366,7 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     http.open_timeout = timeout if client_options.open_timeout.nil? && timeout
     http.start
   rescue *Requests::Base::NETWORK_ERRORS => e
-    raise Exceptions::ConnectionError, "Connection to the DeepL API failed: #{e.message}"
+    raise Exceptions::ConnectionError.from_network_error(e)
   end
 
   def ensure_configured

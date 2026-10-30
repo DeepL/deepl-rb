@@ -36,8 +36,8 @@ describe 'DeepL HTTP client' do
       expect(stub).to have_been_requested.twice
     end
 
-    it 'retries refused and reset connections, EOF and TLS errors' do
-      [Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError, OpenSSL::SSL::SSLError].each do |error|
+    it 'retries refused and reset connections, broken pipes and EOF' do
+      [Errno::ECONNREFUSED, Errno::ECONNRESET, Errno::EPIPE, EOFError].each do |error|
         WebMock.reset!
         stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
 
@@ -45,6 +45,34 @@ describe 'DeepL HTTP client' do
 
         expect(stub).to have_been_requested.twice
       end
+    end
+
+    it 'does not retry a TLS failure or a malformed response' do
+      [OpenSSL::SSL::SSLError, Net::HTTPBadResponse].each do |error|
+        WebMock.reset!
+        stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
+
+        expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |e|
+          expect([e.cause, e.should_retry?]).to match([be_a(error), false])
+        }
+        expect(stub).to have_been_requested.once
+      end
+    end
+
+    it 'does not let Net::HTTP re-send a request outside max_network_retries' do # rubocop:disable RSpec/ExampleLength
+      clients = []
+      allow(Net::HTTP).to receive(:new).and_wrap_original do |new, *args|
+        new.call(*args).tap { clients << _1 }
+      end
+      upload_url = 'https://storage.example.test/upload?sig=abc'
+      stub_request(:put, upload_url).to_return(status: 200)
+
+      [nil, DeepL::HTTPClientOptions.new({})].each do |options|
+        client = DeepL::Client.new('abc', http_client_options: options)
+        client.upload_translation_memory_file(upload_url, 'tmx')
+      end
+
+      expect(clients.map(&:max_retries)).to eq([0, 0, 0, 0])
     end
 
     it 'trims the auth key' do

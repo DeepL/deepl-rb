@@ -9,10 +9,15 @@ module DeepL
       # Maximum number of glossaries that may be provided via the +glossary_ids+ option.
       MAX_GLOSSARY_IDS = 5
 
-      # Network failures without an HTTP response. Net::OpenTimeout and Net::ReadTimeout are
-      # Timeout::Errors, Errno::* are SystemCallErrors.
-      NETWORK_ERRORS = [Net::HTTPBadResponse, Timeout::Error, SocketError, SystemCallError,
-                        EOFError, OpenSSL::SSL::SSLError].freeze
+      # Transient network failures, which are retried: DNS (SocketError), timeouts
+      # (Net::OpenTimeout and Net::ReadTimeout are Timeout::Errors), refused or reset connections,
+      # broken pipes and unreachable hosts (SystemCallError), and connections closed early.
+      RETRYABLE_NETWORK_ERRORS = [Timeout::Error, SocketError, SystemCallError, EOFError].freeze
+
+      # Network failures without an HTTP response. TLS failures and malformed responses are not
+      # transient and are raised without retrying.
+      NETWORK_ERRORS = [*RETRYABLE_NETWORK_ERRORS, Net::HTTPBadResponse,
+                        OpenSSL::SSL::SSLError].freeze
 
       # Errors raised while building the result from a received response: the response has an
       # unexpected format.
@@ -131,10 +136,7 @@ module DeepL
           wait_before_retry(e, files_to_reset)
           next
         rescue *NETWORK_ERRORS => e
-          if @backoff_timer.num_retries >= api.configuration.max_network_retries ||
-             (retry_only_unprocessed? && !unprocessed_error?(e))
-            raise Exceptions::ConnectionError, "Connection to the DeepL API failed: #{e.message}"
-          end
+          raise Exceptions::ConnectionError.from_network_error(e) unless retry_network_error?(e)
 
           wait_before_retry(e, files_to_reset)
           next
@@ -167,6 +169,12 @@ module DeepL
                      "#{format('%.2f', @backoff_timer.time_until_deadline)}")
         files_to_reset.each(&:rewind)
         @backoff_timer.sleep_until_deadline
+      end
+
+      def retry_network_error?(error)
+        Exceptions::ConnectionError.transient?(error) &&
+          @backoff_timer.num_retries < api.configuration.max_network_retries &&
+          (!retry_only_unprocessed? || unprocessed_error?(error))
       end
 
       def should_retry?(response, exception, num_retries)

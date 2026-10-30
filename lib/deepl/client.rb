@@ -35,7 +35,7 @@ module DeepL
     # @param [Hash] headers HTTP headers sent with every DeepL API request (not to pre-signed
     #   storage URLs). A +User-Agent+ replaces the library's; +Authorization+ cannot be replaced.
     # @param [Integer] max_retries Number of retries after the first attempt, for HTTP 429, any
-    #   5xx and network failures.
+    #   5xx and transient network failures (not TLS failures or malformed responses).
     # @param [Numeric] timeout Timeout of each attempt in seconds, applied to opening the
     #   connection, reading and writing. A longer backoff interval takes precedence.
     # @param [String, nil] proxy Proxy URL, e.g. +http://user:password@proxy.example:8080+.

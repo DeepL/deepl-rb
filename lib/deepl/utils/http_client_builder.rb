@@ -9,15 +9,17 @@ module DeepL
       extend self
 
       ##
-      # Builds an unstarted Net::HTTP client for +host+ configured with +options+.
+      # Builds an unstarted Net::HTTP client for +host+ configured with +options+. Net::HTTP does
+      # not retry on its own (+max_retries+ 0): only the library's retries apply.
       #
       # @param [String] host Base URL of the API.
       # @param [DeepL::HTTPClientOptions] options Proxy, SSL and timeout options.
       # @return [Net::HTTP]
-      def build(host, options) # rubocop:disable Metrics/AbcSize
+      def build(host, options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         uri = URI(host)
         http = Net::HTTP.new(uri.host, uri.port, *proxy_arguments(options.proxy))
         http.use_ssl = uri.scheme == 'https'
+        http.max_retries = 0
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE unless options.enable_ssl_verification
         http.ca_file = options.cert_path if options.cert_path
         http.open_timeout = options.open_timeout unless options.open_timeout.nil?

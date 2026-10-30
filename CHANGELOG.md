@@ -258,6 +258,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL.correct`, `DeepL.document` and `DeepL.translation_memories.create_import`) could
   replace the `Authorization` header. An `Authorization` header in any casing is now ignored, as
   in `headers:`.
+- Net::HTTP re-sent a failed GET, PUT or DELETE request once on its own, so with
+  `max_retries: 0` such a request could still be sent twice. The library's connections now
+  disable Net::HTTP's own retry; only `max_retries:` applies.
+- TLS failures (including certificate verification failures) and malformed HTTP responses were
+  retried like transient network failures. They now raise `DeepL::Exceptions::ConnectionError`
+  at once, with `should_retry?` false.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

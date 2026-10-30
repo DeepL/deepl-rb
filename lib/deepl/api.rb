@@ -32,6 +32,8 @@ module DeepL
       uri = URI(host)
       client = Net::HTTP.new(uri.host, uri.port)
       client.use_ssl = uri.scheme == 'https'
+      # Net::HTTP would re-send idempotent requests once on its own, outside max_retries.
+      client.max_retries = 0
       client
     end
   end

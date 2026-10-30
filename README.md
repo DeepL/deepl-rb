@@ -43,7 +43,7 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 | ------ | ------- | ----------- |
 | `server_url:` | `https://api-free.deepl.com` for Free keys (ending in `:fx`), else `https://api.deepl.com` | Base URL of the DeepL API. A path prefix is kept. |
 | `headers:` | `{}` | HTTP headers sent with every DeepL API request (not to pre-signed storage URLs). A `User-Agent` replaces the library's; `Authorization` cannot be replaced. |
-| `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and network failures. |
+| `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and transient network failures. |
 | `timeout:` | `10` | Timeout of each attempt in seconds. A longer backoff interval takes precedence. |
 | `proxy:` | none | Proxy URL, e.g. `http://user:password@proxy.example:8080`. |
 | `send_platform_info:` | `true` | Adds the OS and Ruby versions to the `User-Agent`. |
@@ -1436,7 +1436,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | --------------- | ----------- |
 | `DeepL::Exceptions::AuthorizationFailed` | The authorization process has failed. Check your `auth_key` value. |
 | `DeepL::Exceptions::BadRequest` | Something is wrong in your request. Check `exception.message` for more information. |
-| `DeepL::Exceptions::ConnectionError` | No HTTP response after all retries (DNS, connection, TLS or timeout failure). The original exception is `exception.cause`. |
+| `DeepL::Exceptions::ConnectionError` | No HTTP response: a DNS, connection or timeout failure after all retries (`should_retry?` is true), or a TLS failure or malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
@@ -1481,10 +1481,13 @@ end
 
 ### Retries and timeouts
 
-Requests that fail with HTTP 429, any 5xx status or a network failure (DNS, refused or reset
-connection, TLS error, timeout) are retried up to `max_retries:` times (default 5) with
-exponential backoff. Each attempt has a timeout of `timeout:` seconds (default 10). After the
-last retry, network failures raise `DeepL::Exceptions::ConnectionError`.
+Requests that fail with HTTP 429, any 5xx status or a transient network failure (DNS, refused
+or reset connection, broken pipe, unreachable host, timeout) are retried up to `max_retries:`
+times (default 5) with exponential backoff; a request is sent at most `max_retries:` + 1 times.
+Each attempt has a timeout of `timeout:` seconds (default 10). After the last retry, network
+failures raise `DeepL::Exceptions::ConnectionError`. TLS failures (including certificate
+verification) and malformed responses are not retried and raise
+`DeepL::Exceptions::ConnectionError` at once.
 `AdminClient#create_developer_key` is only retried when the request was not sent (HTTP 429,
 DNS failure, refused connection or connection timeout). With the module-level API, set
 `config.max_network_retries` and `config.timeout`.
