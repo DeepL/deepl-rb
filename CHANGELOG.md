@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `DeepL::Resources::DocumentTranslationStatus#done?` (the status is `done`).
 - `DeepL::Resources::DocumentHandle.new(document_id, document_key)` creates a handle from a
   stored ID and key; the request and response arguments are now optional.
+- `DeepL::Exceptions::DocumentTranslationError` copies `http_status_code` and `should_retry?`
+  from the DeepL error it wraps.
 - Added `DeepL::Client#get_usage`, which returns the same `DeepL::Resources::Usage` as
   `DeepL.usage`. Please refer to the README for usage instructions.
 - Added translation memories to `DeepL::Client`: `list_translation_memories(page: nil,

@@ -10,10 +10,21 @@ module DeepL
       #   the upload failed. Use it to query the status or download the document later.
       attr_reader :document_handle
 
-      def initialize(message, handle)
+      # +error+ is the failure being wrapped; the HTTP status and retryability of a DeepL error
+      # are copied from it.
+      def initialize(message, handle, error = nil)
         super(message)
         @handle = handle
         @document_handle = handle
+        return unless error.is_a?(Error)
+
+        @http_status_code = error.http_status_code
+        @should_retry = error.should_retry?
+      end
+
+      # @return [Boolean] +should_retry?+ of the wrapped DeepL error, +false+ without one.
+      def should_retry?
+        @should_retry || false
       end
     end
   end

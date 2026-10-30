@@ -117,7 +117,7 @@ module DeepL
       rescue StandardError => e
         FileUtils.rm_f(output_path)
         raise Exceptions::DocumentTranslationError.new(
-          "Error occurred during document translation: #{e.message}", handle
+          "Error occurred during document translation: #{e.message}", handle, e
         )
       end
     end
