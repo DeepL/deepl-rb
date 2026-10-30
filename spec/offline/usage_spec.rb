@@ -7,8 +7,8 @@ require_relative 'offline_helper'
 
 describe 'usage' do
   describe 'DeepL.usage' do
-    it 'sends a GET with an empty JSON body' do
-      stub_request(:get, url('/v2/usage')).with(body: '{}', headers: json_headers)
+    it 'sends a GET without a body or Content-Type' do
+      stub_request(:get, url('/v2/usage')).with(headers: auth_headers) { bodyless?(_1) }
                                           .to_return(usage_reply)
       DeepL.usage
     end

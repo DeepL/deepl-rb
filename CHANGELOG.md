@@ -271,6 +271,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- `get_usage` (and `DeepL.usage`), the glossary and multilingual glossary get, list, entries
+  and delete requests, and the style rule and custom instruction get and delete requests sent a
+  JSON body `{}` with `Content-Type: application/json`. GET and DELETE requests are now sent
+  without a body and without a `Content-Type`.
 - Headers passed per call to the module-level API (`DeepL.translate`, `DeepL.rephrase`,
   `DeepL.correct`, `DeepL.document` and `DeepL.translation_memories.create_import`) could
   replace the `Authorization` header. An `Authorization` header in any casing is now ignored, as

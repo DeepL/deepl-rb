@@ -23,9 +23,19 @@ module OfflineHelper
     "#{HOST}#{path}"
   end
 
-  # Headers of a request that carries a JSON body, or of a GET sent by the SDK.
+  # Headers of a request with a JSON Content-Type.
   def json_headers
     { 'Authorization' => "DeepL-Auth-Key #{AUTH_KEY}", 'Content-Type' => 'application/json' }
+  end
+
+  # Headers of a request without a body.
+  def auth_headers
+    { 'Authorization' => "DeepL-Auth-Key #{AUTH_KEY}" }
+  end
+
+  # True for a request sent without a body and without a Content-Type, as GET and DELETE are.
+  def bodyless?(request)
+    request.body.to_s.empty? && !request.headers.key?('Content-Type')
   end
 
   def reply(body = {}, status = 200)

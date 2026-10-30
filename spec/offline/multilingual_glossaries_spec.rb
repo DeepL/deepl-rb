@@ -84,10 +84,10 @@ describe 'multilingual glossaries' do
     end
 
     describe '#find and #list' do
-      it 'sends GET requests with an empty JSON body' do
-        stub_request(:get, url('/v3/glossaries/g-1')).with(body: '{}', headers: json_headers)
+      it 'sends GET requests without a body' do
+        stub_request(:get, url('/v3/glossaries/g-1')).with(headers: auth_headers) { bodyless?(_1) }
                                                      .to_return(reply(glossary_json))
-        stub_request(:get, url('/v3/glossaries')).with(body: '{}', headers: json_headers)
+        stub_request(:get, url('/v3/glossaries')).with(headers: auth_headers) { bodyless?(_1) }
                                                  .to_return(reply(glossaries: [glossary_json]))
 
         glossaries.find('g-1')
@@ -165,9 +165,10 @@ describe 'multilingual glossaries' do
     end
 
     describe '#destroy' do
-      it 'sends a DELETE with an empty JSON body and returns nil' do
-        stub_request(:delete, url('/v3/glossaries/g-1')).with(body: '{}', headers: json_headers)
-                                                        .to_return(status: 204)
+      it 'sends a DELETE without a body and returns nil' do
+        stub_request(:delete, url('/v3/glossaries/g-1'))
+          .with(headers: auth_headers) { bodyless?(_1) }
+          .to_return(status: 204)
 
         expect(glossaries.destroy('g-1')).to be_nil
       end
@@ -193,6 +194,10 @@ describe 'multilingual glossaries' do
 
     def json_headers
       { 'Authorization' => 'DeepL-Auth-Key client-key', 'Content-Type' => 'application/json' }
+    end
+
+    def auth_headers
+      { 'Authorization' => 'DeepL-Auth-Key client-key' }
     end
 
     def no_body
@@ -252,7 +257,7 @@ describe 'multilingual glossaries' do
 
     describe '#list_multilingual_glossaries and #get_multilingual_glossary' do
       it 'send GET requests and take a glossary object' do
-        stub_request(:get, url('/v3/glossaries')).with(headers: json_headers)
+        stub_request(:get, url('/v3/glossaries')).with(headers: auth_headers)
                                                  .to_return(reply(glossaries: [glossary_json]))
 
         expect(client.list_multilingual_glossaries.map(&:id)).to eq(['g-1'])
@@ -380,7 +385,7 @@ describe 'multilingual glossaries' do
       it 'send DELETE requests and return nil' do
         stub_request(:delete, url('/v3/glossaries/g-1/dictionaries?source_lang=EN&target_lang=FR'))
           .with(headers: json_headers, body: no_body).to_return(status: 204)
-        stub_request(:delete, url('/v3/glossaries/g-1')).with(headers: json_headers)
+        stub_request(:delete, url('/v3/glossaries/g-1')).with(headers: auth_headers)
                                                         .to_return(status: 204)
 
         expect(client.delete_multilingual_glossary_dictionary(glossary, 'EN', 'FR')).to be_nil

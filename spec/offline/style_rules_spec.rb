@@ -90,8 +90,8 @@ describe 'style rules' do
     end
 
     describe '#find' do
-      it 'sends a GET with an empty JSON body' do
-        stub_request(:get, url('/v3/style_rules/s-1')).with(body: '{}', headers: json_headers)
+      it 'sends a GET without a body' do
+        stub_request(:get, url('/v3/style_rules/s-1')).with(headers: auth_headers) { bodyless?(_1) }
                                                       .to_return(reply(style_json))
 
         style_rules.find('s-1')
@@ -160,9 +160,10 @@ describe 'style rules' do
     end
 
     describe '#destroy' do
-      it 'sends a DELETE with an empty JSON body and returns the ID' do
-        stub_request(:delete, url('/v3/style_rules/s-1')).with(body: '{}', headers: json_headers)
-                                                         .to_return(status: 204)
+      it 'sends a DELETE without a body and returns the ID' do
+        stub_request(:delete, url('/v3/style_rules/s-1'))
+          .with(headers: auth_headers) { bodyless?(_1) }
+          .to_return(status: 204)
 
         expect(style_rules.destroy('s-1')).to eq('s-1')
       end
@@ -183,7 +184,7 @@ describe 'style rules' do
 
       it 'sends a GET on find' do
         stub_request(:get, url('/v3/style_rules/s-1/custom_instructions/i-1'))
-          .with(body: '{}', headers: json_headers).to_return(reply(instruction_json))
+          .with(headers: auth_headers) { bodyless?(_1) }.to_return(reply(instruction_json))
 
         style_rules.find_custom_instruction('s-1', 'i-1')
       end
@@ -202,7 +203,7 @@ describe 'style rules' do
 
       it 'sends a DELETE on destroy and returns the instruction ID' do
         stub_request(:delete, url('/v3/style_rules/s-1/custom_instructions/i-1'))
-          .with(body: '{}', headers: json_headers).to_return(status: 204)
+          .with(headers: auth_headers) { bodyless?(_1) }.to_return(status: 204)
 
         expect(style_rules.destroy_custom_instruction('s-1', 'i-1')).to eq('i-1')
       end
@@ -224,6 +225,10 @@ describe 'style rules' do
 
     def json_headers
       { 'Authorization' => 'DeepL-Auth-Key client-key', 'Content-Type' => 'application/json' }
+    end
+
+    def auth_headers
+      { 'Authorization' => 'DeepL-Auth-Key client-key' }
     end
 
     describe '#get_all_style_rules' do
@@ -297,7 +302,7 @@ describe 'style rules' do
       end
 
       it 'sends get, update and delete for an ID or a CustomInstruction' do
-        stub_request(:get, path).with(headers: json_headers).to_return(reply(instruction_json))
+        stub_request(:get, path).with(headers: auth_headers).to_return(reply(instruction_json))
         stub_request(:put, path)
           .with(body: { label: 'New', prompt: 'Be long', source_language: 'de' })
           .to_return(reply(instruction_json))

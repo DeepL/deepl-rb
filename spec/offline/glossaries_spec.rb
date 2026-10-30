@@ -57,8 +57,8 @@ describe DeepL::GlossaryApi do
   end
 
   describe '#find' do
-    it 'sends a GET with an empty JSON body' do
-      stub_request(:get, url('/v2/glossaries/g-1')).with(body: '{}', headers: json_headers)
+    it 'sends a GET without a body' do
+      stub_request(:get, url('/v2/glossaries/g-1')).with(headers: auth_headers) { bodyless?(_1) }
                                                    .to_return(reply(glossary_json))
 
       glossaries.find('g-1')
@@ -69,7 +69,7 @@ describe DeepL::GlossaryApi do
     it 'returns one glossary per entry of the reply' do
       second = glossary_json.merge(glossary_id: 'g-2')
       stub_request(:get, url('/v2/glossaries'))
-        .with(body: '{}', headers: json_headers)
+        .with(headers: auth_headers) { bodyless?(_1) }
         .to_return(reply(glossaries: [glossary_json, second]))
 
       expect(glossaries.list.size).to eq(2)
@@ -79,7 +79,7 @@ describe DeepL::GlossaryApi do
   describe '#entries' do
     it 'parses the TSV reply into pairs' do
       stub_request(:get, url('/v2/glossaries/g-1/entries'))
-        .with(body: '{}', headers: json_headers)
+        .with(headers: auth_headers) { bodyless?(_1) }
         .to_return(status: 200, body: "Apple\tApfel\nBanana\tBanane")
 
       expect(glossaries.entries('g-1')).to eq([%w[Apple Apfel], %w[Banana Banane]])
@@ -87,8 +87,8 @@ describe DeepL::GlossaryApi do
   end
 
   describe '#destroy' do
-    it 'sends a DELETE with an empty JSON body and returns the ID' do
-      stub_request(:delete, url('/v2/glossaries/g-1')).with(body: '{}', headers: json_headers)
+    it 'sends a DELETE without a body and returns the ID' do
+      stub_request(:delete, url('/v2/glossaries/g-1')).with(headers: auth_headers) { bodyless?(_1) }
                                                       .to_return(status: 204)
 
       expect(glossaries.destroy('g-1')).to eq('g-1')

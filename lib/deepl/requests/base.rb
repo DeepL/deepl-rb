@@ -220,11 +220,9 @@ module DeepL
         post_req
       end
 
+      # GET and DELETE send no body, so no Content-Type either.
       def get_request # rubocop:disable Naming/AccessorMethodName
-        http_headers = add_json_content_type(headers)
-        get_req = Net::HTTP::Get.new(uri.path, http_headers)
-        get_req.body = options_without_extra_params.to_json
-        get_req
+        Net::HTTP::Get.new(uri.path, headers)
       end
 
       def patch_request(payload)
@@ -242,10 +240,7 @@ module DeepL
       end
 
       def delete_request
-        http_headers = add_json_content_type(headers)
-        del_req = Net::HTTP::Delete.new(uri.path, http_headers)
-        del_req.body = options_without_extra_params.to_json
-        del_req
+        Net::HTTP::Delete.new(uri.path, headers)
       end
 
       def validate_response!(response, request = nil)
