@@ -1263,9 +1263,11 @@ puts status.billed_characters
 # => 2045
 ```
 
-Every failure (also a failed translation) raises `DeepL::Exceptions::DocumentTranslationError`.
-Once the upload succeeded, its `document_handle` is set, so you can still query the status and
-download the document. `timeout_s:` limits the wait after the upload in seconds; by default
+A missing input file raises `ArgumentError` before anything is sent. Every other failure (also
+an existing output file, which is kept, and a failed translation) raises
+`DeepL::Exceptions::DocumentTranslationError`. Once the upload succeeded, its `document_handle`
+is set, so you can still query the status and download the document. If a DeepL error caused
+it, its `http_status_code` and `should_retry?` are copied from that error. `timeout_s:` limits the wait after the upload in seconds; by default
 `translate_document` waits until the translation is done or failed:
 
 ```rb
@@ -1309,7 +1311,8 @@ optional additional headers. `DeepL.document.translate_document` waits until the
 done or failed and returns the final status; the deprecated configuration setting
 `max_doc_status_queries` limits the number of status requests. The deprecated
 `DocumentHandle#wait_until_document_translation_finished` returns the final status also when
-the translation failed.
+the translation failed. `DeepL.document.translate_document` raises
+`DeepL::Exceptions::DocumentTranslationError` if the output file already exists.
 
 ```rb
 doc_handle = DeepL.document.upload('/path/to/spanish_document.pdf', 'ES', 'EN')

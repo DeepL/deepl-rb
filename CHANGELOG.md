@@ -273,6 +273,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   at once, with `should_retry?` false.
 - Query values were encoded with a space as `+`. They are now encoded per RFC 3986, with a space
   as `%20`.
+- `DeepL::Client#translate_document` and `DeepL.document.translate_document` raise
+  `DeepL::Exceptions::DocumentTranslationError` (without a document handle) instead of
+  `IOError` when the output file already exists; the file is still kept and nothing is
+  uploaded. The doc comment of `DeepL.document.translate_document` no longer claims that an
+  existing file is overwritten.
+- `DeepL::Client#translate_document` raises `ArgumentError` for a missing input file before
+  any request, instead of wrapping the `Errno::ENOENT` in `DocumentTranslationError`.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

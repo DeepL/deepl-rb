@@ -100,13 +100,18 @@ module DeepL
     #   the upload, +nil+ to wait until it is done.
     # @param [Hash] options The options of #translate_document_upload, including +:filename+.
     # @return [DeepL::Resources::DocumentTranslationStatus] The final status, +done+.
-    # @raise [IOError] If +output_path+ already exists; nothing is uploaded.
-    # @raise [DeepL::Exceptions::DocumentTranslationError] For any other failure, also a failed
-    #   translation or an expired +timeout_s+. Its +document_handle+ is set once the upload
-    #   succeeded, so the document can still be queried and downloaded.
+    # @raise [ArgumentError] If +input_path+ does not exist; nothing is uploaded.
+    # @raise [DeepL::Exceptions::DocumentTranslationError] For any other failure, also an
+    #   existing +output_path+ (nothing is uploaded and the file is kept), a failed translation
+    #   or an expired +timeout_s+. Its +document_handle+ is set once the upload succeeded, so the
+    #   document can still be queried and downloaded. +http_status_code+ and +should_retry?+ are
+    #   those of the DeepL error that caused it, if any.
     def translate_document(input_path, output_path, source_lang, target_lang, timeout_s: nil, # rubocop:disable Metrics/MethodLength
                            **options)
-      raise IOError, 'File already exists at output path' if File.exist?(output_path)
+      raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
+      if File.exist?(output_path)
+        raise Exceptions::DocumentTranslationError.new('File already exists at output path', nil)
+      end
 
       handle = nil
       begin

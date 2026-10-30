@@ -376,13 +376,17 @@ describe DeepL::DocumentApi do
         .to raise_error(DeepL::Exceptions::DocumentTranslationError, /not done/)
     end
 
-    it 'raises IOError and keeps the file when the output file already exists' do
+    it 'raises DocumentTranslationError and keeps the file when the output file already exists' do
       input, output = create_text_document(temp_dir)
       File.write(output, 'keep me')
 
       expect { documents.translate_document(input, output, 'EN', 'DE') }
-        .to raise_error(IOError, 'File already exists at output path')
+        .to raise_error(DeepL::Exceptions::DocumentTranslationError,
+                        'File already exists at output path') { |e|
+          expect(e.document_handle).to be_nil
+        }
       expect(File.read(output)).to eq('keep me')
+      expect(a_request(:any, /.*/)).not_to have_been_made
     end
 
     it 'raises DocumentTranslationError for an unreadable input without other libraries loaded' do
@@ -554,6 +558,40 @@ describe DeepL::DocumentApi do
           .to raise_error(DeepL::Exceptions::DocumentTranslationError, /bad/) { |e|
             expect(e.document_handle).to be_nil
           }
+      end
+
+      it 'copies the HTTP status and retryability of the DeepL error it wraps' do
+        client = DeepL::Client.new('client-key', server_url: 'https://client.example.test',
+                                                 max_retries: 0)
+        input, output = create_text_document(temp_dir)
+        stub_upload.to_return(reply({ message: 'unavailable' }, 503))
+
+        expect { client.translate_document(input, output, 'EN', 'DE') }
+          .to raise_error(DeepL::Exceptions::DocumentTranslationError) { |e|
+            expect([e.http_status_code, e.should_retry?]).to eq([503, true])
+          }
+      end
+
+      it 'raises DocumentTranslationError and keeps the file when the output file already exists' do
+        input, output = create_text_document(temp_dir)
+        File.write(output, 'keep me')
+
+        expect { client.translate_document(input, output, 'EN', 'DE') }
+          .to raise_error(DeepL::Exceptions::DocumentTranslationError,
+                          'File already exists at output path') { |e|
+            expect([e.document_handle, e.http_status_code, e.should_retry?])
+              .to eq([nil, nil, false])
+          }
+        expect(File.read(output)).to eq('keep me')
+        expect(a_request(:any, /.*/)).not_to have_been_made
+      end
+
+      it 'raises ArgumentError for a missing input file before any request' do
+        output = File.join(temp_dir, 'out.txt')
+
+        expect { client.translate_document(File.join(temp_dir, 'missing.txt'), output, 'EN', 'DE') }
+          .to raise_error(ArgumentError, /Input file does not exist/)
+        expect(a_request(:any, /.*/)).not_to have_been_made
       end
     end
   end

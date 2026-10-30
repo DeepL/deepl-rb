@@ -92,8 +92,8 @@ module DeepL
     #   translation fails or is not done after `max_doc_status_queries`.
     #
     # @param [String] input_file Path to the file to be translated
-    # @param [String] output_file Path to the file to write to. Will be overwritten if the file
-    #                             already exists.
+    # @param [String] output_file Path to the file to write to. Must not exist; if it does,
+    #                             DocumentTranslationError is raised and the file is kept.
     # @param [String, nil] source_lang Source language to use for the translation. `nil` will cause
     #                                  automatic source langauge detection to be used. Must be
     #                                  formatted as ISO 639-1, 2-letter language codes.
@@ -109,7 +109,9 @@ module DeepL
 
     def translate_document(input_file, output_file, source_lang, target_lang, # rubocop:disable Metrics/MethodLength,Metrics/ParameterLists
                            filename = nil, options = {}, additional_headers = {})
-      raise IOError, 'File already exists at output path' if File.exist?(output_file)
+      if File.exist?(output_file)
+        raise Exceptions::DocumentTranslationError.new('File already exists at output path', nil)
+      end
 
       begin
         handle = upload(input_file, source_lang, target_lang, filename, options,
