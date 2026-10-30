@@ -129,7 +129,7 @@ module DeepL
       doc_status = Utils::DocumentPoller.wait_until_finished(
         @api, document_handle, max_queries: @api.configuration.max_doc_status_queries
       )
-      unless doc_status.successful?
+      unless doc_status.done?
         raise Exceptions::DocumentTranslationError.new(not_done_message(doc_status),
                                                        document_handle)
       end

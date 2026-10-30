@@ -1278,7 +1278,8 @@ end
 ```
 
 The steps are also exposed. `translate_document_upload` returns a
-`DeepL::Resources::DocumentHandle` (`document_id`, `document_key`).
+`DeepL::Resources::DocumentHandle` (`document_id`, `document_key`). To resume from a stored ID
+and key, create the handle with `DeepL::Resources::DocumentHandle.new(document_id, document_key)`.
 `translate_document_wait_until_done(handle, timeout_s: nil)` queries the status every 5 seconds
 until the translation is done and returns that status; it raises `DeepL::Exceptions::Error`
 with the API's error message if the translation fails, and when `timeout_s` expires.
@@ -1290,7 +1291,7 @@ writes the translated document, overwriting an existing file; it raises
 handle = client.translate_document_upload('/path/to/spanish_document.pdf', 'ES', 'EN',
                                           filename: 'report.pdf')
 status = client.translate_document_get_status(handle)
-puts "#{status.status}, ok: #{status.ok?}, done: #{status.successful?}"
+puts "#{status.status}, ok: #{status.ok?}, done: #{status.done?}"
 # => translating, ok: true, done: false
 client.translate_document_wait_until_done(handle)
 client.translate_document_download(handle, '/path/to/translated_document.pdf')
@@ -1299,8 +1300,8 @@ client.translate_document_download(handle, '/path/to/translated_document.pdf')
 A `DeepL::Resources::DocumentTranslationStatus` has `document_id`, `status` (a string;
 `DeepL::Constants::DocumentStatusCode` has the values `QUEUED`, `TRANSLATING`, `DONE` and
 `ERROR`), `seconds_remaining`, `billed_characters` and `error_message`, and the predicates
-`successful?` (done), `error?` (failed), `ok?` (not failed, also while queued or translating)
-and `finished?` (done or failed).
+`done?` (done), `error?` (failed), `ok?` (not failed, also while queued or translating)
+and `finished?` (done or failed). `successful?` is a deprecated alias of `done?`.
 
 With the deprecated module-level API, the same methods are `DeepL.document.translate_document`,
 `upload`, `get_status` and `download`, which take the filename as a positional parameter and

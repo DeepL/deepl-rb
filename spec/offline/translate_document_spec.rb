@@ -8,7 +8,7 @@ require_relative 'offline_helper'
 
 describe DeepL::DocumentApi do
   let(:documents) { DeepL.document }
-  let(:handle) { DeepL::Resources::DocumentHandle.new('doc-1', 'key-1', nil, nil) }
+  let(:handle) { DeepL::Resources::DocumentHandle.new('doc-1', 'key-1') }
   let(:upload_reply) { reply(document_id: 'doc-1', document_key: 'key-1') }
   let(:document_key_body) { { document_key: 'key-1' } }
 
@@ -196,12 +196,12 @@ describe DeepL::DocumentApi do
       expect(status.finished?).to be(false)
     end
 
-    it 'parses done as successful and error as failed' do
+    it 'parses done as done and error as failed' do
       stub_status(status_reply('done'), status_reply('error'))
 
       statuses = Array.new(2) { documents.get_status(handle) }
 
-      expect(statuses.map { |s| [s.successful?, s.error?, s.finished?] })
+      expect(statuses.map { |s| [s.done?, s.error?, s.finished?] })
         .to eq([[true, false, true], [false, true, true]])
     end
 
@@ -278,7 +278,7 @@ describe DeepL::DocumentApi do
       status = handle.wait_until_document_translation_finished
 
       expect(stub).to have_been_requested.twice
-      expect(status.successful?).to be(true)
+      expect(status.done?).to be(true)
     end
 
     it 'polls through the connection and configuration the handle was created with' do

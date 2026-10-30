@@ -24,12 +24,23 @@ module DeepL
       end
 
       ##
+      # Checks if the translation is done, so the document can be downloaded.
+      #
+      # @return [Boolean] +true+ if the status is +done+.
+      def done?
+        status == Constants::DocumentStatusCode::DONE
+      end
+
+      ##
       # Checks if the translation finished successfully
       #
+      # @deprecated Use #done? instead.
       # @return [true] if so
-
       def successful?
-        status == Constants::DocumentStatusCode::DONE
+        Deprecation.warn_once('DeepL::Resources::DocumentTranslationStatus#successful?',
+                              '[DEPRECATION] DeepL::Resources::DocumentTranslationStatus#' \
+                              'successful? is deprecated, use #done? instead.')
+        done?
       end
 
       ##
@@ -55,7 +66,7 @@ module DeepL
       #
       # @return [true] if so
       def finished?
-        successful? || error?
+        done? || error?
       end
     end
   end

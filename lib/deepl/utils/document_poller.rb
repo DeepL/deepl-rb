@@ -19,7 +19,7 @@ module DeepL
         deadline = timeout_s.nil? ? nil : monotonic_now + timeout_s
         loop do
           status = get_status(api, handle)
-          return status if status.successful?
+          return status if status.done?
 
           raise_if_failed(status)
 

@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Added `DeepL::Resources::DocumentTranslationStatus#done?` (the status is `done`).
+- `DeepL::Resources::DocumentHandle.new(document_id, document_key)` creates a handle from a
+  stored ID and key; the request and response arguments are now optional.
 - Added `DeepL::Client#get_usage`, which returns the same `DeepL::Resources::Usage` as
   `DeepL.usage`. Please refer to the README for usage instructions.
 - Added translation memories to `DeepL::Client`: `list_translation_memories(page: nil,
@@ -222,6 +225,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Deprecated
+- `DeepL::Resources::DocumentTranslationStatus#successful?`, use `#done?` instead. It prints a
+  warning once per process and keeps working unchanged.
 - `DeepL::Resources::Usage#character_count`, `#character_limit` and `#quota_exceeded?`, use
   `character.count`, `character.limit` and `character.limit_reached?` (or
   `any_limit_reached?`) instead. Each prints a warning once per process and keeps working
