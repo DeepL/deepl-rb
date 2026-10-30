@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stored ID and key; the request and response arguments are now optional.
 - `DeepL::Exceptions::DocumentTranslationError` copies `http_status_code` and `should_retry?`
   from the DeepL error it wraps.
+- `DeepL::Exceptions::Error.new` accepts the keywords `http_status_code:` and `should_retry:`.
 - Added `DeepL::Client#get_usage`, which returns the same `DeepL::Resources::Usage` as
   `DeepL.usage`. Please refer to the README for usage instructions.
 - Added translation memories to `DeepL::Client`: `list_translation_memories(page: nil,
@@ -283,6 +284,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multilingual glossary entries given as a TSV string are parsed into pairs, and each term is
   stripped and checked like terms given as pairs, before anything is sent. A line that is not
   exactly two tab-separated terms raises `ArgumentError`. CSV content is still sent as given.
+- A non-2xx reply of a pre-signed translation memory storage URL (upload or export download)
+  raised the error class of the DeepL API status, for example `AuthorizationFailed` asking for a
+  valid `auth_key` for an expired URL (403). It now raises a plain `DeepL::Exceptions::Error`
+  with `http_status_code`; `should_retry?` is true for 429 and 5xx.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

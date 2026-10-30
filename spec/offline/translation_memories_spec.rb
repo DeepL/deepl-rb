@@ -221,6 +221,15 @@ describe DeepL::TranslationMemoryApi do
 
       memories.upload_file(created, Fixtures::BINARY_CONTENT, content_type: 'text/xml')
     end
+
+    it 'raises a plain Error with the status for a storage reply of 403, not AuthorizationFailed' do
+      stub_request(:put, upload_url).to_return(status: 403, body: 'Request has expired')
+
+      expect { memories.upload_file(upload_url, 'tmx') }.to(raise_error do |error|
+        expect([error.class, error.http_status_code, error.should_retry?])
+          .to eq([DeepL::Exceptions::Error, 403, false])
+      end)
+    end
   end
 
   describe '#find_job' do
@@ -346,6 +355,16 @@ describe DeepL::TranslationMemoryApi do
     it 'raises Error for a job without a download URL' do
       expect { memories.download_export(job_resource('processing'), output) }
         .to raise_error(DeepL::Exceptions::Error, /no download URL/)
+    end
+
+    it 'retries a storage reply of 503 and raises a plain Error that should be retried' do
+      stub = stub_request(:get, download_url).to_return(status: 503)
+
+      expect { memories.download_export(download_url, output) }.to(raise_error do |error|
+        expect([error.class, error.http_status_code, error.should_retry?])
+          .to eq([DeepL::Exceptions::Error, 503, true])
+      end)
+      expect(stub).to have_been_requested.times(3)
     end
   end
 

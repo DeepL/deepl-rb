@@ -113,6 +113,10 @@ module DeepL
     # upload URL is a pre-signed storage URL outside of the DeepL API, so no authorization header
     # is sent with this request.
     #
+    # @raise [DeepL::Exceptions::Error] If the storage URL replies with a non-2xx status. The error
+    #                                   carries `http_status_code`, and `should_retry?` is true
+    #                                   for 429 and 5xx.
+    #
     # @param [String, DeepL::Resources::TranslationMemoryImport] translation_memory_import Import
     #        returned by `create_import`, or its upload URL.
     # @param [String] file_content Content of the TMX file.

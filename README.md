@@ -1071,7 +1071,10 @@ not available on the local file system. `create_translation_memory_import`
 accepts `content_type`, `display_name` and `extra_body_parameters`; keywords left
 `nil` are not sent. The upload URL is a pre-signed storage URL outside of the
 DeepL API, so no authorization header and no configured `headers` are sent with
-the upload; the proxy, SSL and timeout settings of the client apply.
+the upload; the proxy, SSL and timeout settings of the client apply. A non-2xx
+reply of a storage URL (for example 403 for an expired URL) raises a plain
+`DeepL::Exceptions::Error` carrying `http_status_code`; its `should_retry?` is
+`true` for 429 and 5xx.
 
 ```rb
 content = File.binread('legal.tmx')

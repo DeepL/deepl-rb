@@ -830,6 +830,8 @@ module DeepL
     # @param [String, nil] content_type MIME type of the file, must match the one of the import
     #   job. +nil+ sends +application/xml+.
     # @return [nil]
+    # @raise [DeepL::Exceptions::Error] If the storage URL replies with a non-2xx status; the error
+    #   carries +http_status_code+, and +should_retry?+ is true for 429 and 5xx.
     def upload_translation_memory_file(translation_memory_import, content, content_type: nil)
       translation_memories.upload_file(translation_memory_import, content,
                                        content_type: content_type)
