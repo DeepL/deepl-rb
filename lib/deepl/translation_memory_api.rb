@@ -178,21 +178,20 @@ module DeepL
     #
     # @param [String, DeepL::Resources::TranslationMemoryJob] job Job ID or object.
     # @param [Hash] options Additional options for the status queries.
-    # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the job to finish. Note
-    #                                 that this is not accurate to the second, the status is only
-    #                                 queried every five seconds.
+    # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the job to finish. The
+    #                                 status is queried every five seconds; the last wait is cut
+    #                                 so that the call never waits past `timeout_s`.
     # @return [DeepL::Resources::TranslationMemoryJob] The finished job.
     #
     # @deprecated Use DeepL::Client#wait_until_translation_memory_job_done instead.
 
     def wait_until_job_done(job, options = {}, timeout_s: nil)
+      deadline = timeout_s.nil? ? nil : monotonic_time + timeout_s
       job_status = find_job(job, options)
-      started_at = monotonic_time
       until job_status.finished?
-        raise_timeout_error(timeout_s) if timeout_exceeded?(started_at, timeout_s)
-
-        log_job_polling
-        sleep(JOB_POLLING_INTERVAL_SECONDS)
+        interval = polling_interval_until(deadline, timeout_s)
+        log_job_polling(interval)
+        sleep(interval)
         job_status = find_job(job, options)
       end
       raise_job_error(job_status) if job_status.error?
@@ -337,17 +336,24 @@ module DeepL
       raise Exceptions::Error, "Output directory #{directory} does not exist"
     end
 
-    def log_job_polling
+    def log_job_polling(interval)
       @api.configuration.logger&.info('Rechecking translation memory job status after sleeping ' \
-                                      "for #{JOB_POLLING_INTERVAL_SECONDS} seconds.")
+                                      "for #{format('%.2f', interval)} seconds.")
     end
 
     def monotonic_time
       Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
 
-    def timeout_exceeded?(started_at, timeout_s)
-      !timeout_s.nil? && (monotonic_time - started_at) > timeout_s
+    # The polling interval, cut to the time left until +deadline+ so that a wait never runs
+    # past +timeout_s+.
+    def polling_interval_until(deadline, timeout_s)
+      return JOB_POLLING_INTERVAL_SECONDS if deadline.nil?
+
+      remaining = deadline - monotonic_time
+      raise_timeout_error(timeout_s) if remaining <= 0
+
+      [JOB_POLLING_INTERVAL_SECONDS, remaining].min
     end
 
     def raise_timeout_error(timeout_s)

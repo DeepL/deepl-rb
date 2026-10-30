@@ -298,6 +298,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failures, such as an input path that is a directory or unreadable, or an output path that
   cannot be written. They now raise `DeepL::Exceptions::Error` with the original error as
   `cause`.
+- `wait_until_translation_memory_job_done` (and the file helpers) could wait up to five seconds
+  past `timeout_s`; the last wait is now cut to the deadline.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

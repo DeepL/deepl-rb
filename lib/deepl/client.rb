@@ -924,7 +924,8 @@ module DeepL
     #
     # @param [String, DeepL::Resources::TranslationMemoryJob] job ID or job.
     # @param [Numeric, nil] timeout_s Maximum time to wait in seconds, +nil+ to wait until the
-    #   job is completed, failed or expired. A job whose file is never uploaded does not finish.
+    #   job is completed, failed or expired. The last wait is cut so that the call never waits
+    #   past +timeout_s+. A job whose file is never uploaded does not finish.
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job.
     # @raise [DeepL::Exceptions::Error] If the job fails or expires (with the API's error
     #   message), or +timeout_s+ expires.

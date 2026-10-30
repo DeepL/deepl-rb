@@ -309,6 +309,19 @@ describe DeepL::TranslationMemoryApi do
       expect { memories.wait_until_job_done('j-1', timeout_s: 0) }
         .to raise_error(DeepL::Exceptions::Error, /timeout of 0s exceeded/)
     end
+
+    it 'cuts the last sleep to the deadline of timeout_s' do
+      stub_job(reply(job_json('processing')))
+      slept = []
+      allow(memories).to receive(:sleep) do |seconds|
+        slept << seconds
+        Kernel.sleep(seconds)
+      end
+
+      expect { memories.wait_until_job_done('j-1', timeout_s: 0.2) }
+        .to raise_error(DeepL::Exceptions::Error, /timeout of 0.2s exceeded/)
+      expect(slept).to all(be <= 0.2)
+    end
   end
 
   describe '#create_export' do

@@ -1141,7 +1141,8 @@ client.download_translation_memory_export(job, 'export.tmx')
 job, and `wait_until_translation_memory_job_done` polls it every five seconds
 until it is completed, raising a `DeepL::Exceptions::Error` with the API's error
 message if the job failed or expired. Pass `timeout_s` to give up after a number
-of seconds instead of waiting forever.
+of seconds instead of waiting forever; the last wait is cut so that the call
+never waits longer than `timeout_s`.
 
 `done?` is `true` once the job is completed, `ok?` is `false` once it failed or
 expired (and `true` while it runs), and `finished?` is `true` for any terminal
