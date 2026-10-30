@@ -147,8 +147,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   body accept `extra_body_parameters:`, added to the request body last.
   `DeveloperKey#label`, `DeveloperKey#usage_limits`, `KeyUsage#api_key_label`,
   `AdminUsageReport#total_usage`, `#start_date`, `#end_date` and
-  `AdminUsageBreakdown#speech_to_speech_minutes` are `nil` when the response does not contain
-  them.
+  `AdminUsageBreakdown#speech_to_speech_minutes` and
+  `CustomTagUsageBreakdown#speech_to_speech_minutes` are `nil` when the response does not
+  contain them.
   `set_developer_key_usage_limits` changes only the given limits, including
   `speech_to_speech_milliseconds`. New public types: `DeepL::AdminClient`,
   `DeepL::Resources::DeveloperKey`, `DeepL::Resources::DeveloperKeyUsageLimits`,

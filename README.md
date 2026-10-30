@@ -1409,7 +1409,7 @@ report.key_usages.each do |key_usage|
 end
 ```
 
-`get_custom_tag_usage_analytics` returns a `DeepL::Resources::CustomTagUsageReport` with the usage per custom tag, for a date range with the same limits. Use `aggregate_by:` to choose between the whole period (`DeepL::Constants::CustomTagUsageAggregateBy::PERIOD`, the default) and per-day usage (`DeepL::Constants::CustomTagUsageAggregateBy::DAY`). The results are paginated: pass the `next_page` value of a report as `page:` to get the next page. The `aggregate_by` of a custom tag report is the raw string the API returns.
+`get_custom_tag_usage_analytics` returns a `DeepL::Resources::CustomTagUsageReport` with the usage per custom tag, for a date range with the same limits. Use `aggregate_by:` to choose between the whole period (`DeepL::Constants::CustomTagUsageAggregateBy::PERIOD`, the default) and per-day usage (`DeepL::Constants::CustomTagUsageAggregateBy::DAY`). The results are paginated: pass the `next_page` value of a report as `page:` to get the next page. The `aggregate_by` of a custom tag report is the raw string the API returns. `speech_to_speech_minutes` of a custom tag breakdown is `nil` when the response does not contain it.
 
 ```rb
 page = nil

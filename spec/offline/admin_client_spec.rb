@@ -272,6 +272,18 @@ describe DeepL::AdminClient do
                                                               speech_to_text_minutes: 0.0)
     end
 
+    it 'reads an absent speech_to_speech_minutes as nil' do
+      body = { custom_tag_usage_report: {
+        usage: [{ custom_tag: 'tag', breakdown: { total_characters: 380 } }]
+      } }
+      stub_request(:get, url('/v2/admin/analytics/custom-tags')).with(query: hash_including({}))
+                                                                .to_return(reply(body))
+
+      report = client.get_custom_tag_usage_analytics('2026-05-03', '2026-05-15')
+
+      expect(report.usage.first.breakdown.speech_to_speech_minutes).to be_nil
+    end
+
     it 'rejects an invalid date like the usage analytics' do
       expect { client.get_custom_tag_usage_analytics('2025-9-1', '2025-09-01') }
         .to raise_error(ArgumentError, /Invalid date/)

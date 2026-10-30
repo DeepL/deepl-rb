@@ -5,6 +5,9 @@
 
 module DeepL
   module Resources
+    ##
+    # Usage breakdown of a custom tag. +speech_to_speech_minutes+ is +nil+ when the response
+    # does not contain it.
     class CustomTagUsageBreakdown
       attr_reader :total_characters, :text_translation_characters,
                   :text_improvement_characters, :speech_to_text_minutes,
@@ -19,7 +22,7 @@ module DeepL
           Utils::NumberParser.count(breakdown['text_improvement_characters'])
         @speech_to_text_minutes = Utils::NumberParser.minutes(breakdown['speech_to_text_minutes'])
         @speech_to_speech_minutes =
-          Utils::NumberParser.minutes(breakdown['speech_to_speech_minutes'])
+          Utils::NumberParser.optional_minutes(breakdown['speech_to_speech_minutes'])
       end
     end
 
