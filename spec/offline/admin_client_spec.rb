@@ -177,7 +177,7 @@ describe DeepL::AdminClient do
         .to raise_error(DeepL::Exceptions::BadRequest)
     end
 
-    it 'parses speech_to_speech_minutes and defaults it to 0' do
+    it 'reads an absent speech_to_speech_minutes as nil' do
       body = { usage_report: {
         total_usage: { speech_to_speech_minutes: 1.5 },
         key_usages: [{ api_key: 'dc88****3a2c', usage: { total_characters: 3 } }]
@@ -188,7 +188,17 @@ describe DeepL::AdminClient do
       report = client.get_usage_analytics('2025-09-29', '2025-10-01')
 
       expect(report.total_usage.speech_to_speech_minutes).to eq(1.5)
-      expect(report.key_usages.first.usage.speech_to_speech_minutes).to eq(0.0)
+      expect(report.key_usages.first.usage.speech_to_speech_minutes).to be_nil
+    end
+
+    it 'reads an absent total_usage as nil' do
+      body = { usage_report: { start_date: '2025-09-29T00:00:00' } }
+      stub_request(:get, url('/v2/admin/analytics')).with(query: hash_including({}))
+                                                    .to_return(reply(body))
+
+      report = client.get_usage_analytics('2025-09-29', '2025-10-01')
+
+      expect(report.total_usage).to be_nil
     end
 
     it 'tolerates malformed values in the report' do # rubocop:disable RSpec/ExampleLength

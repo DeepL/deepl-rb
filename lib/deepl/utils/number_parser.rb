@@ -20,6 +20,11 @@ module DeepL
         value.is_a?(Numeric) ? value.to_f : 0.0
       end
 
+      # @return [Float, nil] The value as a Float if it is numeric, otherwise nil.
+      def optional_minutes(value)
+        value.is_a?(Numeric) ? value.to_f : nil
+      end
+
       # @return [Integer, nil] The value if it is an Integer, otherwise nil.
       def optional_count(value)
         value.is_a?(Integer) ? value : nil

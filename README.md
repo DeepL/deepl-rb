@@ -1398,12 +1398,12 @@ A failed `create_developer_key` request is retried only after HTTP 429, a DNS re
 
 #### Retrieving usage analytics
 
-`get_usage_analytics` returns a `DeepL::Resources::AdminUsageReport` for a date range. Dates are UTC calendar days, and both the start day and the end day are included. They can be `Date`, `Time` or `DateTime` objects or `YYYY-MM-DD` strings. For `Time` and `DateTime` values the SDK sends the UTC date of that moment, so `Time.new(2026, 10, 20, 0, 0, 0, '+02:00')` is sent as `2026-10-19`. An invalid date raises `ArgumentError` without sending a request. The API requires the end date to be after the start date, so a report covers at least two days, and at most 366 days after it; otherwise both analytics methods raise `DeepL::Exceptions::BadRequest`. Use `group_by:` to break the usage down by key (`DeepL::Constants::AdminUsageGroupBy::KEY`, see `key_usages`) or by key and day (`DeepL::Constants::AdminUsageGroupBy::KEY_AND_DAY`, see `key_and_day_usages`). The `group_by` of the report is the raw string the API returns. The usage breakdowns include `speech_to_text_minutes` and `speech_to_speech_minutes`.
+`get_usage_analytics` returns a `DeepL::Resources::AdminUsageReport` for a date range. Dates are UTC calendar days, and both the start day and the end day are included. They can be `Date`, `Time` or `DateTime` objects or `YYYY-MM-DD` strings. For `Time` and `DateTime` values the SDK sends the UTC date of that moment, so `Time.new(2026, 10, 20, 0, 0, 0, '+02:00')` is sent as `2026-10-19`. An invalid date raises `ArgumentError` without sending a request. The API requires the end date to be after the start date, so a report covers at least two days, and at most 366 days after it; otherwise both analytics methods raise `DeepL::Exceptions::BadRequest`. Use `group_by:` to break the usage down by key (`DeepL::Constants::AdminUsageGroupBy::KEY`, see `key_usages`) or by key and day (`DeepL::Constants::AdminUsageGroupBy::KEY_AND_DAY`, see `key_and_day_usages`). The `group_by` of the report is the raw string the API returns. The usage breakdowns include `speech_to_text_minutes` and `speech_to_speech_minutes`. `speech_to_speech_minutes` of a usage breakdown, and `total_usage`, `start_date` and `end_date` of a report, are `nil` when the response does not contain them.
 
 ```rb
 report = admin_client.get_usage_analytics('2026-06-01', '2026-07-01',
                                           group_by: DeepL::Constants::AdminUsageGroupBy::KEY)
-puts "Total characters: #{report.total_usage.total_characters}"
+puts "Total characters: #{report.total_usage&.total_characters}"
 report.key_usages.each do |key_usage|
   puts "#{key_usage.api_key_label}: #{key_usage.usage.total_characters}"
 end

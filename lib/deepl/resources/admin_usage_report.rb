@@ -5,6 +5,9 @@
 
 module DeepL
   module Resources
+    ##
+    # Usage breakdown of an admin usage report. +speech_to_speech_minutes+ is +nil+ when the
+    # response does not contain it.
     class AdminUsageBreakdown
       attr_reader :total_characters, :text_translation_characters,
                   :document_translation_characters, :text_improvement_characters,
@@ -18,7 +21,8 @@ module DeepL
           Utils::NumberParser.count(usage['document_translation_characters'])
         @text_improvement_characters = Utils::NumberParser.count(usage['text_improvement_characters'])
         @speech_to_text_minutes = Utils::NumberParser.minutes(usage['speech_to_text_minutes'])
-        @speech_to_speech_minutes = Utils::NumberParser.minutes(usage['speech_to_speech_minutes'])
+        @speech_to_speech_minutes =
+          Utils::NumberParser.optional_minutes(usage['speech_to_speech_minutes'])
       end
     end
 
@@ -39,6 +43,7 @@ module DeepL
     ##
     # Admin usage analytics report. +key_usages+ is only filled when grouped by key and
     # +key_and_day_usages+ only when grouped by key and day; otherwise they are empty.
+    # +total_usage+, +start_date+ and +end_date+ are +nil+ when the response does not contain them.
     class AdminUsageReport < Base
       attr_reader :total_usage, :start_date, :end_date, :group_by, :key_usages,
                   :key_and_day_usages
@@ -47,7 +52,8 @@ module DeepL
         super(*args)
         report = data.is_a?(Hash) ? data['usage_report'] : nil
         report = {} unless report.is_a?(Hash)
-        @total_usage = AdminUsageBreakdown.new(report['total_usage'])
+        total_usage = report['total_usage']
+        @total_usage = total_usage.is_a?(Hash) ? AdminUsageBreakdown.new(total_usage) : nil
         @start_date = Utils::TimeParser.parse_optional_utc_time(report['start_date'])
         @end_date = Utils::TimeParser.parse_optional_utc_time(report['end_date'])
         @group_by = report['group_by'].is_a?(String) ? report['group_by'] : nil
