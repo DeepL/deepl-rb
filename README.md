@@ -1425,6 +1425,9 @@ rephrased = DeepL.rephrase 'Hello, world!', 'EN', nil, nil, {}, additional_heade
 corrected = DeepL.correct 'Hello, world!', 'EN', {}, additional_headers
 ```
 
+Neither `headers:` nor the additional headers can replace the `Authorization` header, in any
+casing.
+
 ### Handle exceptions
 
 You can capture and process exceptions that may be raised during API calls. These are all the possible exceptions:

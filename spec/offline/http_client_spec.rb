@@ -233,6 +233,18 @@ describe 'DeepL HTTP client' do
     end
   end
 
+  describe 'headers' do
+    it 'does not let per-call headers replace the Authorization header' do
+      stub_request(:post, url('/v2/translate'))
+        .with(headers: { 'Authorization' => "DeepL-Auth-Key #{OfflineHelper::AUTH_KEY}",
+                         'X-Custom' => 'v' })
+        .to_return(reply(translations: [{ text: 'Hallo' }]))
+
+      DeepL.translate('Hello', nil, 'DE', {}, { 'authorization' => 'DeepL-Auth-Key other',
+                                                'X-Custom' => 'v' })
+    end
+  end
+
   describe 'HTTPClientBuilder' do
     it 'uses the proxy only when both address and port are given' do
       partial = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test' })

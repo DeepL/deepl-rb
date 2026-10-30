@@ -254,6 +254,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- Headers passed per call to the module-level API (`DeepL.translate`, `DeepL.rephrase`,
+  `DeepL.correct`, `DeepL.document` and `DeepL.translation_memories.create_import`) could
+  replace the `Authorization` header. An `Authorization` header in any casing is now ignored, as
+  in `headers:`.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

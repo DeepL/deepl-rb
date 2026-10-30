@@ -355,14 +355,17 @@ module DeepL
         options
       end
 
-      # The configured +headers+ may replace the User-Agent but not the Authorization header.
+      # The configured +headers+ and the per-call additional headers may replace the User-Agent
+      # but not the Authorization header, in any casing.
       def headers
-        configured = (api.configuration.headers || {}).reject do |name, _|
-          name.to_s.casecmp?('authorization')
-        end
         { 'Authorization' => "DeepL-Auth-Key #{api.configuration.auth_key.to_s.strip}",
           'User-Agent' => api.configuration.user_agent }
-          .merge(configured).merge(@additional_headers)
+          .merge(without_authorization(api.configuration.headers))
+          .merge(without_authorization(@additional_headers))
+      end
+
+      def without_authorization(given_headers)
+        (given_headers || {}).reject { |name, _| name.to_s.casecmp?('authorization') }
       end
 
       def loggable_headers
