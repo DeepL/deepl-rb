@@ -34,7 +34,7 @@ module DeepL
         end
 
         def uri
-          @uri ||= URI("#{host}/v3/#{path}?#{URI.encode_www_form(lang: lang)}")
+          @uri ||= URI("#{host}/v3/#{path}?#{encode_query(lang: lang)}")
         end
 
         def path

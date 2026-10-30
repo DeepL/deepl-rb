@@ -264,6 +264,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TLS failures (including certificate verification failures) and malformed HTTP responses were
   retried like transient network failures. They now raise `DeepL::Exceptions::ConnectionError`
   at once, with `should_retry?` false.
+- Query values were encoded with a space as `+`. They are now encoded per RFC 3986, with a space
+  as `%20`.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
   proxy, SSL verification, certificate file and timeouts set with `proxy:` or
   `http_client_options:` (or `DeepL.with_session`). They now use the same options as the API

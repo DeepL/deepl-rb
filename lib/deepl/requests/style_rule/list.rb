@@ -47,7 +47,7 @@ module DeepL
           params['page'] = option(:page).to_s if option?(:page)
           params['page_size'] = option(:page_size).to_s if option?(:page_size)
           params['detailed'] = option(:detailed).to_s.downcase if option?(:detailed)
-          URI.encode_www_form(params)
+          encode_query(params)
         end
 
         def path

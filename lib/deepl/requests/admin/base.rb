@@ -32,7 +32,7 @@ module DeepL
         def uri
           @uri ||= begin
             base_uri = URI(url)
-            query_string = URI.encode_www_form(query_params)
+            query_string = encode_query(query_params)
             base_uri.query = query_string unless query_string.empty?
             base_uri
           end

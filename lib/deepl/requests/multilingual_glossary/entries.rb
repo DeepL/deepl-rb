@@ -52,7 +52,7 @@ module DeepL
         def uri
           @uri ||= begin
             base_uri = URI("#{host}/v3/#{path}")
-            base_uri.query = URI.encode_www_form(source_lang: source_lang, target_lang: target_lang)
+            base_uri.query = encode_query(source_lang: source_lang, target_lang: target_lang)
             base_uri
           end
         end

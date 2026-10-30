@@ -340,6 +340,12 @@ module DeepL
         URI.encode_www_form_component(value.to_s).gsub('+', '%20')
       end
 
+      # URL-encodes +params+ as a query string per RFC 3986. encode_www_form writes a space as +,
+      # which is right for a form body only; a literal + is already %2B, so every + is a space.
+      def encode_query(params)
+        URI.encode_www_form(params).gsub('+', '%20')
+      end
+
       def url
         "#{host}/#{api.configuration.version}/#{path}"
       end

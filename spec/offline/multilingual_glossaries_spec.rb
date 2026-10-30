@@ -305,6 +305,17 @@ describe 'multilingual glossaries' do
     end
 
     describe '#get_multilingual_glossary_dictionary_entries' do
+      it 'encodes a space in a query value as %20' do
+        expect(Net::HTTP::Get).to receive(:new)
+          .with('/v3/glossaries/g-1/entries?source_lang=E%20N&target_lang=DE', anything)
+          .and_call_original
+        stub_request(:get, url('/v3/glossaries/g-1/entries?source_lang=E%20N&target_lang=DE'))
+          .to_return(reply(dictionaries: [{ source_lang: 'en', target_lang: 'de', entries: '',
+                                            entries_format: 'tsv' }]))
+
+        client.get_multilingual_glossary_dictionary_entries('g-1', 'E N', 'DE')
+      end
+
       it 'returns the one dictionary with its entries as source/target pairs' do
         stub_request(:get, url('/v3/glossaries/g-1/entries?source_lang=EN&target_lang=DE'))
           .with(headers: json_headers)

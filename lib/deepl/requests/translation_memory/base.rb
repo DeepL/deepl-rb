@@ -24,10 +24,7 @@ module DeepL
         end
 
         def build_query_string
-          # encode_www_form encodes a space as `+`, which is correct for a form body but not for
-          # a URI query string. A literal `+` is already escaped as %2B, so every remaining `+`
-          # is a space.
-          URI.encode_www_form(query_params).gsub('+', '%20')
+          encode_query(query_params)
         end
 
         def query_params

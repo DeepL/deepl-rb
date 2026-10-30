@@ -39,7 +39,7 @@ module DeepL
       def build_query_string
         params = [['resource', @resource]]
         Array(option(:include)).each { |value| params << ['include', value.to_s] }
-        URI.encode_www_form(params)
+        encode_query(params)
       end
 
       def get_request # rubocop:disable Naming/AccessorMethodName
