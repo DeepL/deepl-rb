@@ -127,7 +127,7 @@ module DeepL
           resp = nil
           client = http_client
           apply_request_timeout(client)
-          resp = client.request(req)
+          resp = client.request(req) { |response| read_complete_body(response) }
           validate_response!(resp, req)
           @response_received = true
           return [req, resp]
@@ -142,6 +142,18 @@ module DeepL
           wait_before_retry(e, files_to_reset)
           next
         end
+      end
+
+      # Before net-http 0.3, Net::HTTP cannot raise at EOF of a short body (+ignore_eof+), so the
+      # body is compared with Content-Length. An inflated body has no comparable length.
+      def read_complete_body(response)
+        encoding = response['content-encoding']
+        expected = response.content_length unless response.chunked?
+        body = response.read_body
+        return if body.nil? || expected.nil? || !(encoding.nil? || encoding == 'identity')
+        return if body.bytesize >= expected
+
+        raise EOFError, "Response body ended after #{body.bytesize} of #{expected} bytes"
       end
 
       # Per attempt, the timeout is the configured timeout or, if longer, the time until the

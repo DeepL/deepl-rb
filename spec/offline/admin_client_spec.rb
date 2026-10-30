@@ -406,6 +406,15 @@ describe DeepL::AdminClient do
         expect(stub).to have_been_requested.once
       end
     end
+
+    it 'does not retry a body shorter than its Content-Length' do
+      short = { status: 200, body: '{"api', headers: { 'Content-Length' => '99' } }
+      stub = stub_create.to_return(short)
+
+      expect { client.create_developer_key }
+        .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.should_retry?).to be(true) }
+      expect(stub).to have_been_requested.once
+    end
   end
 
   describe '#list_developer_keys' do

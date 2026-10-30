@@ -274,7 +274,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `get_usage` (and `DeepL.usage`), the glossary and multilingual glossary get, list, entries
   and delete requests, and the style rule and custom instruction get and delete requests sent a
   JSON body `{}` with `Content-Type: application/json`. GET and DELETE requests are now sent
-  without a body and without a `Content-Type`.
+  without a body.
+- A response body shorter than its `Content-Length` (the connection closed mid-body) was
+  returned as complete: `translate_document_download` wrote a truncated document, and JSON
+  calls raised a generic "Unexpected response" error. It is now retried like a reset
+  connection and, after the last retry, raises `DeepL::Exceptions::ConnectionError` with
+  `should_retry?` true.
 - An HTTPS proxy that refuses the `CONNECT` request (for example with 407 Proxy Authentication
   Required) raised a raw `Net::HTTPClientException` or `Net::HTTPFatalError`. It now raises
   `DeepL::Exceptions::ConnectionError` with `should_retry?` false, without retrying.

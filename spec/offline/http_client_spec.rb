@@ -69,7 +69,17 @@ describe 'DeepL HTTP client' do
       expect(stub).to have_been_requested.once
     end
 
-    it 'does not let Net::HTTP re-send a request outside max_network_retries' do # rubocop:disable RSpec/ExampleLength
+    it 'retries a body shorter than its Content-Length and raises a ConnectionError' do
+      short = { status: 200, body: '{"char', headers: { 'Content-Length' => '46' } }
+      stub = stub_usage(short)
+
+      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |e|
+        expect([e.cause, e.should_retry?]).to match([be_a(EOFError), true])
+      }
+      expect(stub).to have_been_requested.times(3)
+    end
+
+    it 'does not let Net::HTTP re-send a request or accept a short body' do # rubocop:disable RSpec/ExampleLength
       clients = []
       allow(Net::HTTP).to receive(:new).and_wrap_original do |new, *args|
         new.call(*args).tap { clients << _1 }
@@ -83,6 +93,10 @@ describe 'DeepL HTTP client' do
       end
 
       expect(clients.map(&:max_retries)).to eq([0, 0, 0, 0])
+      # Net::HTTP#ignore_eof= exists from net-http 0.3 (Ruby 3.2).
+      next unless Net::HTTP.method_defined?(:ignore_eof=)
+
+      expect(clients.map(&:ignore_eof)).to eq([false, false, false, false])
     end
 
     it 'trims the auth key' do

@@ -19,13 +19,22 @@ module DeepL
         uri = URI(host)
         http = Net::HTTP.new(uri.host, uri.port, *proxy_arguments(options.proxy))
         http.use_ssl = uri.scheme == 'https'
-        http.max_retries = 0
+        disable_lenient_defaults(http)
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE unless options.enable_ssl_verification
         http.ca_file = options.cert_path if options.cert_path
         http.open_timeout = options.open_timeout unless options.open_timeout.nil?
         http.read_timeout = options.read_timeout unless options.read_timeout.nil?
         http.write_timeout = options.write_timeout unless options.write_timeout.nil?
         http.ssl_timeout = options.ssl_timeout unless options.ssl_timeout.nil?
+        http
+      end
+
+      ##
+      # Net::HTTP would re-send idempotent requests once on its own, outside max_retries, and would
+      # return a body shorter than its Content-Length as complete (+ignore_eof+, net-http 0.3+).
+      def disable_lenient_defaults(http)
+        http.max_retries = 0
+        http.ignore_eof = false if http.respond_to?(:ignore_eof=)
         http
       end
 
