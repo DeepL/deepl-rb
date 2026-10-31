@@ -9,11 +9,25 @@ module DeepL
     @warned = {}
     @mutex = Mutex.new
 
-    # Prints +message+ once per process for +key+. +uplevel+ 2 points the warning at the caller
-    # of the deprecated method.
+    # Prints +message+ once per process for +key+, only while Ruby's deprecation warnings are on
+    # (+ruby -W:deprecated+). +uplevel+ 2 points the warning at the caller of the deprecated
+    # method.
     def self.warn_once(key, message, uplevel: 2)
+      return unless enabled?
+
       first = @mutex.synchronize { @warned[key] ? false : (@warned[key] = true) }
-      Kernel.warn(message, uplevel: uplevel) if first
+      return unless first
+
+      if RUBY_VERSION >= '3.0'
+        Kernel.warn(message, uplevel: uplevel, category: :deprecated)
+      else
+        Kernel.warn(message, uplevel: uplevel)
+      end
+    end
+
+    # Ruby 2.6 has no Warning.[] and prints no deprecation warnings.
+    def self.enabled?
+      Warning.respond_to?(:[]) && Warning[:deprecated]
     end
 
     # Like +warn_once+, but points the warning at the first caller outside the library, for
