@@ -6,12 +6,18 @@
 module DeepL
   module Exceptions
     class ServerError < RequestError
+      # @param [Boolean] should_retry False for a request that is unsafe to repeat once sent.
+      def initialize(response, request = nil, should_retry: true)
+        super(response, request)
+        @should_retry = should_retry
+      end
+
       def to_s
         'An internal server error occured. Try again after waiting a short period.'
       end
 
       def should_retry?
-        true
+        @should_retry
       end
     end
   end

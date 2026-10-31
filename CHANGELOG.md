@@ -157,6 +157,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `rename_developer_key`, `set_developer_key_usage_limits`) and retrieving usage analytics
   (`get_usage_analytics`, `get_custom_tag_usage_analytics`). The four methods that send a
   body accept `extra_body_parameters:`, added to the request body last.
+  `create_developer_key` is retried only when the request was not sent (HTTP 429, DNS
+  resolution errors, refused connections and connection timeouts), and the raised error's
+  `should_retry?` is true only when the request was not sent.
   `DeveloperKey#label`, `DeveloperKey#usage_limits`, `KeyUsage#api_key_label`,
   `AdminUsageReport#total_usage`, `#start_date`, `#end_date` and
   `AdminUsageBreakdown#speech_to_speech_minutes` and

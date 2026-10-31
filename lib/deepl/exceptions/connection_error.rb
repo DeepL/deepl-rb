@@ -14,9 +14,10 @@ module DeepL
     # exception is available as +cause+. The module-level API raises the original exception.
     class ConnectionError < Error
       # Raised from a +rescue+ block, so the original exception becomes +cause+.
-      def self.from_network_error(error)
+      # +should_retry: false+ marks a request that is unsafe to repeat once sent.
+      def self.from_network_error(error, should_retry: true)
         new("Connection to the DeepL API failed: #{error.message}",
-            should_retry: transient?(error))
+            should_retry: should_retry && transient?(error))
       end
 
       def self.transient?(error)

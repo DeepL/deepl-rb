@@ -149,7 +149,11 @@ module DeepL
 
       # Until the next major version, the module-level API raises the original network error.
       def raise_network_error(error)
-        raise Exceptions::ConnectionError.from_network_error(error) if api.client?
+        if api.client?
+          raise Exceptions::ConnectionError.from_network_error(
+            error, should_retry: !retry_only_unprocessed? || unprocessed_error?(error)
+          )
+        end
 
         raise error
       end
@@ -268,6 +272,10 @@ module DeepL
 
       def validate_response!(response, request = nil)
         return if response.is_a?(Net::HTTPSuccess)
+        # A request that is unsafe to repeat may have been processed before the server failed.
+        if retry_only_unprocessed? && (500..599).cover?(response.code.to_i)
+          raise Exceptions::ServerError.new(response, request, should_retry: false)
+        end
 
         raise Utils::ExceptionBuilder.new(response, request).build
       end

@@ -354,12 +354,26 @@ describe DeepL::AdminClient do
       expect { client.create_developer_key }.to raise_error(DeepL::Exceptions::Error)
     end
 
+    it 'reports should_retry? after a 429 reply when the retries are used up' do
+      stub_create.to_return(reply({}, 429))
+
+      expect { described_class.new(admin_key, max_retries: 0).create_developer_key }
+        .to raise_error(DeepL::Exceptions::Error) { |e| expect(e.should_retry?).to be(true) }
+    end
+
     it 'retries after a 429 reply' do
       stub = stub_create.to_return(reply({}, 429), reply(developer_key_json))
 
       client.create_developer_key
 
       expect(stub).to have_been_requested.twice
+    end
+
+    it 'reports should_retry? after a DNS resolution error when the retries are used up' do
+      stub_create.to_raise(SocketError)
+
+      expect { described_class.new(admin_key, max_retries: 0).create_developer_key }
+        .to raise_error(DeepL::Exceptions::Error) { |e| expect(e.should_retry?).to be(true) }
     end
 
     it 'retries after a DNS resolution error' do
@@ -370,12 +384,26 @@ describe DeepL::AdminClient do
       expect(stub).to have_been_requested.twice
     end
 
+    it 'reports should_retry? after a connection timeout when the retries are used up' do
+      stub_create.to_raise(Net::OpenTimeout)
+
+      expect { described_class.new(admin_key, max_retries: 0).create_developer_key }
+        .to raise_error(DeepL::Exceptions::Error) { |e| expect(e.should_retry?).to be(true) }
+    end
+
     it 'retries after a connection timeout' do
       stub = stub_create.to_raise(Net::OpenTimeout).then.to_return(reply(developer_key_json))
 
       client.create_developer_key
 
       expect(stub).to have_been_requested.twice
+    end
+
+    it 'reports should_retry? after a refused connection when the retries are used up' do
+      stub_create.to_raise(Errno::ECONNREFUSED)
+
+      expect { described_class.new(admin_key, max_retries: 0).create_developer_key }
+        .to raise_error(DeepL::Exceptions::Error) { |e| expect(e.should_retry?).to be(true) }
     end
 
     it 'retries after a refused connection' do
@@ -391,7 +419,8 @@ describe DeepL::AdminClient do
         WebMock.reset!
         stub = stub_create.to_return(reply({ message: 'Error' }, status))
 
-        expect { client.create_developer_key }.to raise_error(DeepL::Exceptions::Error)
+        expect { client.create_developer_key }
+          .to raise_error(DeepL::Exceptions::ServerError) { |e| expect(e.should_retry?).to be(false) }
         expect(stub).to have_been_requested.once
       end
     end
@@ -402,7 +431,9 @@ describe DeepL::AdminClient do
         stub = stub_create.to_raise(error)
 
         expect { client.create_developer_key }
-          .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.cause).to be_a(error) }
+          .to(raise_error(DeepL::Exceptions::ConnectionError) do |e|
+            expect([e.cause, e.should_retry?]).to match([be_a(error), false])
+          end)
         expect(stub).to have_been_requested.once
       end
     end
@@ -412,7 +443,7 @@ describe DeepL::AdminClient do
       stub = stub_create.to_return(short)
 
       expect { client.create_developer_key }
-        .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.should_retry?).to be(true) }
+        .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.should_retry?).to be(false) }
       expect(stub).to have_been_requested.once
     end
   end
