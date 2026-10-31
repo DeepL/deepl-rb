@@ -206,7 +206,8 @@ module DeepL
     # @raise [DeepL::Exceptions::Error] If the job carries no download URL, for example because
     #                                   it has not completed yet, if the storage URL replies with
     #                                   a non-2xx status (with `http_status_code`, `should_retry?`
-    #                                   true for 429 and 5xx), or if the file cannot be written.
+    #                                   true for 429 and 5xx).
+    # @raise [SystemCallError, IOError] If the file cannot be written.
     #
     # @param [DeepL::Resources::TranslationMemoryJob, String] job Completed export job carrying
     #        the download URL, or the download URL itself.
@@ -224,8 +225,9 @@ module DeepL
     # Imports a TMX file as a new translation memory: creates the import job, uploads the file
     # and waits for the processing to finish.
     #
-    # @raise [ArgumentError] If no file exists at `input_file_path`, before any request is sent.
-    # @raise [DeepL::Exceptions::Error] If the file cannot be read or the import fails.
+    # @raise [DeepL::Exceptions::Error] If no file exists at `input_file_path` (before any request
+    #                                   is sent) or the import fails.
+    # @raise [SystemCallError, IOError] If the file cannot be read.
     #
     # @param [String] input_file_path Path to the TMX file to import.
     # @param [String, nil] display_name Name of the resulting translation memory, defaults to the
@@ -244,8 +246,7 @@ module DeepL
 
     def import_from_filepath(input_file_path, display_name: nil, timeout_s: nil,
                              content_type: nil, extra_body_parameters: nil)
-      raise ArgumentError, "No file found at #{input_file_path}" unless File.exist?(input_file_path)
-
+      check_input_file(input_file_path)
       file_content = read_input_file(input_file_path)
       created = create_import(File.basename(input_file_path), file_content.bytesize,
                               content_type: content_type, display_name: display_name,
@@ -258,9 +259,10 @@ module DeepL
     # Exports a translation memory to a TMX file: creates the export job, waits for it to finish
     # and writes the result to +output_path+.
     #
-    # @raise [DeepL::Exceptions::Error] If the directory of `output_path` does not exist (checked
-    #                                   before the export job is created), the export fails or
-    #                                   the file cannot be written.
+    # @raise [Errno::ENOENT] If the directory of `output_path` does not exist, checked before the
+    #                        export job is created.
+    # @raise [DeepL::Exceptions::Error] If the export fails.
+    # @raise [SystemCallError, IOError] If the file cannot be written.
     #
     # @param [String, DeepL::Resources::TranslationMemory] translation_memory Translation memory
     #                                                                         ID or object.
@@ -323,9 +325,22 @@ module DeepL
       value.nil? || value.empty?
     end
 
+    # Until the next major version, the module-level API raises the error classes of v3.9.0 for
+    # local file failures; DeepL::Client raises ArgumentError and wrapped errors.
+    def check_input_file(input_file_path)
+      return if File.exist?(input_file_path)
+
+      message = "No file found at #{input_file_path}"
+      raise ArgumentError, message if @api.client?
+
+      raise Exceptions::Error, message
+    end
+
     def read_input_file(input_file_path)
       File.binread(input_file_path)
     rescue SystemCallError, IOError => e
+      raise e unless @api.client?
+
       raise Exceptions::Error, "Could not read #{input_file_path}: #{e.message}"
     end
 
@@ -333,7 +348,10 @@ module DeepL
       directory = File.dirname(output_path)
       return if File.directory?(directory)
 
-      raise Exceptions::Error, "Output directory #{directory} does not exist"
+      message = "Output directory #{directory} does not exist"
+      raise Exceptions::Error, message if @api.client?
+
+      raise Errno::ENOENT, message
     end
 
     def log_job_polling(interval)

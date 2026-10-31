@@ -7,8 +7,11 @@ module DeepL
   class API
     attr_reader :configuration, :http_client, :http_client_options
 
-    def initialize(configuration, http_client_options = nil)
+    # +client:+ is true for the API of a DeepL::Client or DeepL::AdminClient, whose errors differ
+    # from those of the module-level API until the next major version. @api private
+    def initialize(configuration, http_client_options = nil, client: false)
       @configuration = configuration
+      @client = client
       configuration.validate!
       @http_client_options = http_client_options
       @http_client = if http_client_options
@@ -16,6 +19,11 @@ module DeepL
                      else
                        default_http_client(configuration.host)
                      end
+    end
+
+    # @api private
+    def client?
+      @client
     end
 
     # +options+ are the HTTPClientOptions the client was built with; their timeouts take

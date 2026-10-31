@@ -378,13 +378,11 @@ describe DeepL::TranslationMemoryApi do
         .to raise_error(DeepL::Exceptions::Error, /no download URL/)
     end
 
-    it 'raises Error with the cause when the file cannot be written' do
+    it 'raises the Errno error when the file cannot be written' do
       stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
 
       expect { memories.download_export(download_url, File.join(temp_dir, 'missing', 'x.tmx')) }
-        .to raise_error(DeepL::Exceptions::Error, /Could not write/) { |error|
-          expect(error.cause).to be_a(Errno::ENOENT)
-        }
+        .to raise_error(Errno::ENOENT)
     end
 
     it 'retries a storage reply of 503 and raises a plain Error that should be retried' do
@@ -433,21 +431,18 @@ describe DeepL::TranslationMemoryApi do
                                           extra_body_parameters: { extra: 'x' })
     end
 
-    it 'raises ArgumentError for a missing import file without sending a request' do
+    it 'raises Error for a missing import file without sending a request' do
       expect { memories.import_from_filepath(File.join(temp_dir, 'missing.tmx')) }
-        .to raise_error(ArgumentError, /No file found/)
+        .to raise_error(DeepL::Exceptions::Error, /No file found/)
     end
 
-    it 'raises Error with the cause for an unreadable import file without sending a request' do
-      expect { memories.import_from_filepath(temp_dir) }
-        .to raise_error(DeepL::Exceptions::Error, /Could not read/) { |error|
-          expect(error.cause).to be_a(Errno::EISDIR)
-        }
+    it 'raises the Errno error for an unreadable import file without sending a request' do
+      expect { memories.import_from_filepath(temp_dir) }.to raise_error(Errno::EISDIR)
     end
 
-    it 'raises Error for a missing output directory before creating the export job' do
+    it 'raises Errno::ENOENT for a missing output directory before creating the export job' do
       expect { memories.export_to_filepath('tm-1', File.join(temp_dir, 'missing', 'x.tmx')) }
-        .to raise_error(DeepL::Exceptions::Error, /does not exist/)
+        .to raise_error(Errno::ENOENT, /missing/)
     end
 
     it 'exports to a file: creates the export, waits for the job and downloads the result' do

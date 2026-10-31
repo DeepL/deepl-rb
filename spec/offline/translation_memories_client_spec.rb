@@ -125,6 +125,18 @@ describe 'DeepL::Client translation memories' do
 
       expect([job.done?, job.result.translation_memory_id]).to eq([true, 'tm-2'])
     end
+
+    it 'raises ArgumentError for a missing import file without sending a request' do
+      expect { client.import_translation_memory_from_filepath(File.join(temp_dir, 'missing.tmx')) }
+        .to raise_error(ArgumentError, /No file found/)
+    end
+
+    it 'raises Error with the cause for an unreadable import file without sending a request' do
+      expect { client.import_translation_memory_from_filepath(temp_dir) }
+        .to raise_error(DeepL::Exceptions::Error, /Could not read/) { |error|
+          expect(error.cause).to be_a(Errno::EISDIR)
+        }
+    end
   end
 
   describe 'export' do
@@ -156,6 +168,24 @@ describe 'DeepL::Client translation memories' do
       job = client.export_translation_memory_to_filepath('tm-1', output, timeout_s: 10)
 
       expect([job.status, File.read(output)]).to eq(%w[completed tmx])
+    end
+
+    it 'raises Error for a missing output directory before creating the export job' do
+      missing = File.join(temp_dir, 'missing', 'x.tmx')
+
+      expect { client.export_translation_memory_to_filepath('tm-1', missing) }
+        .to raise_error(DeepL::Exceptions::Error, /does not exist/)
+    end
+
+    it 'raises Error with the cause when the file cannot be written' do
+      stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
+
+      expect do
+        client.download_translation_memory_export(download_url,
+                                                  File.join(temp_dir, 'missing', 'x.tmx'))
+      end.to raise_error(DeepL::Exceptions::Error, /Could not write/) { |error|
+        expect(error.cause).to be_a(Errno::ENOENT)
+      }
     end
   end
 

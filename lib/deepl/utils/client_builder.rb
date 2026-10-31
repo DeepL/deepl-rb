@@ -25,7 +25,7 @@ module DeepL
             user_agent: headers.find { |name, _| user_agent_header?(name) }&.last },
           app_info&.app_name, app_info&.app_version, send_platform_info
         )
-        API.new(configuration, merge_proxy(http_client_options, proxy))
+        API.new(configuration, merge_proxy(http_client_options, proxy), client: true)
       end
 
       private

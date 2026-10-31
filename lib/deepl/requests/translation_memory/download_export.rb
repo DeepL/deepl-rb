@@ -29,6 +29,8 @@ module DeepL
         def extract_file(_request, response)
           File.binwrite(@output_file, response.body)
         rescue SystemCallError, IOError => e
+          raise e unless api.client?
+
           raise Exceptions::Error, "Could not write the export to #{@output_file}: #{e.message}"
         end
       end
