@@ -1519,8 +1519,8 @@ require 'logger'
 logger = Logger.new(STDOUT)
 logger.level = Logger::INFO
 
-deepl.configure do |config|
-  config.auth_key = configuration.auth_key
+DeepL.configure do |config|
+  config.auth_key = ENV.fetch('DEEPL_AUTH_KEY')
   config.logger = logger
 end
 ```
@@ -1554,8 +1554,8 @@ client = DeepL::Client.new(auth_key, proxy: 'http://user:password@localhost:3128
 module-level API, a session needs to be used; the proxy is configured as part of the HTTP client options:
 
 ```rb
-client_options = HTTPClientOptions.new({ 'proxy_addr' => 'http://localhost', 'proxy_port' => 80 })
-deepl.with_session(client_options) do |session|
+client_options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'http://localhost', 'proxy_port' => 80 })
+DeepL.with_session(client_options) do |session|
   # ...
 end
 ```
@@ -1565,7 +1565,7 @@ end
 By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, create the client with `send_platform_info: false`, or with the module-level API set the `User-Agent` to the library name and version only:
 
 ```rb
-deepl.configure do |config|
+DeepL.configure do |config|
   config.user_agent = "deepl-ruby/#{DeepL::VERSION}"
 end
 ```
@@ -1573,7 +1573,7 @@ end
 You can also completely replace the `User-Agent` header with `headers: { 'User-Agent' => 'myCustomUserAgent' }`, or with the module-level API like so:
 
 ```rb
-deepl.configure do |config|
+DeepL.configure do |config|
   config.user_agent = 'myCustomUserAgent'
 end
 ```
@@ -1583,10 +1583,10 @@ end
 When writing an application that send multiple requests, using a HTTP session will give better performance through [HTTP Keep-Alive](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive). You can use it by simply wrapping your requests in a `with_session` block:
 
 ```rb
-deepl.with_session do |session|
-  deepl.translate(sentence1, 'DE', 'EN-GB')
-  deepl.translate(sentence2, 'DE', 'EN-GB')
-  deepl.translate(sentence3, 'DE', 'EN-GB')
+DeepL.with_session do |session|
+  DeepL.translate(sentence1, 'DE', 'EN-GB')
+  DeepL.translate(sentence2, 'DE', 'EN-GB')
+  DeepL.translate(sentence3, 'DE', 'EN-GB')
 end
 ```
 
@@ -1602,12 +1602,12 @@ client = DeepL::Client.new(auth_key, app_info: { app_name: 'MyTranslationPlugin'
 With the module-level API, append them to the `User-Agent`:
 
 ```rb
-deepl.configure do |config|
+DeepL.configure do |config|
   config.user_agent = "#{config.user_agent} MyTranslationPlugin/1.0.1"
 end
 ```
 
-This information is passed along when the library makes calls to the DeepL API. Both name and version are required. Please note that setting the `User-Agent` header via `deepl.configure` will override this setting, if you need to use this, please manually identify your Application in the `User-Agent` header.
+This information is passed along when the library makes calls to the DeepL API. Both name and version are required. Please note that setting the `User-Agent` header via `DeepL.configure` will override this setting, if you need to use this, please manually identify your Application in the `User-Agent` header.
 
 ## Options Constants
 
