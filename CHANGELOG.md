@@ -187,7 +187,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dictionary is a `DeepL::Resources::MultilingualGlossaryDictionaryEntries` (`source_lang`,
   `target_lang` and `entries`, a hash of source term to target term; constructible with
   `.new` from a hash, source/target pairs or a TSV string) or a hash
-  with the same keys. `get_multilingual_glossary_dictionary_entries` returns one dictionary
+  with the same keys. A source term that appears twice (after stripping) or a pair that is not
+  exactly two strings raises `DeepL::Exceptions::ValidationError` before any request. `get_multilingual_glossary_dictionary_entries` returns one dictionary
   and raises `DeepL::Exceptions::NotFound` if the glossary has none for the language pair;
   the delete methods return `nil`. `creation_time` is a UTC `Time`, `nil` when malformed.
   Please refer to the README for usage instructions.

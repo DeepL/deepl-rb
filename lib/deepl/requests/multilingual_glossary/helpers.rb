@@ -40,10 +40,9 @@ module DeepL
 
         # A hash, source/target pairs or a TSV string of them, checked and joined as TSV.
         def entries_to_string(entries)
-          if entries.is_a?(String)
-            entries = Resources::MultilingualGlossaryDictionaryEntries.tsv_to_pairs(entries)
-          end
-          entries.map do |entry|
+          entries_class = Resources::MultilingualGlossaryDictionaryEntries
+          entries = entries.is_a?(String) ? entries_class.tsv_to_pairs(entries) : entries.to_a
+          entries_class.check_pairs!(entries).map do |entry|
             source = Utils::TermValidator.validate!(entry.first)
             target = Utils::TermValidator.validate!(entry.last)
             "#{source}\t#{target}"

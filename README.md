@@ -528,7 +528,8 @@ as a hash (`{ 'Hello' => 'Hallo' }`), as source/target pairs or as a TSV string 
 source/target pair per line, separated by a tab); a hash dictionary may also give
 them as CSV with `entries_format: 'csv'`. Terms not given as CSV are checked like v2
 glossary terms: each term is stripped of surrounding whitespace, and an empty term,
-one with a control character or a TSV line that is not exactly two terms raises
+one with a control character, a pair or TSV line that is not exactly two terms, or a
+source term that appears twice raises
 `DeepL::Exceptions::ValidationError` before anything is sent. CSV content is sent as
 given. Further options, such as
 `extra_body_parameters`, are given as additional keywords:

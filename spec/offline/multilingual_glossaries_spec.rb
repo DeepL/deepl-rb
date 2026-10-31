@@ -101,6 +101,18 @@ describe 'multilingual glossaries' do
         end
       end
 
+      { 'a duplicate source term' => [%w[Apple Apfel], [' Apple', 'Apfel2']],
+        'a one-element pair' => [['Apple']] }.each do |label, pairs|
+        it "raises ValidationError for #{label} and sends no request" do
+          entries_class = DeepL::Resources::MultilingualGlossaryDictionaryEntries
+
+          expect do
+            client.create_multilingual_glossary('terms', [entries_class.new('EN', 'DE', pairs)])
+          end.to raise_error(DeepL::Exceptions::ValidationError, /Apple/)
+          expect(a_request(:any, /.*/)).not_to have_been_made
+        end
+      end
+
       it 'parses the creation time as a UTC Time' do
         stub_request(:post, url('/v3/glossaries')).to_return(reply(glossary_json, 201))
 

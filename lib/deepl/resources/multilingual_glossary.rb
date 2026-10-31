@@ -36,13 +36,15 @@ module DeepL
       # @param [Hash{String => String}, Array<Array(String, String)>, String] entries The target
       #   term of each source term, as a hash, source/target pairs or a TSV string; terms are
       #   stripped and checked when sent.
-      # @raise [DeepL::Exceptions::ValidationError] If a TSV line is not exactly two terms.
+      # @raise [DeepL::Exceptions::ValidationError] If a pair or TSV line is not exactly two
+      #   terms, or a source term appears twice.
       def initialize(source_lang, target_lang, entries, request = nil, response = nil)
         super(request, response)
 
         @source_lang = source_lang
         @target_lang = target_lang
-        @entries = entries.is_a?(String) ? self.class.tsv_to_pairs(entries).to_h : entries.to_h
+        pairs = entries.is_a?(String) ? self.class.tsv_to_pairs(entries) : entries.to_a
+        @entries = self.class.check_pairs!(pairs).to_h
       end
 
       # @api private
@@ -53,6 +55,23 @@ module DeepL
           [source, target]
         end
         new(dictionary['source_lang'], dictionary['target_lang'], entries, request, response)
+      end
+
+      # @api private
+      # Raises ValidationError unless each pair is two strings and no source term, stripped as
+      # the term check strips it, appears twice. Returns +pairs+.
+      def self.check_pairs!(pairs)
+        seen = {}
+        pairs.each do |pair|
+          unless pair.is_a?(Array) && pair.size == 2 && pair.all?(String)
+            raise Exceptions::ValidationError, "Entry #{pair.inspect} must be two terms"
+          end
+
+          source = pair.first.strip
+          next seen[source] = true unless seen[source]
+
+          raise Exceptions::ValidationError, "Duplicate source term #{source.inspect}"
+        end
       end
 
       # @api private
