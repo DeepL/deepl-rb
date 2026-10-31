@@ -84,9 +84,9 @@ module DeepL
 
     ##
     # Translates a document with the DeepL API, `sleep`ing during waiting periods, and returns
-    # the final status once the translated document is downloaded. Polls until the translation
-    # is done or failed; the deprecated `max_doc_status_queries` limits the number of status
-    # requests if it is configured.
+    # the number of bytes written once the translated document is downloaded. Polls until the
+    # translation is done or failed; the deprecated `max_doc_status_queries` limits the number of
+    # status requests if it is configured.
     #
     # @raise [DocumentTranslationError] If any error occurs during the process, also when the
     #   translation fails or is not done after `max_doc_status_queries`.
@@ -105,7 +105,7 @@ module DeepL
     #                               the filename of +input_file_path+.
     # @param [Hash] options Additional options for the upload.
     # @param [Hash] additional_headers Additional headers for the upload.
-    # @return [DeepL::Resources::DocumentTranslationStatus] Status of the document translation.
+    # @return [Integer] Number of bytes written
 
     def translate_document(input_file, output_file, source_lang, target_lang, # rubocop:disable Metrics/MethodLength,Metrics/ParameterLists
                            filename = nil, options = {}, additional_headers = {})
@@ -137,7 +137,6 @@ module DeepL
       end
 
       download(document_handle, output_file)
-      doc_status
     end
 
     def not_done_message(doc_status)

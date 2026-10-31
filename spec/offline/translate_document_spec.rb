@@ -341,16 +341,13 @@ describe DeepL::DocumentApi do
       expect(form_fields(forms.first)).to include('enable_watermark' => 'true')
     end
 
-    it 'returns the final status' do
+    it 'returns the number of bytes written' do
       input, output = create_text_document(temp_dir)
       stub_upload.to_return(upload_reply)
       stub_status(status_reply('done', billed_characters: 11))
       stub_request(:post, url('/v2/document/doc-1/result')).to_return(status: 200, body: 'x')
 
-      status = documents.translate_document(input, output, 'EN', 'DE')
-
-      expect([status.class, status.status, status.billed_characters])
-        .to eq([DeepL::Resources::DocumentTranslationStatus, 'done', 11])
+      expect(documents.translate_document(input, output, 'EN', 'DE')).to eq(1)
     end
 
     it 'polls until the translation is done, beyond the former limit of 11 status requests' do
