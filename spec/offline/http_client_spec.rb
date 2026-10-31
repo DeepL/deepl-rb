@@ -295,6 +295,14 @@ describe 'DeepL HTTP client' do
       DeepL.translate('Hello', nil, 'DE', {}, { 'host' => 'other.example.test',
                                                 'content-type' => 'text/plain' })
     end
+
+    it 'sends no caller Content-Type with a request without a body' do
+      DeepL.configuration.headers = { 'content-type' => 'text/plain' }
+      stub_request(:get, url('/v2/usage'))
+        .with { |request| !request.headers.key?('Content-Type') }.to_return(usage_reply)
+
+      DeepL.usage
+    end
   end
 
   describe 'HTTPClientBuilder' do
