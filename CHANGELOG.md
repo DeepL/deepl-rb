@@ -27,7 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `export_translation_memory_to_filepath(translation_memory, output_path, timeout_s: nil)`,
   `get_translation_memory_job(job)` and `wait_until_translation_memory_job_done(job,
   timeout_s: nil)`. Keywords left `nil` are not sent; the delete and download methods return
-  `nil`. Please refer to the README for usage instructions.
+  `nil`. Please refer to the README for usage instructions. A missing input file raises
+  `ArgumentError` before any request; other local file failures raise
+  `DeepL::Exceptions::Error` with the original error as `cause`.
 - `DeepL.translation_memories.import_from_filepath` accepts `content_type:`, declared in the
   import job and sent with the upload, and `extra_body_parameters:`.
   `DeepL.translation_memories.create_import` accepts `extra_body_parameters:`.
@@ -99,16 +101,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   max_retries:, timeout:, proxy:, send_platform_info:, app_info:, http_client_options:,
   logger:)`. Its operations follow in later changes. New public types: `DeepL::Client` and
   `DeepL::AppInfo` (`app_name`, `app_version`).
-- Added the client options `headers:` (sent with every DeepL API request; a `User-Agent`
-  replaces the library's, `Authorization` cannot be replaced), `timeout:` (seconds per
-  attempt, default 10, applied to opening, reading and writing) and `proxy:` (a proxy URL,
+- Added the client options `headers:` (sent with every DeepL API request; a header of the same
+  name, in any casing, replaces the library's, including `Authorization` and `User-Agent`,
+  except `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host`), `timeout:` (seconds
+  per attempt, default 10, applied to opening, reading and writing) and `proxy:` (a proxy URL,
   also accepted as the `proxy` of `DeepL::HTTPClientOptions`; its user info never shows in
   `inspect` output or error messages). The module configuration has `headers` and `timeout`
-  attributes too.
+  (default 60) attributes too.
 - Added `DeepL::Client.free_account_auth_key?(key)`.
-- Added `DeepL::Exceptions::ConnectionError`, raised for network failures without an HTTP
-  response (DNS, connection, TLS, timeout) after the retries; the original exception is its
-  `cause`.
+- Added `DeepL::Exceptions::ConnectionError`, raised by `DeepL::Client` and
+  `DeepL::AdminClient` for network failures without an HTTP response (DNS, connection, TLS,
+  timeout) after the retries; the original exception is its `cause`. The module-level API still
+  raises the original network errors.
+- Added `DeepL::Exceptions::ValidationError`, a `DeepL::Exceptions::Error` raised before any
+  request for an invalid glossary or spoken terms term and an unsupported `DeepL.languages`
+  `type`.
 - Added `http_status_code` (`Integer`, `nil` without a response) to
   `DeepL::Exceptions::Error`. `RequestError#request` now returns the failed request, and the
   message of a `RequestError` for an unmapped status contains the status and the API's
@@ -209,40 +216,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Text translation accepts a glossary without a source language: the `glossary_ids`
   option no longer requires `source_lang`, and the API detects the source language.
   Document translation with `glossary_ids` still requires `source_lang`.
-- `DeepL.document.translate_document` now returns the final
-  `DeepL::Resources::DocumentTranslationStatus`, as documented, instead of the number of bytes
-  written.
 - Text translation now always sends `show_billed_characters: true`, so every result has
-  `billed_characters`.
-- Network failures are now raised as `DeepL::Exceptions::ConnectionError` after the retries,
-  instead of the raw `SocketError`, `Timeout::Error`, `Errno::*` or `OpenSSL::SSL::SSLError`.
-- Requests now time out after 10 seconds per attempt (or the backoff interval, if longer)
-  instead of Net::HTTP's 60 seconds; set `timeout:` (or `config.timeout`) to change it.
-  Timeouts given in `DeepL::HTTPClientOptions` still take precedence.
+  `billed_characters`; previously it was sent only when set.
+- Requests of the module-level API now time out after `config.timeout` seconds per attempt
+  (default 60, or the backoff interval if longer), applied to opening, reading and writing;
+  previously Net::HTTP's 60-second defaults applied and could not be set. Timeouts given in
+  `DeepL::HTTPClientOptions` still take precedence.
 - `DeepL.languages` and `DeepL.glossaries.language_pairs` now use the `GET /v3/languages`
   endpoint instead of the deprecated `GET /v2/languages` and `GET /v2/glossary-language-pairs`
   endpoints. Public method signatures and return types are unchanged. An unsupported `type`
-  option passed to `DeepL.languages` now raises `ArgumentError` instead of
-  `DeepL::Exceptions::BadRequest`, since the value is now validated client-side.
+  option now raises `DeepL::Exceptions::ValidationError` before any request; previously the
+  API answered with `DeepL::Exceptions::BadRequest`.
 - Language lists returned by `DeepL.languages` and `DeepL.glossaries.language_pairs` may now
   include additional languages that the v2 endpoints did not list.
-- `import_translation_memory_from_filepath` (and `DeepL.translation_memories.import_from_filepath`)
-  raises `ArgumentError` instead of `DeepL::Exceptions::Error` when the input file does not
-  exist, before any request is sent.
-- `export_translation_memory_to_filepath` (and `DeepL.translation_memories.export_to_filepath`)
-  raises `DeepL::Exceptions::Error` before creating the export job if the output directory does
-  not exist.
+- `DeepL.translation_memories.export_to_filepath` now checks the output directory before
+  creating the export job and raises `Errno::ENOENT` if it does not exist; previously the same
+  error came after the export finished. `DeepL::Client#export_translation_memory_to_filepath`
+  raises `DeepL::Exceptions::Error` instead.
+- Glossary terms given as `[source, target]` pairs are now stripped of surrounding whitespace
+  before they are sent; previously they were sent as given.
+- Every 5xx reply is now retried; previously only 429 and 500 were, and 502, 503, 504 and other
+  5xx replies were raised at once.
+- Query values are now encoded per RFC 3986, with a space as `%20`; previously as `+`.
+- `DeepL.document.translate_document` and `DocumentHandle#wait_until_document_translation_finished`
+  now poll until the translation is done or failed; previously they stopped after 11 status
+  requests (about 50 seconds) and `translate_document` then downloaded the unfinished document.
+  A configured `max_doc_status_queries` still limits the requests; `translate_document` then
+  raises `DocumentTranslationError`.
+- A non-2xx response from the translation memory storage URL (upload or export download) raises
+  `DeepL::Exceptions::Error` with `http_status_code`, `should_retry?` true for 429 and 5xx
+  (previously the API status class such as `AuthorizationFailed`); a malformed API response
+  (invalid JSON or an unexpected structure) raises `DeepL::Exceptions::Error` instead of
+  `JSON::ParserError`, `NoMethodError` or `TypeError`.
 - Reworked the test suite so that it no longer needs the `deepl-mock` server. The offline specs
   assert the exact outgoing requests with WebMock, and one real-API spec per resource calls each
   endpoint once. `webmock` and `webrick` are test dependencies again.
 
 ### Deprecated
 - `DeepL::Resources::DocumentTranslationStatus#successful?`, use `#done?` instead. It prints a
-  warning once per process and keeps working unchanged.
+  deprecation warning once per process when Ruby's deprecation warnings are enabled
+  (`ruby -W:deprecated`) and keeps working unchanged.
 - `DeepL::Resources::Usage#character_count`, `#character_limit` and `#quota_exceeded?`, use
-  `character.count`, `character.limit` and `character.limit_reached?` (or
-  `any_limit_reached?`) instead. Each prints a warning once per process and keeps working
-  unchanged. `DeepL.usage` now names `DeepL::Client#get_usage` as its replacement.
+  `character.count`, `character.limit` and `character.limit_reached?` (or `any_limit_reached?`)
+  instead. Each prints a deprecation warning once per process when Ruby's deprecation warnings
+  are enabled (`ruby -W:deprecated`) and keeps working unchanged. `DeepL.usage` now names
+  `DeepL::Client#get_usage` as its replacement.
 - The methods of `DeepL::TranslationMemoryApi` (`DeepL.translation_memories`), use the
   translation memory methods of `DeepL::Client` instead (`list` is
   `list_translation_memories`, `find` is `get_translation_memory`, `segments` is
@@ -252,19 +270,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client` instead (`list` is `get_all_style_rules`, `find` is `get_style_rule`,
   `update_name` is `update_style_rule_name`, `destroy` is `delete_style_rule`, and so on).
   They keep working unchanged.
-- `DeepL::Exceptions::NotSupported` is deprecated: the library no longer raises it. Creating
-  one prints a deprecation warning once per process.
+- `DeepL::Exceptions::NotSupported` is deprecated: the library no longer raises it. Creating one
+  prints a deprecation warning once per process when Ruby's deprecation warnings are enabled
+  (`ruby -W:deprecated`).
 - The module-level API is deprecated in favour of `DeepL::Client` and will be removed in the
   next major version: `DeepL.configure`, `DeepL.configuration`, `DeepL.api`, `DeepL.translate`,
   `DeepL.rephrase`, `DeepL.correct`, `DeepL.usage`, `DeepL.languages`,
   `DeepL.languages_for_resource`, `DeepL.language_resources`, `DeepL.document`,
   `DeepL.glossaries`, `DeepL.multilingual_glossaries`, `DeepL.style_rules`,
-  `DeepL.translation_memories`,
-  `DeepL.with_session` and `DeepL.http_client`. Each prints a warning once per process and
-  keeps working unchanged.
+  `DeepL.translation_memories`, `DeepL.with_session` and `DeepL.http_client`. Each prints a
+  deprecation warning once per process when Ruby's deprecation warnings are enabled
+  (`ruby -W:deprecated`) and keeps working unchanged.
 - `DeepL::Configuration#version=` (the API version is part of each endpoint).
-- The `glossary_id` option of text and document translation, use `glossary` instead. It
-  prints a warning once per process and keeps working unchanged.
+- The `glossary_id` option of text and document translation, use `glossary` instead. It prints a
+  deprecation warning once per process when Ruby's deprecation warnings are enabled
+  (`ruby -W:deprecated`) and keeps working unchanged.
 - `DeepL::Resources::DocumentHandle#wait_until_document_translation_finished`, use
   `DeepL::Client#translate_document_wait_until_done` instead.
 - `DeepL::Configuration#max_doc_status_queries=`, use the `timeout_s:` of
@@ -279,40 +299,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   returned as complete: `translate_document_download` wrote a truncated document, and JSON
   calls raised a generic "Unexpected response" error. It is now retried like a reset
   connection and, after the last retry, raises `DeepL::Exceptions::ConnectionError` with
-  `should_retry?` true.
+  `should_retry?` true (`DeepL::Client`, `DeepL::AdminClient`) or the original `EOFError`
+  (module-level API).
 - An HTTPS proxy that refuses the `CONNECT` request (for example with 407 Proxy Authentication
   Required) raised a raw `Net::HTTPClientException` or `Net::HTTPFatalError`. It now raises
-  `DeepL::Exceptions::ConnectionError` with `should_retry?` false, without retrying.
-- Headers passed per call to the module-level API (`DeepL.translate`, `DeepL.rephrase`,
-  `DeepL.correct`, `DeepL.document` and `DeepL.translation_memories.create_import`) could
-  replace the `Authorization` header. An `Authorization` header in any casing is now ignored, as
-  in `headers:`.
+  `DeepL::Exceptions::ConnectionError` with `should_retry?` false (`DeepL::Client`,
+  `DeepL::AdminClient`) or the original proxy error (module-level API), without retrying.
 - Net::HTTP re-sent a failed GET, PUT or DELETE request once on its own, so with
   `max_retries: 0` such a request could still be sent twice. The library's connections now
   disable Net::HTTP's own retry; only `max_retries:` applies.
 - TLS failures (including certificate verification failures) and malformed HTTP responses were
-  retried like transient network failures. They now raise `DeepL::Exceptions::ConnectionError`
-  at once, with `should_retry?` false.
-- Query values were encoded with a space as `+`. They are now encoded per RFC 3986, with a space
-  as `%20`.
-- `DeepL::Client#translate_document` and `DeepL.document.translate_document` raise
-  `DeepL::Exceptions::DocumentTranslationError` (without a document handle) instead of
-  `IOError` when the output file already exists; the file is still kept and nothing is
-  uploaded. The doc comment of `DeepL.document.translate_document` no longer claims that an
+  retried like transient network failures. They are now raised at once, as
+  `DeepL::Exceptions::ConnectionError` with `should_retry?` false (`DeepL::Client`,
+  `DeepL::AdminClient`) or as the original TLS or protocol error (module-level API).
+- `DeepL.document.translate_document` raised `NoMethodError` when the output file already
+  exists. It now raises `DeepL::Exceptions::DocumentTranslationError` (without a document
+  handle); the file is kept and nothing is uploaded, as in `DeepL::Client#translate_document`.
+  The doc comment of `DeepL.document.translate_document` no longer claims that an
   existing file is overwritten.
 - `DeepL::Client#translate_document` raises `ArgumentError` for a missing input file before
   any request, instead of wrapping the `Errno::ENOENT` in `DocumentTranslationError`.
 - Multilingual glossary entries given as a TSV string are parsed into pairs, and each term is
   stripped and checked like terms given as pairs, before anything is sent. A line that is not
-  exactly two tab-separated terms raises `ArgumentError`. CSV content is still sent as given.
-- A non-2xx reply of a pre-signed translation memory storage URL (upload or export download)
-  raised the error class of the DeepL API status, for example `AuthorizationFailed` asking for a
-  valid `auth_key` for an expired URL (403). It now raises a plain `DeepL::Exceptions::Error`
-  with `http_status_code`; `should_retry?` is true for 429 and 5xx.
-- The translation memory file helpers raised raw `Errno::*` and `IOError` errors for local file
-  failures, such as an input path that is a directory or unreadable, or an output path that
-  cannot be written. They now raise `DeepL::Exceptions::Error` with the original error as
-  `cause`.
+  exactly two tab-separated terms raises `DeepL::Exceptions::ValidationError`. CSV content is
+  still sent as given.
 - `wait_until_translation_memory_job_done` (and the file helpers) could wait up to five seconds
   past `timeout_s`; the last wait is now cut to the deadline.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
@@ -337,11 +347,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   longer changed.
 - `DeepL::Resources::Language#supports_formality?` raised `DeepL::Exceptions::NotSupported`
   for source languages. It now returns `nil` for them.
-- `DeepL.document.translate_document` and `DocumentHandle#wait_until_document_translation_finished`
-  stopped polling after 11 status requests (about 50 seconds), and `translate_document` then
-  downloaded the unfinished document. They now poll until the translation is done or failed;
-  only an explicitly configured `max_doc_status_queries` still limits the requests, and
-  `translate_document` then raises `DocumentTranslationError` instead of downloading.
 - Downloaded documents were written in text mode, which converted newlines on Windows and
   failed or transcoded the bytes when `Encoding.default_internal` was set. They are now
   written in binary mode.
@@ -364,37 +369,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The auth key was sent with surrounding whitespace, and a whitespace-only key passed
   `DeepL.configure`. The key is now trimmed, and a blank key raises
   `DeepL::Exceptions::Error`.
-- Only HTTP 429 and 500 replies were retried; 502, 503, 504 and other 5xx replies were raised
-  immediately. Every 5xx reply is now retried.
-- Refused or reset connections, `EOFError` and TLS errors were not retried. They are now
+- Refused or reset connections and `EOFError` were not retried. They are now
   retried like timeouts and DNS failures. `AdminClient#create_developer_key` also retries a
   refused connection, which shows that the request was not sent.
-- A malformed response (invalid JSON or an unexpected structure) raised `JSON::ParserError`,
-  `NoMethodError` or `TypeError`. It now raises `DeepL::Exceptions::Error`. A 400 or 404
-  reply with a JSON array body raised `TypeError` when its message was read.
+- A 400 or 404 reply with a JSON array body raised `TypeError` when its message was read.
 - `extra_body_parameters` were overridden by options of the same name, and a string key next
   to the SDK's symbol key sent the field twice. They are now applied last and replace the
   SDK's field.
 - `DeepL.with_session` turned TLS off (instead of certificate verification) when
   `enable_ssl_verification` was `false`, turned it on for `http://` hosts, and used a proxy
   with only an address. It now builds its connection like `DeepL::AdminClient`.
-- `DeepL.with_session` opened its connection with Net::HTTP's 60 second open timeout and
-  raised DNS, connection and TLS failures raw. It now uses the configured `timeout` unless
-  the HTTP client options set `open_timeout`, and raises `DeepL::Exceptions::ConnectionError`.
+- `DeepL.with_session` opened its connection with Net::HTTP's 60 second open timeout. It now
+  uses the configured `timeout` unless the HTTP client options set `open_timeout`.
 - `DocumentHandle#wait_until_document_translation_finished` polled through the module
   configuration instead of the connection that created the handle.
 - `DeepL::Configuration#inspect` showed the auth key. It now shows `[REDACTED]`.
 - Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create` and the
   `DeepL.multilingual_glossaries` methods) were sent unchecked, so a term with a tab or newline
-  silently corrupted the entries. Each term is now stripped of surrounding whitespace and sent
-  stripped; an invalid term raises `ArgumentError` before any request: it must not be empty or
-  contain C0 or C1 control characters, U+2028 or U+2029. Entries given as a TSV or CSV string
+  silently corrupted the entries. An invalid term now raises
+  `DeepL::Exceptions::ValidationError` before any request: after stripping, it must not be empty
+  or contain C0 or C1 control characters, U+2028 or U+2029. Entries given as a TSV or CSV string
   are still sent as given.
 - Debug logging no longer includes the auth key in the logged request headers.
 - Network errors (timeouts, `SocketError`) were retried without limit. They are now retried at
   most `max_network_retries` times, like 429 and 500 replies, and then raised.
-- `DeepL.document.translate_document` raised `NoMethodError` instead of `IOError` when the output
-  file already exists. It now raises `IOError` and leaves the file untouched.
 - `DeepL.with_session` without client options raised `ArgumentError`, and without a block raised
   `NoMethodError`. It now runs with default options and raises `ArgumentError` without a block.
   `HTTPClientOptions.new` now defaults `proxy` to `{}` and `cert_path` to `nil`, so the README

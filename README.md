@@ -42,7 +42,7 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 | Option | Default | Description |
 | ------ | ------- | ----------- |
 | `server_url:` | `https://api-free.deepl.com` for Free keys (ending in `:fx`), else `https://api.deepl.com` | Base URL of the DeepL API. A path prefix is kept. |
-| `headers:` | `{}` | HTTP headers sent with every DeepL API request (not to pre-signed storage URLs). A `User-Agent` replaces the library's; `Authorization` cannot be replaced. |
+| `headers:` | `{}` | HTTP headers sent with every DeepL API request. A header of the same name, in any casing, replaces the library's, `Authorization` and `User-Agent` included, except `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host`. Pre-signed storage URLs get only the `User-Agent`. |
 | `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and transient network failures. |
 | `timeout:` | `10` | Timeout of each attempt in seconds. A longer backoff interval takes precedence. |
 | `proxy:` | none | Proxy URL, e.g. `http://user:password@proxy.example:8080`. |
@@ -61,8 +61,9 @@ document translation (`translate_document` and its steps, see
 multilingual glossaries (see [Multilingual glossaries](#multilingual-glossaries)),
 spoken terms (see
 [Spoken terms](#spoken-terms)) and usage (`get_usage`, see [Monitor usage](#monitor-usage)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
-is deprecated: each method prints a deprecation warning once per process, and it will be
-removed in the next major version.
+is deprecated and will be removed in the next major version: each method prints a deprecation
+warning once per process when Ruby's deprecation warnings are enabled (`ruby -W:deprecated` or
+`Warning[:deprecated] = true`). See [Migrating to DeepL::Client](#migrating-to-deeplclient).
 
 ### Module-level configuration (deprecated)
 
@@ -91,6 +92,38 @@ end
 
 Without a host, keys ending in `:fx` use `https://api-free.deepl.com`. The `version` setting
 is deprecated.
+
+### Migrating to DeepL::Client
+
+The module-level API keeps working until the next major version. Its deprecation warnings
+appear only with Ruby's deprecation warnings on (`ruby -W:deprecated` or
+`Warning[:deprecated] = true`). The `DeepL::Client` methods replacing it:
+
+| Module-level API | `DeepL::Client` |
+| ---------------- | --------------- |
+| `DeepL.configure` | `DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), ...)` |
+| `DeepL.translate` | `translate_text` |
+| `DeepL.rephrase` / `DeepL.correct` | `rephrase_text` / `correct_text` |
+| `DeepL.usage` | `get_usage` |
+| `DeepL.languages(type:)` | `get_source_languages` / `get_target_languages` |
+| `DeepL.languages_for_resource` / `DeepL.language_resources` | `get_languages_for_resource` / `get_language_resources` |
+| `DeepL.document.*` | `translate_document`, `translate_document_upload`, `translate_document_get_status`, `translate_document_wait_until_done`, `translate_document_download` |
+| `DeepL.glossaries` / `DeepL.multilingual_glossaries` | the `*_multilingual_glossary*` methods |
+| `DeepL.style_rules` | the style rule methods (`get_all_style_rules`, `create_style_rule`, ...) |
+| `DeepL.translation_memories` | the translation memory methods (`list_translation_memories`, ...) |
+| `DeepL.with_session` / `DeepL.http_client` | the `http_client_options:` and `proxy:` options |
+| per-call `additional_headers` | the `headers:` option |
+
+`DeepL::Client` behaves differently from the module-level API in these points:
+
+- Network failures raise `DeepL::Exceptions::ConnectionError` (the module-level API raises the
+  original network error).
+- The timeout of each attempt defaults to 10 seconds (60 for the module-level API).
+- `translate_document` returns the final `DeepL::Resources::DocumentTranslationStatus` (the
+  module-level `DeepL.document.translate_document` returns the number of bytes written).
+- The translation memory file helpers raise `ArgumentError` for a missing input file and
+  `DeepL::Exceptions::Error` for other local file failures (the module-level API raises
+  `DeepL::Exceptions::Error` and the raw `Errno::*`).
 
 ### Available languages
 
@@ -500,7 +533,7 @@ give its entries as a TSV string (one source/target pair per line, separated by 
 tab), or as CSV with `entries_format: 'csv'`. Terms given as pairs or as TSV are
 checked like v2 glossary terms: each term is stripped of surrounding whitespace,
 and an empty term, one with a control character or a TSV line that is not exactly
-two terms raises `ArgumentError` before anything is sent. CSV content is sent as
+two terms raises `DeepL::Exceptions::ValidationError` before anything is sent. CSV content is sent as
 given. Further options, such as
 `extra_body_parameters`, are given as additional keywords:
 
@@ -598,7 +631,7 @@ To create a collection, pass a name and one `DeepL::Resources::SpokenTermsEntrie
 (or a hash with `:lang` and `:entries`) per language. Terms are checked like
 glossary terms: each term is stripped of surrounding whitespace and sent stripped,
 and `create_spoken_terms`, `update_spoken_terms` and `replace_spoken_terms_list`
-raise `ArgumentError` before sending anything if a term is then empty or contains
+raise `DeepL::Exceptions::ValidationError` before sending anything if a term is then empty or contains
 a C0 or C1 control character (such as a tab or newline), U+2028 or U+2029.
 Further options, such as `extra_body_parameters`, are given as additional
 keywords:
@@ -1071,8 +1104,8 @@ The three steps can also be performed separately with
 not available on the local file system. `create_translation_memory_import`
 accepts `content_type`, `display_name` and `extra_body_parameters`; keywords left
 `nil` are not sent. The upload URL is a pre-signed storage URL outside of the
-DeepL API, so no authorization header and no configured `headers` are sent with
-the upload; the proxy, SSL and timeout settings of the client apply. A non-2xx
+DeepL API, so no authorization header and, of the configured `headers`, only a
+`User-Agent` is sent with the upload; the proxy, SSL and timeout settings of the client apply. A non-2xx
 reply of a storage URL (for example 403 for an expired URL) raises a plain
 `DeepL::Exceptions::Error` carrying `http_status_code`; its `should_retry?` is
 `true` for 429 and 5xx.
@@ -1096,7 +1129,8 @@ asynchronously, so the job keeps reporting `awaiting_input` for a while
 afterwards, typically around half a minute, before it completes.
 `wait_until_translation_memory_job_done` therefore polls through that status
 like any other non-terminal one. A job whose file is never uploaded does not
-finish on its own, so pass `timeout_s` when that is a possibility.
+finish on its own, and a status the library does not know keeps it polling too, so pass
+`timeout_s` to bound the wait.
 
 #### Exporting a translation memory
 
@@ -1140,9 +1174,10 @@ client.download_translation_memory_export(job, 'export.tmx')
 `get_translation_memory_job` returns the current status of an import or export
 job, and `wait_until_translation_memory_job_done` polls it every five seconds
 until it is completed, raising a `DeepL::Exceptions::Error` with the API's error
-message if the job failed or expired. Pass `timeout_s` to give up after a number
-of seconds instead of waiting forever; the last wait is cut so that the call
-never waits longer than `timeout_s`.
+message if the job failed or expired. A status the library does not know keeps it
+polling. Pass `timeout_s` to give up after a number of seconds instead of
+waiting forever; the last wait is cut so that the call never waits longer than
+`timeout_s`.
 
 `done?` is `true` once the job is completed, `ok?` is `false` once it failed or
 expired (and `true` while it runs), and `finished?` is `true` for any terminal
@@ -1175,7 +1210,10 @@ The deprecated module-level `DeepL.translation_memories` (`list`, `find`,
 `create_export`, `download_export`, `export_to_filepath`, `find_job`,
 `wait_until_job_done`) keeps working unchanged. Its `import_from_filepath` also
 accepts `content_type` and `extra_body_parameters`, and `create_import` accepts
-`extra_body_parameters`.
+`extra_body_parameters`. Its file helpers raise `DeepL::Exceptions::Error` for a
+missing input file and the raw `Errno::*` error for other local file failures,
+such as an unreadable input file or a missing output directory (checked before
+the export job is created).
 
 #### Using a translation memory in translations
 
@@ -1293,7 +1331,8 @@ The steps are also exposed. `translate_document_upload` returns a
 and key, create the handle with `DeepL::Resources::DocumentHandle.new(document_id, document_key)`.
 `translate_document_wait_until_done(handle, timeout_s: nil)` queries the status every 5 seconds
 until the translation is done and returns that status; it raises `DeepL::Exceptions::Error`
-with the API's error message if the translation fails, and when `timeout_s` expires.
+with the API's error message if the translation fails, and when `timeout_s` expires. A status
+the library does not know keeps it polling, so pass `timeout_s` to bound the wait.
 `translate_document_get_status` queries the status once, and `translate_document_download`
 writes the translated document, overwriting an existing file; it raises
 `DeepL::Exceptions::DocumentNotReadyError` if the translation is not done yet.
@@ -1317,7 +1356,7 @@ and `finished?` (done or failed). `successful?` is a deprecated alias of `done?`
 With the deprecated module-level API, the same methods are `DeepL.document.translate_document`,
 `upload`, `get_status` and `download`, which take the filename as a positional parameter and
 optional additional headers. `DeepL.document.translate_document` waits until the translation is
-done or failed and returns the final status; the deprecated configuration setting
+done or failed and returns the number of bytes written; the deprecated configuration setting
 `max_doc_status_queries` limits the number of status requests. The deprecated
 `DocumentHandle#wait_until_document_translation_finished` returns the final status also when
 the translation failed. `DeepL.document.translate_document` raises
@@ -1438,8 +1477,11 @@ rephrased = DeepL.rephrase 'Hello, world!', 'EN', nil, nil, {}, additional_heade
 corrected = DeepL.correct 'Hello, world!', 'EN', {}, additional_headers
 ```
 
-Neither `headers:` nor the additional headers can replace the `Authorization` header, in any
-casing.
+A header in `headers:` (or `config.headers`) or in the additional headers replaces a library
+header of the same name, in any casing, `Authorization` and `User-Agent` included, except
+`Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host`, which the library always sets.
+Pre-signed translation memory storage URLs get only the `User-Agent`, the caller's if one is
+set.
 
 ### Handle exceptions
 
@@ -1449,7 +1491,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | --------------- | ----------- |
 | `DeepL::Exceptions::AuthorizationFailed` | The authorization process has failed. Check your `auth_key` value. |
 | `DeepL::Exceptions::BadRequest` | Something is wrong in your request. Check `exception.message` for more information. |
-| `DeepL::Exceptions::ConnectionError` | No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
+| `DeepL::Exceptions::ConnectionError` | Raised by `DeepL::Client` and `DeepL::AdminClient` (the module-level API raises the original network error). No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed; `http_status_code` and `should_retry?` are those of the DeepL error that caused it, if any. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
@@ -1458,6 +1500,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | `DeepL::Exceptions::NotSupported` | Deprecated, no longer raised by the library. |
 | `DeepL::Exceptions::RequestEntityTooLarge` | Your request is too large, reduce the amount of data you are sending. The API has a request size limit of 128 KiB. |
 | `DeepL::Exceptions::ServerError` | An error occured in the DeepL API (HTTP 5xx), raised after all retries. |
+| `DeepL::Exceptions::ValidationError` | An invalid argument detected before any request: an invalid glossary or spoken terms term, or an unsupported `DeepL.languages` type. |
 
 All of them are subclasses of `DeepL::Exceptions::Error`, which is also raised for a response
 that cannot be parsed. Errors of an HTTP response carry the status as an `Integer` in
@@ -1498,10 +1541,12 @@ Requests that fail with HTTP 429, any 5xx status or a transient network failure 
 or reset connection, broken pipe, unreachable host, timeout, response body cut off before its
 `Content-Length`) are retried up to `max_retries:`
 times (default 5) with exponential backoff; a request is sent at most `max_retries:` + 1 times.
-Each attempt has a timeout of `timeout:` seconds (default 10). After the last retry, network
-failures raise `DeepL::Exceptions::ConnectionError`. TLS failures (including certificate
+Each attempt has a timeout of `timeout:` seconds (default 10; the module-level
+`config.timeout` defaults to 60). After the last retry, network failures raise
+`DeepL::Exceptions::ConnectionError` in `DeepL::Client` and `DeepL::AdminClient`; the
+module-level API raises the original network error. TLS failures (including certificate
 verification), proxy failures (the proxy refuses `CONNECT`, e.g. with 407) and malformed
-responses are not retried and raise `DeepL::Exceptions::ConnectionError` at once.
+responses are not retried and are raised the same way at once.
 `AdminClient#create_developer_key` is only retried when the request was not sent (HTTP 429,
 DNS failure, refused connection or connection timeout). With the module-level API, set
 `config.max_network_retries` and `config.timeout`.
