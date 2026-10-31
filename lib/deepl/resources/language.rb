@@ -8,12 +8,14 @@ module DeepL
     class Language < Base
       attr_reader :code, :name
 
-      def initialize(code, name, supports_formality, *args)
+      # +client:+ is true for a language returned by DeepL::Client. @api private
+      def initialize(code, name, supports_formality, *args, client: false)
         super(*args)
 
         @code = code
         @name = name
         @supports_formality = supports_formality
+        @client = client
       end
 
       def to_s
@@ -22,10 +24,14 @@ module DeepL
 
       # Whether the target language supports the +formality+ option.
       #
-      # @return [Boolean, nil] +true+ or +false+ for a target language, +nil+ for a source
-      #   language.
+      # @return [Boolean, nil] +true+ or +false+ for a target language; for a source language
+      #   +nil+ if it came from DeepL::Client.
+      # @raise [DeepL::Exceptions::NotSupported] For a source language from the module-level
+      #   +DeepL.languages+, until the next major version.
       def supports_formality?
-        @supports_formality
+        return @supports_formality unless @supports_formality.nil? && !@client
+
+        raise Exceptions::NotSupported, 'Support formality is only available on target languages'
       end
     end
   end

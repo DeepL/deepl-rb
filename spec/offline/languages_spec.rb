@@ -43,9 +43,10 @@ describe 'languages' do
       expect(DeepL.languages('type' => 'target').map(&:code)).to eq(%w[EN-GB DE JA])
     end
 
-    it 'returns nil for the formality support of a source language' do
+    it 'raises NotSupported for the formality support of a source language' do
       stub_languages
-      expect(DeepL.languages.map(&:supports_formality?)).to eq([nil, nil, nil])
+      expect { DeepL.languages(type: :source).first.supports_formality? }
+        .to raise_error(DeepL::Exceptions::NotSupported, /only available on target languages/)
     end
 
     it 'raises ValidationError for an unknown type without sending a request' do

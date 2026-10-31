@@ -261,7 +261,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client` instead (`list` is `get_all_style_rules`, `find` is `get_style_rule`,
   `update_name` is `update_style_rule_name`, `destroy` is `delete_style_rule`, and so on).
   They keep working unchanged.
-- `DeepL::Exceptions::NotSupported` is deprecated: the library no longer raises it. Creating one
+- `DeepL::Exceptions::NotSupported` is deprecated: only the module-level API raises it, from
+  `DeepL::Resources::Language#supports_formality?` for a source language of `DeepL.languages`;
+  for a source language from `DeepL::Client`, `supports_formality?` returns `nil`. Creating one
   prints a deprecation warning once per process when Ruby's deprecation warnings are enabled
   (`ruby -W:deprecated`).
 - The module-level API is deprecated in favour of `DeepL::Client` and will be removed in the
@@ -335,8 +337,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Creating a style rule list removed `configured_rules` and `custom_instructions` from the
   options hash passed in, so reusing the hash for another create sent neither. The hash is no
   longer changed.
-- `DeepL::Resources::Language#supports_formality?` raised `DeepL::Exceptions::NotSupported`
-  for source languages. It now returns `nil` for them.
 - Downloaded documents were written in text mode, which converted newlines on Windows and
   failed or transcoded the bytes when `Encoding.default_internal` was set. They are now
   written in binary mode.

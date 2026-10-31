@@ -5,13 +5,14 @@
 
 module DeepL
   module Exceptions
-    # @deprecated The library no longer raises it: +DeepL::Resources::Language#supports_formality?+
-    #   returns +nil+ for source languages instead.
+    # @deprecated Only the module-level API raises it, from
+    #   +DeepL::Resources::Language#supports_formality?+ for a source language; DeepL::Client
+    #   returns +nil+ instead.
     class NotSupported < Error
       def initialize(msg = 'The feature is not supported')
         Deprecation.warn_once('DeepL::Exceptions::NotSupported',
                               '[DEPRECATION] DeepL::Exceptions::NotSupported is deprecated, ' \
-                              'the library no longer raises it.')
+                              'only the module-level API raises it.')
         super
       end
     end

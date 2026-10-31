@@ -143,6 +143,8 @@ puts german.supports_formality?
 ```
 
 `supports_formality?` is `true` or `false` for target languages and `nil` for source languages.
+For a source language of the module-level `DeepL.languages`, it raises
+`DeepL::Exceptions::NotSupported`, as in version 3.9.0.
 
 All languages are also defined on the
 [official API documentation](https://developers.deepl.com/docs/api-reference/translate).
@@ -1484,7 +1486,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
 | `DeepL::Exceptions::QuotaExceeded` | You've reached the API's character limit. |
 | `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |
-| `DeepL::Exceptions::NotSupported` | Deprecated, no longer raised by the library. |
+| `DeepL::Exceptions::NotSupported` | Deprecated. Raised only by the module-level API: `supports_formality?` of a source language from `DeepL.languages`. |
 | `DeepL::Exceptions::RequestEntityTooLarge` | Your request is too large, reduce the amount of data you are sending. The API has a request size limit of 128 KiB. |
 | `DeepL::Exceptions::ServerError` | An error occured in the DeepL API (HTTP 5xx), raised after all retries. |
 | `DeepL::Exceptions::ValidationError` | An invalid argument detected before any request: an invalid glossary or spoken terms term, or an unsupported `DeepL.languages` type. |
