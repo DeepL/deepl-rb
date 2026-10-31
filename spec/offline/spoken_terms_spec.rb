@@ -87,13 +87,13 @@ describe 'DeepL::Client spoken terms' do
     end
 
     [["a\nb"], ['  ']].each do |bad|
-      it "raises ArgumentError for #{bad.inspect} and sends no request" do
+      it "raises ValidationError for #{bad.inspect} and sends no request" do
         expect { client.create_spoken_terms('terms', [{ lang: 'en', entries: bad }]) }
-          .to raise_error(ArgumentError)
+          .to raise_error(DeepL::Exceptions::ValidationError)
         expect { client.update_spoken_terms('st-1', term_lists: [{ lang: 'en', entries: bad }]) }
-          .to raise_error(ArgumentError)
+          .to raise_error(DeepL::Exceptions::ValidationError)
         expect { client.replace_spoken_terms_list('st-1', { lang: 'en', entries: bad }) }
-          .to raise_error(ArgumentError)
+          .to raise_error(DeepL::Exceptions::ValidationError)
         expect(a_request(:any, /.*/)).not_to have_been_made
       end
     end

@@ -13,8 +13,8 @@ module DeepL
         @type = (delete_option(:type) || :source).to_s
         return if SUPPORTED_TYPES.include?(@type)
 
-        raise ArgumentError, "Unsupported `type` option: #{@type.inspect} " \
-                             "(supported: #{SUPPORTED_TYPES.join(', ')})"
+        raise Exceptions::ValidationError, "Unsupported `type` option: #{@type.inspect} " \
+                                           "(supported: #{SUPPORTED_TYPES.join(', ')})"
       end
 
       def request

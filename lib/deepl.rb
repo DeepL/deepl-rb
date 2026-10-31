@@ -13,6 +13,7 @@ require_relative 'deepl/deprecation'
 
 # -- Exceptions
 require_relative 'deepl/exceptions/error'
+require_relative 'deepl/exceptions/validation_error'
 require_relative 'deepl/exceptions/request_error'
 require_relative 'deepl/exceptions/authorization_failed'
 require_relative 'deepl/exceptions/bad_request'

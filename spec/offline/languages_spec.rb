@@ -48,8 +48,9 @@ describe 'languages' do
       expect(DeepL.languages.map(&:supports_formality?)).to eq([nil, nil, nil])
     end
 
-    it 'raises ArgumentError for an unknown type without sending a request' do
-      expect { DeepL.languages(type: :both) }.to raise_error(ArgumentError, /Unsupported `type`/)
+    it 'raises ValidationError for an unknown type without sending a request' do
+      expect { DeepL.languages(type: :both) }
+        .to raise_error(DeepL::Exceptions::ValidationError, /Unsupported `type`/)
     end
   end
 

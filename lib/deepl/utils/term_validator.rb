@@ -17,12 +17,13 @@ module DeepL
       #
       # @param [String] term The term to check.
       # @return [String] The stripped term, which is what the request sends.
-      # @raise [ArgumentError] If the stripped term is empty or contains a control character.
+      # @raise [DeepL::Exceptions::ValidationError] If the stripped term is empty or contains a
+      #   control character.
       def validate!(term)
         term = term.to_s.strip
-        raise ArgumentError, 'Term must not be empty' if term.empty?
+        raise Exceptions::ValidationError, 'Term must not be empty' if term.empty?
         if INVALID_CHARACTERS.match?(term)
-          raise ArgumentError, "Term #{term.inspect} contains an invalid character"
+          raise Exceptions::ValidationError, "Term #{term.inspect} contains an invalid character"
         end
 
         term

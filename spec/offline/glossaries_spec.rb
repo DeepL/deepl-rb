@@ -49,8 +49,9 @@ describe DeepL::GlossaryApi do
 
   describe '#create with invalid terms' do
     [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]], [['Apple', ' ']]].each do |entries|
-      it "raises ArgumentError for #{entries.inspect} and sends no request" do
-        expect { glossaries.create('terms', 'EN', 'DE', entries) }.to raise_error(ArgumentError)
+      it "raises ValidationError for #{entries.inspect} and sends no request" do
+        expect { glossaries.create('terms', 'EN', 'DE', entries) }
+          .to raise_error(DeepL::Exceptions::ValidationError)
         expect(a_request(:any, /.*/)).not_to have_been_made
       end
     end

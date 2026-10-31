@@ -62,10 +62,11 @@ describe 'multilingual glossaries' do
     describe '#create with invalid terms' do
       [[%W[Apple\tPie Apfel]], [%W[Apple Apfel\nKuchen]], "Apple\tApfel\tKuchen", "Apple\n",
        " \tApfel", "Apple\tAp\u0001fel", "Apple\tAp\u2028fel"].each do |entries|
-        it "raises ArgumentError for #{entries.inspect} and sends no request" do
+        it "raises ValidationError for #{entries.inspect} and sends no request" do
           dictionaries = [{ source_lang: 'EN', target_lang: 'DE', entries: entries }]
 
-          expect { glossaries.create('terms', dictionaries) }.to raise_error(ArgumentError)
+          expect { glossaries.create('terms', dictionaries) }
+            .to raise_error(DeepL::Exceptions::ValidationError)
           expect(a_request(:any, /.*/)).not_to have_been_made
         end
       end

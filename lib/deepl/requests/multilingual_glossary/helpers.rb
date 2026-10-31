@@ -53,8 +53,9 @@ module DeepL
           tsv.split(/\r?\n/).reject { |line| line.strip.empty? }.map do |line|
             pair = line.split("\t", -1)
             unless pair.size == 2
-              raise ArgumentError, "TSV entry #{line.inspect} must be a source and a target term " \
-                                   'separated by one tab'
+              raise Exceptions::ValidationError,
+                    "TSV entry #{line.inspect} must be a source and a target term separated by " \
+                    'one tab'
             end
 
             pair
