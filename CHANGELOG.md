@@ -283,6 +283,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Client#translate_document` or `translate_document_wait_until_done` instead.
 
 ### Fixed
+- The README's module-level examples for turning off platform information and for setting app
+  information called `DeepL.configure` with arguments, which raises `ArgumentError`. They now
+  use the block form.
 - `get_usage` (and `DeepL.usage`), the glossary and multilingual glossary get, list, entries
   and delete requests, and the style rule and custom instruction get and delete requests sent a
   JSON body `{}` with `Content-Type: application/json`. GET and DELETE requests are now sent

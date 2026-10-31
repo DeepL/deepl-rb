@@ -1561,11 +1561,11 @@ end
 
 ### Anonymous platform information
 
-By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, create the client with `send_platform_info: false`, or with the module-level API set the `send_platform_info` flag in the configuration to `false` like so:
+By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, create the client with `send_platform_info: false`, or with the module-level API set the `User-Agent` to the library name and version only:
 
 ```rb
-deepl.configure({}, nil, nil, false) do |config|
-  # ...
+deepl.configure do |config|
+  config.user_agent = "deepl-ruby/#{DeepL::VERSION}"
 end
 ```
 
@@ -1598,11 +1598,11 @@ client = DeepL::Client.new(auth_key, app_info: { app_name: 'MyTranslationPlugin'
                                                  app_version: '1.0.1' })
 ```
 
-With the module-level API:
+With the module-level API, append them to the `User-Agent`:
 
 ```rb
-deepl.configure({}, 'MyTranslationPlugin', '1.0.1') do |config|
-  # ...
+deepl.configure do |config|
+  config.user_agent = "#{config.user_agent} MyTranslationPlugin/1.0.1"
 end
 ```
 
