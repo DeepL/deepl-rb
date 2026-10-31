@@ -32,8 +32,10 @@ module DeepL
     # @param [String, nil] server_url Base URL of the DeepL API, a path prefix is kept. Defaults
     #   to +https://api-free.deepl.com+ for Free keys (ending in +:fx+), else
     #   +https://api.deepl.com+.
-    # @param [Hash] headers HTTP headers sent with every DeepL API request (not to pre-signed
-    #   storage URLs). A +User-Agent+ replaces the library's; +Authorization+ cannot be replaced.
+    # @param [Hash] headers HTTP headers sent with every DeepL API request (pre-signed storage
+    #   URLs get only a +User-Agent+). A header of the same name in any casing replaces the
+    #   library's, +Authorization+ and +User-Agent+ included, except the technical headers
+    #   +Content-Type+, +Content-Length+, +Transfer-Encoding+ and +Host+.
     # @param [Integer] max_retries Number of retries after the first attempt, for HTTP 429, any
     #   5xx and transient network failures (not TLS failures or malformed responses).
     # @param [Numeric] timeout Timeout of each attempt in seconds, applied to opening the

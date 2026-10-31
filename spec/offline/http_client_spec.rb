@@ -286,14 +286,23 @@ describe 'DeepL HTTP client' do
   end
 
   describe 'headers' do
-    it 'does not let per-call headers replace the Authorization header' do
+    it 'lets per-call headers replace the Authorization header in any casing' do
       stub_request(:post, url('/v2/translate'))
-        .with(headers: { 'Authorization' => "DeepL-Auth-Key #{OfflineHelper::AUTH_KEY}",
-                         'X-Custom' => 'v' })
+        .with(headers: { 'Authorization' => 'DeepL-Auth-Key other', 'X-Custom' => 'v' })
         .to_return(reply(translations: [{ text: 'Hallo' }]))
 
       DeepL.translate('Hello', nil, 'DE', {}, { 'authorization' => 'DeepL-Auth-Key other',
                                                 'X-Custom' => 'v' })
+    end
+
+    it "keeps the SDK's Host and Content-Type over per-call headers" do
+      sdk_host = ->(request) { [nil, 'api.deepl.com'].include?(request.headers['Host']) }
+      stub_request(:post, 'https://api.deepl.com/v2/translate')
+        .with(headers: { 'Content-Type' => 'application/json' }, &sdk_host)
+        .to_return(reply(translations: [{ text: 'Hallo' }]))
+
+      DeepL.translate('Hello', nil, 'DE', {}, { 'host' => 'other.example.test',
+                                                'content-type' => 'text/plain' })
     end
   end
 

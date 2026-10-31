@@ -9,9 +9,10 @@ module DeepL
       ##
       # Common behaviour of the requests to a pre-signed storage URL handed out by the API, such
       # as a translation memory upload or download URL. Those URLs point outside of the DeepL
-      # API, so they are requested over their own connection and the DeepL `Authorization` header
-      # is deliberately not sent. That connection uses the same proxy, SSL and timeout options as
-      # the API connection. Every non-2xx response raises a plain DeepL::Exceptions::Error.
+      # API, so they are requested over their own connection and send only the User-Agent: neither
+      # the DeepL `Authorization` header nor other caller headers. That connection uses the same
+      # proxy, SSL and timeout options as the API connection. Every non-2xx response raises a
+      # plain DeepL::Exceptions::Error.
 
       class StorageBase < DeepL::Requests::Base
         attr_reader :storage_url
@@ -61,8 +62,12 @@ module DeepL
           )
         end
 
+        # Only the User-Agent: the caller's from the configured +headers+, else the library's.
         def headers
-          { 'User-Agent' => api.configuration.user_agent }.merge(@additional_headers)
+          caller_agent = (api.configuration.headers || {}).find do |name, _|
+            name.to_s.casecmp?('user-agent')
+          end
+          { 'User-Agent' => caller_agent ? caller_agent.last : api.configuration.user_agent }
         end
       end
     end

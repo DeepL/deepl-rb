@@ -68,8 +68,8 @@ describe DeepL::Client do
   end
 
   describe 'headers' do
-    it 'sends the headers but keeps the Authorization header' do
-      stub_usage(headers: { 'Authorization' => 'DeepL-Auth-Key abc', 'X-Custom' => 'v' })
+    it 'lets the headers replace the Authorization header' do
+      stub_usage(headers: { 'Authorization' => 'DeepL-Auth-Key other', 'X-Custom' => 'v' })
 
       usage(described_class.new('abc', headers: { 'X-Custom' => 'v',
                                                   'authorization' => 'DeepL-Auth-Key other' }))

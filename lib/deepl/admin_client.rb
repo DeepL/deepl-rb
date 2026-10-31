@@ -19,8 +19,9 @@ module DeepL
     # @param [String] admin_key Admin API key, surrounding whitespace is removed.
     # @param [String, nil] server_url Base URL of the DeepL API, defaults to
     #   +https://api.deepl.com+ (also for keys ending in +:fx+).
-    # @param [Hash] headers HTTP headers sent with every request. A +User-Agent+ replaces the
-    #   library's; +Authorization+ cannot be replaced.
+    # @param [Hash] headers HTTP headers sent with every request. A header of the same name in
+    #   any casing replaces the library's, +Authorization+ and +User-Agent+ included, except the
+    #   technical headers +Content-Type+, +Content-Length+, +Transfer-Encoding+ and +Host+.
     # @param [Integer] max_retries Number of retries after the first attempt.
     # @param [Numeric] timeout Timeout of each attempt in seconds.
     # @param [String, nil] proxy Proxy URL, e.g. +http://user:password@proxy.example:8080+.

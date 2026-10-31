@@ -57,6 +57,7 @@ RSpec.configure do |config|
       c.host = OfflineHelper::HOST
       c.logger = nil
       c.max_doc_status_queries = nil
+      c.headers = {}
       # The default of 5 retries would sleep for about 16 seconds in every retry example.
       c.max_network_retries = 2
     end

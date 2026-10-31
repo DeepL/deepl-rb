@@ -24,6 +24,9 @@ module DeepL
       # unexpected format.
       RESPONSE_FORMAT_ERRORS = [JSON::ParserError, NoMethodError, TypeError, KeyError].freeze
 
+      # Headers that describe the request the SDK builds; a caller's value is dropped.
+      TECHNICAL_HEADERS = %w[content-type content-length transfer-encoding host].freeze
+
       # Wraps +request+ of every request class, so that a malformed response raises a
       # DeepL::Exceptions::Error instead of a raw JSON or type error.
       module ResponseFormatGuard
@@ -377,17 +380,23 @@ module DeepL
         options
       end
 
-      # The configured +headers+ and the per-call additional headers may replace the User-Agent
-      # but not the Authorization header, in any casing.
+      # The configured +headers+, then the per-call additional headers, each replace a header of
+      # the same name in any casing, Authorization and User-Agent included.
       def headers
-        { 'Authorization' => "DeepL-Auth-Key #{api.configuration.auth_key.to_s.strip}",
-          'User-Agent' => api.configuration.user_agent }
-          .merge(without_authorization(api.configuration.headers))
-          .merge(without_authorization(@additional_headers))
+        library = { 'Authorization' => "DeepL-Auth-Key #{api.configuration.auth_key.to_s.strip}",
+                    'User-Agent' => api.configuration.user_agent }
+        merge_headers(library, api.configuration.headers, @additional_headers)
       end
 
-      def without_authorization(given_headers)
-        (given_headers || {}).reject { |name, _| name.to_s.casecmp?('authorization') }
+      def merge_headers(base, *given_headers)
+        given_headers.each_with_object(base) do |given, merged|
+          (given || {}).each do |name, value|
+            next if TECHNICAL_HEADERS.include?(name.to_s.downcase)
+
+            merged.delete_if { |existing, _| existing.to_s.casecmp?(name.to_s) }
+            merged[name] = value
+          end
+        end
       end
 
       def loggable_headers

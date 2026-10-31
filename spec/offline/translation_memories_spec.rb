@@ -212,6 +212,14 @@ describe DeepL::TranslationMemoryApi do
       memories.upload_file(upload_url, Fixtures::EXAMPLE_TMX)
     end
 
+    it 'sends the User-Agent of config.headers to the storage URL' do
+      DeepL.configuration.headers = { 'user-agent' => 'mine/1' }
+      stub_request(:put, upload_url).with(headers: { 'User-Agent' => 'mine/1' }, &no_authorization)
+                                    .to_return(status: 200)
+
+      memories.upload_file(upload_url, Fixtures::EXAMPLE_TMX)
+    end
+
     it 'takes the URL from an import and sends the given content type and bytes' do
       created = DeepL::Resources::TranslationMemoryImport.new({ 'upload_url' => upload_url },
                                                               nil, nil)
