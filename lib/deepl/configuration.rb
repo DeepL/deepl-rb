@@ -14,7 +14,8 @@ module DeepL
 
     DEEPL_SERVER_URL = 'https://api.deepl.com'
     DEEPL_SERVER_URL_FREE = 'https://api-free.deepl.com'
-    DEFAULT_TIMEOUT = 10.0
+    # Net::HTTP's 60-second default, kept for the module-level API; 10 in the next major version.
+    DEFAULT_TIMEOUT = 60.0
     private_constant :DEEPL_SERVER_URL, :DEEPL_SERVER_URL_FREE, :DEFAULT_TIMEOUT
 
     def initialize(data = {}, app_info_name = nil, app_info_version = nil, send_platform_info = true) # rubocop:disable all

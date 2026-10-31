@@ -25,6 +25,7 @@ describe DeepL::Configuration do
         expect(config.host).to eq('https://api.deepl.com')
         expect(config.max_doc_status_queries).to be_nil
         expect(config.version).to eq('v2')
+        expect(config.timeout).to eq(60.0)
       end
 
       it 'sends platform information' do
