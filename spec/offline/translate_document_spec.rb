@@ -71,6 +71,11 @@ describe DeepL::DocumentApi do
   end
 
   describe '#upload' do
+    it 'raises Errno::ENOENT for a missing input file' do
+      expect { documents.upload(File.join(temp_dir, 'missing.txt'), nil, 'DE') }
+        .to raise_error(Errno::ENOENT)
+    end
+
     it 'sends a multipart POST with the credentials and the file, languages and filename' do
       input, = create_text_document(temp_dir)
 
@@ -459,6 +464,12 @@ describe DeepL::DocumentApi do
         expect(form_fields(forms.first)).to eq('source_lang' => 'EN', 'target_lang' => 'DE',
                                                'filename' => 'name.docx', 'formality' => 'more')
         expect([result.document_id, result.document_key]).to eq(%w[doc-1 key-1])
+      end
+
+      it 'raises ArgumentError for a missing input file before any request' do
+        expect { client.translate_document_upload(File.join(temp_dir, 'missing.txt'), nil, 'DE') }
+          .to raise_error(ArgumentError, /Input file does not exist/)
+        expect(a_request(:any, /.*/)).not_to have_been_made
       end
     end
 

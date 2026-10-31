@@ -68,7 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the `filename:` option. `translate_document` returns the final status and wraps every
   failure in `DeepL::Exceptions::DocumentTranslationError`; `translate_document_wait_until_done`
   raises `DeepL::Exceptions::Error` with the API's message when the translation fails, and both
-  raise when `timeout_s` expires.
+  raise when `timeout_s` expires. `translate_document` and `translate_document_upload` raise
+  `ArgumentError` for a missing input file before any request.
 - Added `DeepL::Exceptions::DocumentNotReadyError` (a `ServerError`), raised for HTTP 503 on a
   document download.
 - Added `DeepL::Exceptions::DocumentTranslationError#document_handle`, the handle of the

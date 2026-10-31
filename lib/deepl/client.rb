@@ -149,8 +149,11 @@ module DeepL
     #   * +:extra_body_parameters+ - A hash added to the form last; replaces fields of the same
     #     name.
     # @return [DeepL::Resources::DocumentHandle] Handle of the uploaded document.
-    # @raise [ArgumentError] If the glossary options are combined or more than 5 are given.
+    # @raise [ArgumentError] If +input_path+ does not exist (nothing is uploaded), or the glossary
+    #   options are combined or more than 5 are given.
     def translate_document_upload(input_path, source_lang, target_lang, **options)
+      raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
+
       filename = options.delete(:filename)
       Requests::Document::Upload.new(api, input_path, source_lang, target_lang, filename,
                                      options).request
