@@ -526,7 +526,8 @@ To create a multilingual glossary, pass a name and one
 `:source_lang`, `:target_lang` and `:entries`) per language pair. Entries are given
 as a hash (`{ 'Hello' => 'Hallo' }`), as source/target pairs or as a TSV string (one
 source/target pair per line, separated by a tab); a hash dictionary may also give
-them as CSV with `entries_format: 'csv'`. Terms not given as CSV are checked like v2
+them as a CSV string with `entries_format: 'csv'`. Entries given as a hash or as pairs are
+always sent as TSV, whatever `entries_format` says. Terms not given as CSV are checked like v2
 glossary terms: each term is stripped of surrounding whitespace, and an empty term,
 one with a control character, a pair or TSV line that is not exactly two terms, or a
 source term that appears twice raises

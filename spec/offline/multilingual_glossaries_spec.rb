@@ -214,6 +214,47 @@ describe 'multilingual glossaries' do
       end
     end
 
+    describe 'entries_format with converted entries' do
+      operations = {
+        'create' => [:post, '/v3/glossaries', lambda { |client, dictionary|
+          client.create_multilingual_glossary('terms', [dictionary])
+        }, ->(sent) { { name: 'terms', dictionaries: [sent] } }],
+        'update' => [:patch, '/v3/glossaries/g-1', lambda { |client, dictionary|
+          client.update_multilingual_glossary('g-1', dictionaries: [dictionary])
+        }, ->(sent) { { dictionaries: [sent] } }],
+        'replace' => [:put, '/v3/glossaries/g-1/dictionaries', lambda { |client, dictionary|
+          client.replace_multilingual_glossary_dictionary('g-1', dictionary)
+        }, ->(sent) { sent }]
+      }
+
+      operations.each do |name, (method, path, call, body)|
+        { 'a hash' => { 'Hello' => 'Hallo' }, 'pairs' => [%w[Hello Hallo]] }.each do |kind, entries|
+          it "#{name} sends #{kind} given with entries_format csv as TSV" do
+            sent = { source_lang: 'en', target_lang: 'de', entries: "Hello\tHallo",
+                     entries_format: 'tsv' }
+            stub = stub_request(method, url(path)).with(body: body.call(sent))
+                                                  .to_return(reply(glossary_json))
+
+            call.call(client, { source_lang: 'en', target_lang: 'de', entries: entries,
+                                entries_format: 'csv' })
+
+            expect(stub).to have_been_requested
+          end
+        end
+
+        it "#{name} sends a CSV string given with entries_format csv unchanged" do
+          sent = { source_lang: 'en', target_lang: 'de', entries: "Hello,Hallo\n",
+                   entries_format: 'csv' }
+          stub = stub_request(method, url(path)).with(body: body.call(sent))
+                                                .to_return(reply(glossary_json))
+
+          call.call(client, sent)
+
+          expect(stub).to have_been_requested
+        end
+      end
+    end
+
     describe '#get_multilingual_glossary_dictionary_entries' do
       it 'encodes a space in a query value as %20' do
         expect(Net::HTTP::Get).to receive(:new)

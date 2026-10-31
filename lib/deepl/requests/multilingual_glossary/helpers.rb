@@ -22,7 +22,8 @@ module DeepL
         end
 
         # Accepts a MultilingualGlossaryDictionaryEntries object or a hash with +:source_lang+,
-        # +:target_lang+, +:entries+ and optionally +:entries_format+ (default +tsv+).
+        # +:target_lang+, +:entries+ and optionally +:entries_format+ (default +tsv+). Only a CSV
+        # string is sent as CSV; all other entries are converted and sent as TSV.
         def dictionary_payload(dictionary)
           if dictionary.is_a?(DeepL::Resources::MultilingualGlossaryDictionaryEntries)
             return { source_lang: dictionary.source_lang, target_lang: dictionary.target_lang,
@@ -30,12 +31,12 @@ module DeepL
           end
 
           value = ->(key) { dictionary[key] || dictionary[key.to_s] }
-          format = value.call(:entries_format) || 'tsv'
           entries = value.call(:entries)
           # CSV content is sent as given; TSV content is parsed so its terms are checked too.
-          entries = entries_to_string(entries) unless format == 'csv' && entries.is_a?(String)
+          csv = value.call(:entries_format) == 'csv' && entries.is_a?(String)
           { source_lang: value.call(:source_lang), target_lang: value.call(:target_lang),
-            entries: entries, entries_format: format }
+            entries: csv ? entries : entries_to_string(entries),
+            entries_format: csv ? 'csv' : 'tsv' }
         end
 
         # A hash, source/target pairs or a TSV string of them, checked and joined as TSV.
