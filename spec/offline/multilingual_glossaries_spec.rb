@@ -214,7 +214,7 @@ describe 'multilingual glossaries' do
         client.get_multilingual_glossary_dictionary_entries('g-1', 'E N', 'DE')
       end
 
-      it 'returns the one dictionary with its entries as source/target pairs' do
+      it 'returns the one dictionary with its entries as a hash' do
         stub_request(:get, url('/v3/glossaries/g-1/entries?source_lang=EN&target_lang=DE'))
           .with(headers: json_headers)
           .to_return(reply(dictionaries: [{ source_lang: 'en', target_lang: 'de',
@@ -224,7 +224,24 @@ describe 'multilingual glossaries' do
         result = client.get_multilingual_glossary_dictionary_entries('g-1', 'EN', 'DE')
 
         expect([result.source_lang, result.target_lang, result.entries])
-          .to eq(['en', 'de', [%w[Apple Apfel], %w[Banana Banane]]])
+          .to eq(['en', 'de', { 'Apple' => 'Apfel', 'Banana' => 'Banane' }])
+      end
+
+      it 'returns entries that update and replace send back as TSV' do # rubocop:disable RSpec/ExampleLength
+        stub_request(:get, url('/v3/glossaries/g-1/entries?source_lang=EN&target_lang=DE'))
+          .to_return(reply(dictionaries: [{ source_lang: 'en', target_lang: 'de',
+                                            entries: "Hello\tHallo", entries_format: 'tsv' }]))
+        dictionary = { source_lang: 'en', target_lang: 'de', entries: "Hello\tHallo",
+                       entries_format: 'tsv' }
+        stub_request(:patch, url('/v3/glossaries/g-1'))
+          .with(body: { dictionaries: [dictionary] }).to_return(reply(glossary_json))
+        stub_request(:put, url('/v3/glossaries/g-1/dictionaries'))
+          .with(body: dictionary).to_return(reply(dictionary_json))
+
+        entries = client.get_multilingual_glossary_dictionary_entries('g-1', 'EN', 'DE')
+        client.update_multilingual_glossary_dictionary('g-1', entries)
+        client.replace_multilingual_glossary_dictionary('g-1', entries)
+        expect(entries.entries).to eq('Hello' => 'Hallo')
       end
 
       it 'raises NotFound when the glossary has no dictionary for the language pair' do

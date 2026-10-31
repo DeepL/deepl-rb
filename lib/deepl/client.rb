@@ -287,7 +287,7 @@ module DeepL
     # @param [String] name Name of the glossary.
     # @param [Array<DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash>] dictionaries
     #   One entry per language pair. A hash needs the keys +:source_lang+, +:target_lang+ and
-    #   +:entries+ (source/target pairs, or a TSV string; +:entries_format+ +'csv'+ for CSV,
+    #   +:entries+ (a hash, source/target pairs or a TSV string; +:entries_format+ +'csv'+ for CSV,
     #   which is sent as given).
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
@@ -429,8 +429,8 @@ module DeepL
     # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
     # @param [String] source_lang Source language of the dictionary.
     # @param [String] target_lang Target language of the dictionary.
-    # @return [DeepL::Resources::MultilingualGlossaryDictionaryEntries] The entries as
-    #   source/target pairs.
+    # @return [DeepL::Resources::MultilingualGlossaryDictionaryEntries] The entries as a hash
+    #   of source term to target term.
     # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist or has no dictionary
     #   for the language pair.
     def get_multilingual_glossary_dictionary_entries(glossary, source_lang, target_lang)

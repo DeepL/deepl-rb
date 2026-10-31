@@ -26,28 +26,48 @@ module DeepL
     # +replace_multilingual_glossary_dictionary+, and returned by
     # +get_multilingual_glossary_dictionary_entries+.
     class MultilingualGlossaryDictionaryEntries < Base
-      attr_reader :source_lang, :target_lang, :entries
+      # @return [Hash{String => String}] The target term of each source term.
+      attr_reader :entries
+      attr_reader :source_lang, :target_lang
 
       ##
       # @param [String] source_lang Source language code, for example +'en'+.
       # @param [String] target_lang Target language code, for example +'de'+.
-      # @param [Array<Array(String, String)>, Hash{String => String}, String] entries Source/target
-      #   term pairs, or a TSV string of them; terms are stripped and checked when sent.
+      # @param [Hash{String => String}, Array<Array(String, String)>, String] entries The target
+      #   term of each source term, as a hash, source/target pairs or a TSV string; terms are
+      #   stripped and checked when sent.
+      # @raise [DeepL::Exceptions::ValidationError] If a TSV line is not exactly two terms.
       def initialize(source_lang, target_lang, entries, request = nil, response = nil)
         super(request, response)
 
         @source_lang = source_lang
         @target_lang = target_lang
-        @entries = entries.is_a?(Hash) ? entries.to_a : entries
+        @entries = entries.is_a?(String) ? self.class.tsv_to_pairs(entries).to_h : entries.to_h
       end
 
       # @api private
       # Builds the entries from a dictionary of the API, whose entries are a TSV string.
       def self.from_response(dictionary, request, response)
-        entries = (dictionary['entries'] || '').split(/\r?\n/).reject(&:empty?).map do |line|
-          line.split("\t", 2)
+        entries = (dictionary['entries'] || '').split(/\r?\n/).reject(&:empty?).to_h do |line|
+          source, target = line.split("\t", 2)
+          [source, target]
         end
         new(dictionary['source_lang'], dictionary['target_lang'], entries, request, response)
+      end
+
+      # @api private
+      # One source/target pair per non-blank line, separated by a single tab.
+      def self.tsv_to_pairs(tsv)
+        tsv.split(/\r?\n/).reject { |line| line.strip.empty? }.map do |line|
+          pair = line.split("\t", -1)
+          unless pair.size == 2
+            raise Exceptions::ValidationError,
+                  "TSV entry #{line.inspect} must be a source and a target term separated by " \
+                  'one tab'
+          end
+
+          pair
+        end
       end
     end
 

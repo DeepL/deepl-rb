@@ -32,7 +32,7 @@ describe 'DeepL::Client multilingual glossaries' do
       expect(client.list_multilingual_glossaries.map(&:id)).to include(glossary.id)
 
       entries = client.get_multilingual_glossary_dictionary_entries(glossary, 'EN', 'DE')
-      expect(entries.entries).to eq([%w[Apple Apfel]])
+      expect(entries.entries).to eq('Apple' => 'Apfel')
 
       pear = { source_lang: 'EN', target_lang: 'DE', entries: [%w[Pear Birne]] }
       updated = client.update_multilingual_glossary(glossary, name: "#{name}-renamed",

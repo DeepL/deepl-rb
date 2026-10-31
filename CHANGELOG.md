@@ -185,7 +185,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `delete_multilingual_glossary(glossary)`. A glossary is given as its ID or a
   `DeepL::Resources::MultilingualGlossary`; the ID is URL-encoded in the request paths. A
   dictionary is a `DeepL::Resources::MultilingualGlossaryDictionaryEntries` (`source_lang`,
-  `target_lang` and `entries` as source/target pairs, constructible with `.new`) or a hash
+  `target_lang` and `entries`, a hash of source term to target term; constructible with
+  `.new` from a hash, source/target pairs or a TSV string) or a hash
   with the same keys. `get_multilingual_glossary_dictionary_entries` returns one dictionary
   and raises `DeepL::Exceptions::NotFound` if the glossary has none for the language pair;
   the delete methods return `nil`. `creation_time` is a UTC `Time`, `nil` when malformed.

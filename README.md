@@ -516,17 +516,18 @@ puts language_pairs.first.target_lang
 Multilingual glossaries (v3) group several language-pair dictionaries under one
 glossary and are managed through `DeepL::Client`. Every method that takes a
 glossary accepts its ID or a `DeepL::Resources::MultilingualGlossary` object; the
-ID is URL-encoded in the request path. A dictionary's entries are source/target
-term pairs.
+ID is URL-encoded in the request path. A dictionary's `entries` is a hash of
+source term to target term.
 
 To create a multilingual glossary, pass a name and one
 `DeepL::Resources::MultilingualGlossaryDictionaryEntries` (or a hash with
-`:source_lang`, `:target_lang` and `:entries`) per language pair. A hash may also
-give its entries as a TSV string (one source/target pair per line, separated by a
-tab), or as CSV with `entries_format: 'csv'`. Terms given as pairs or as TSV are
-checked like v2 glossary terms: each term is stripped of surrounding whitespace,
-and an empty term, one with a control character or a TSV line that is not exactly
-two terms raises `DeepL::Exceptions::ValidationError` before anything is sent. CSV content is sent as
+`:source_lang`, `:target_lang` and `:entries`) per language pair. Entries are given
+as a hash (`{ 'Hello' => 'Hallo' }`), as source/target pairs or as a TSV string (one
+source/target pair per line, separated by a tab); a hash dictionary may also give
+them as CSV with `entries_format: 'csv'`. Terms not given as CSV are checked like v2
+glossary terms: each term is stripped of surrounding whitespace, and an empty term,
+one with a control character or a TSV line that is not exactly two terms raises
+`DeepL::Exceptions::ValidationError` before anything is sent. CSV content is sent as
 given. Further options, such as
 `extra_body_parameters`, are given as additional keywords:
 
@@ -535,7 +536,7 @@ glossary = client.create_multilingual_glossary(
   'My Glossary',
   [
     DeepL::Resources::MultilingualGlossaryDictionaryEntries.new(
-      'EN', 'DE', [['Hello', 'Hallo'], ['World', 'Welt']]
+      'EN', 'DE', { 'Hello' => 'Hallo', 'World' => 'Welt' }
     ),
     { source_lang: 'EN', target_lang: 'FR', entries: [['Hello', 'Bonjour']] }
   ]
@@ -573,7 +574,7 @@ glossary = client.get_multilingual_glossary 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6
 
 dictionary = client.get_multilingual_glossary_dictionary_entries(glossary, 'EN', 'DE')
 puts dictionary.entries.inspect
-# => [["Hello", "Hallo"], ["World", "Welt"]]
+# => {"Hello"=>"Hallo", "World"=>"Welt"}
 ```
 
 `update_multilingual_glossary` renames the glossary and/or merges entries into

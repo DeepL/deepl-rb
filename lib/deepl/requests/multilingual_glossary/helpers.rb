@@ -38,28 +38,16 @@ module DeepL
             entries: entries, entries_format: format }
         end
 
-        # Source/target pairs, or a TSV string of them, are checked and joined as TSV.
+        # A hash, source/target pairs or a TSV string of them, checked and joined as TSV.
         def entries_to_string(entries)
-          entries = tsv_to_pairs(entries) if entries.is_a?(String)
+          if entries.is_a?(String)
+            entries = Resources::MultilingualGlossaryDictionaryEntries.tsv_to_pairs(entries)
+          end
           entries.map do |entry|
             source = Utils::TermValidator.validate!(entry.first)
             target = Utils::TermValidator.validate!(entry.last)
             "#{source}\t#{target}"
           end.join("\n")
-        end
-
-        # One source/target pair per non-blank line, separated by a single tab.
-        def tsv_to_pairs(tsv)
-          tsv.split(/\r?\n/).reject { |line| line.strip.empty? }.map do |line|
-            pair = line.split("\t", -1)
-            unless pair.size == 2
-              raise Exceptions::ValidationError,
-                    "TSV entry #{line.inspect} must be a source and a target term separated by " \
-                    'one tab'
-            end
-
-            pair
-          end
         end
 
         def build_glossary(request, response)
