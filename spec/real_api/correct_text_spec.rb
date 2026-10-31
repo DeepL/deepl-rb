@@ -5,9 +5,13 @@
 
 require_relative 'real_api_helper'
 
-describe 'DeepL.correct' do
+describe 'DeepL::Client#correct_text' do
+  let(:client) do
+    DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), server_url: ENV.fetch('DEEPL_SERVER_URL', nil))
+  end
+
   it 'sends POST /v2/write/correct and parses the result' do
-    result = DeepL.correct('Protonenstrahl', 'de')
+    result = client.correct_text('Protonenstrahl', 'de')
 
     expect(result).to be_a(DeepL::Resources::Text)
     expect(result.text).to be_a(String)

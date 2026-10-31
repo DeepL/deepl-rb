@@ -103,12 +103,11 @@ appear only with Ruby's deprecation warnings on (`ruby -W:deprecated` or
 | ---------------- | --------------- |
 | `DeepL.configure` | `DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), ...)` |
 | `DeepL.translate` | `translate_text` |
-| `DeepL.rephrase` / `DeepL.correct` | `rephrase_text` / `correct_text` |
+| `DeepL.rephrase` | `rephrase_text` |
 | `DeepL.usage` | `get_usage` |
 | `DeepL.languages(type:)` | `get_source_languages` / `get_target_languages` |
-| `DeepL.languages_for_resource` / `DeepL.language_resources` | `get_languages_for_resource` / `get_language_resources` |
 | `DeepL.document.*` | `translate_document`, `translate_document_upload`, `translate_document_get_status`, `translate_document_wait_until_done`, `translate_document_download` |
-| `DeepL.glossaries` / `DeepL.multilingual_glossaries` | the `*_multilingual_glossary*` methods |
+| `DeepL.glossaries` | the `*_multilingual_glossary*` methods |
 | `DeepL.style_rules` | the style rule methods (`get_all_style_rules`, `create_style_rule`, ...) |
 | `DeepL.translation_memories` | the translation memory methods (`list_translation_memories`, ...) |
 | `DeepL.with_session` / `DeepL.http_client` | the `http_client_options:` and `proxy:` options |
@@ -188,8 +187,6 @@ puts formality.needs_source_support?
 puts formality.needs_target_support?
 # => true
 ```
-
-The module-level `DeepL.languages_for_resource` and `DeepL.language_resources` are deprecated.
 
 ### Translate
 
@@ -393,12 +390,8 @@ puts corrected.target_language
 ```
 
 A string returns a `DeepL::Resources::Text`; an array returns an array of them (also for an
-array with one element). Empty text raises `ArgumentError`. The deprecated module-level
-`DeepL.correct(text, target_lang = nil, options = {}, additional_headers = {})` behaves the
-same.
-
-Both methods raise `DeepL::Exceptions::Error` if the response contains fewer improvements than
-texts were sent.
+array with one element). Empty text raises `ArgumentError`. It raises
+`DeepL::Exceptions::Error` if the response contains fewer improvements than texts were sent.
 
 ### Glossaries
 
@@ -612,12 +605,6 @@ To delete one dictionary or the entire glossary (both return `nil`):
 client.delete_multilingual_glossary_dictionary(glossary, 'EN', 'FR')
 client.delete_multilingual_glossary(glossary)
 ```
-
-The module-level `DeepL.multilingual_glossaries` (`create`, `create_with_csv`,
-`find`, `list`, `entries`, `update_name`, `update_dictionary`,
-`update_dictionary_with_csv`, `replace_dictionary`, `replace_dictionary_with_csv`,
-`destroy_dictionary`, `destroy`) is deprecated; it sends the same requests and
-returns the same objects as the methods above.
 
 ### Spoken terms
 
@@ -1466,7 +1453,7 @@ end
 ### Sending additional HTTP headers
 
 `DeepL::Client.new(key, headers: { 'X-DeepL-Reporting-Tag' => 'my-tag' })` sends the headers
-with every DeepL API request of that client. With the module-level API, you can pass additional HTTP headers to `translate`, `rephrase`, `correct`, and the
+with every DeepL API request of that client. With the module-level API, you can pass additional HTTP headers to `translate`, `rephrase` and the
 `document` methods. For example, to send the `X-DeepL-Reporting-Tag` header
 for usage reporting (see the [cookbook entry](https://developers.deepl.com/docs/learning-how-tos/cookbook/sending-custom-reporting-tags-from-client-libraries)):
 
@@ -1474,7 +1461,6 @@ for usage reporting (see the [cookbook entry](https://developers.deepl.com/docs/
 additional_headers = { 'X-DeepL-Reporting-Tag' => 'my-tag' }
 translation = DeepL.translate 'Hello, world!', 'EN', 'DE', {}, additional_headers
 rephrased = DeepL.rephrase 'Hello, world!', 'EN', nil, nil, {}, additional_headers
-corrected = DeepL.correct 'Hello, world!', 'EN', {}, additional_headers
 ```
 
 A header in `headers:` (or `config.headers`) or in the additional headers replaces a library

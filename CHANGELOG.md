@@ -56,6 +56,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   include: nil)`. `include:` takes one value or an array and is sent as one `include` query
   parameter per value; without it none is sent. Source and target languages keep their
   upper-case codes; `get_languages_for_resource` returns the codes as the API sends them.
+  `get_languages_for_resource` returns `DeepL::Resources::LanguageSupport` objects
+  (source/target usability, status and per-feature support); `get_language_resources` returns
+  `DeepL::Resources::LanguageResource` objects with each feature's source and/or target
+  language requirement.
 - Added `DeepL::Constants::LanguageResourceName` (`TRANSLATE_TEXT`, `TRANSLATE_DOCUMENT`,
   `GLOSSARY`, `VOICE`, `WRITE`, `STYLE_RULES`, `TRANSLATION_MEMORY`) and
   `DeepL::Constants::LanguageInclude` (`BETA`, `EXTERNAL`). Other strings are still accepted
@@ -185,22 +189,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with the same keys. `get_multilingual_glossary_dictionary_entries` returns one dictionary
   and raises `DeepL::Exceptions::NotFound` if the glossary has none for the language pair;
   the delete methods return `nil`. `creation_time` is a UTC `Time`, `nil` when malformed.
-  The module-level `DeepL.multilingual_glossaries` (`create`, `create_with_csv`, `find`,
-  `list`, `entries`, `destroy`, `destroy_dictionary`, `replace_dictionary`,
-  `replace_dictionary_with_csv`, `update_name`, `update_dictionary` and
-  `update_dictionary_with_csv`) sends the same requests and returns the same objects. Please
-  refer to the README for usage instructions.
-- Added `DeepL.correct(text, target_lang = nil)` to correct grammar and spelling via
-  `POST /v2/write/correct`. It accepts a string or an array of strings and returns a
-  `DeepL::Resources::Text` or an array of them, respectively.
-- Added `DeepL.languages_for_resource` (`GET /v3/languages`), which returns the
-  languages supported by a given resource as `DeepL::Resources::LanguageSupport`
-  objects with source/target usability, status and per-feature support. The
-  `include` option (`beta`, `external`) also returns beta or third-party-backed
-  languages and features.
-- Added `DeepL.language_resources` (`GET /v3/languages/resources`), which returns
-  each resource (`name`) and its features as `DeepL::Resources::LanguageResource` objects,
-  including whether a feature needs source and/or target language support.
+  Please refer to the README for usage instructions.
 - Added the `enable_watermark` option to `DeepL.document.upload` and
   `DeepL.document.translate_document`. When `true`, the API adds a "Translated by DeepL"
   watermark to `docx` and `pdf` output. Previously the option was silently dropped.
@@ -276,9 +265,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`ruby -W:deprecated`).
 - The module-level API is deprecated in favour of `DeepL::Client` and will be removed in the
   next major version: `DeepL.configure`, `DeepL.configuration`, `DeepL.api`, `DeepL.translate`,
-  `DeepL.rephrase`, `DeepL.correct`, `DeepL.usage`, `DeepL.languages`,
-  `DeepL.languages_for_resource`, `DeepL.language_resources`, `DeepL.document`,
-  `DeepL.glossaries`, `DeepL.multilingual_glossaries`, `DeepL.style_rules`,
+  `DeepL.rephrase`, `DeepL.usage`, `DeepL.languages`, `DeepL.document`, `DeepL.glossaries`,
+  `DeepL.style_rules`,
   `DeepL.translation_memories`, `DeepL.with_session` and `DeepL.http_client`. Each prints a
   deprecation warning once per process when Ruby's deprecation warnings are enabled
   (`ruby -W:deprecated`) and keeps working unchanged.
@@ -385,8 +373,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DocumentHandle#wait_until_document_translation_finished` polled through the module
   configuration instead of the connection that created the handle.
 - `DeepL::Configuration#inspect` showed the auth key. It now shows `[REDACTED]`.
-- Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create` and the
-  `DeepL.multilingual_glossaries` methods) were sent unchecked, so a term with a tab or newline
+- Glossary entries given as `[source, target]` pairs (`DeepL.glossaries.create`) were sent
+  unchecked, so a term with a tab or newline
   silently corrupted the entries. An invalid term now raises
   `DeepL::Exceptions::ValidationError` before any request: after stripping, it must not be empty
   or contain C0 or C1 control characters, U+2028 or U+2029. Entries given as a TSV or CSV string

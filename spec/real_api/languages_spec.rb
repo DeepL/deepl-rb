@@ -16,7 +16,9 @@ describe 'languages' do
   end
 
   it 'sends GET /v3/languages/resources and parses the resources and their features' do
-    resources = DeepL.language_resources
+    client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'),
+                               server_url: ENV.fetch('DEEPL_SERVER_URL', nil))
+    resources = client.get_language_resources
 
     translate_text = resources.find { |resource| resource.name == 'translate_text' }
     expect(translate_text.features['glossary'].needs_source_support?).to be(true)

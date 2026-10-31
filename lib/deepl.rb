@@ -159,7 +159,6 @@ require_relative 'deepl/api'
 require_relative 'deepl/configuration'
 require_relative 'deepl/document_api'
 require_relative 'deepl/glossary_api'
-require_relative 'deepl/multilingual_glossary_api'
 require_relative 'deepl/style_rule_api'
 require_relative 'deepl/translation_memory_api'
 require_relative 'deepl/app_info'
@@ -171,7 +170,7 @@ require_relative 'deepl/admin_client'
 # The module-level API (+DeepL.configure+, +DeepL.translate+, +DeepL.glossaries+, ...) keeps its
 # configuration in module state. It is deprecated in favour of DeepL::Client and will be removed
 # in the next major version.
-module DeepL # rubocop:disable Metrics/ModuleLength
+module DeepL
   extend self
 
   ## -- API shortcuts
@@ -188,37 +187,6 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     deprecated(:languages,
                'DeepL::Client#get_source_languages or DeepL::Client#get_target_languages')
     Requests::Languages.new(module_api, options).request
-  end
-
-  ##
-  # Retrieves the languages supported by the given resource, each with its per-feature support.
-  #
-  # @param [String, Symbol] resource Resource to query, for example +'translate_text'+,
-  #   +'translate_document'+, +'glossary'+, +'voice'+, +'write'+, +'style_rules'+ or
-  #   +'translation_memory'+.
-  # @param [Hash] options Additional options:
-  #   * +:include+ - A value or an array of values (+'beta'+, +'external'+) to also return beta
-  #     languages and features or features relying on third-party providers. By default only
-  #     stable languages and features are returned.
-  # @return [Array<DeepL::Resources::LanguageSupport>] The supported languages.
-  # @raise [ArgumentError] If +resource+ is empty.
-  # @deprecated Use DeepL::Client#get_languages_for_resource instead.
-  def languages_for_resource(resource, options = {})
-    deprecated(:languages_for_resource, 'DeepL::Client#get_languages_for_resource')
-    ensure_configured
-    Requests::LanguagesForResource.new(module_api, resource, options).request
-  end
-
-  ##
-  # Retrieves the resources supported by the DeepL API with their features, and whether each
-  # feature requires support from the source and/or target language.
-  #
-  # @return [Array<DeepL::Resources::LanguageResource>] One entry per resource.
-  # @deprecated Use DeepL::Client#get_language_resources instead.
-  def language_resources(options = {})
-    deprecated(:language_resources, 'DeepL::Client#get_language_resources')
-    ensure_configured
-    Requests::LanguageResources.new(module_api, options).request
   end
 
   ##
@@ -266,13 +234,6 @@ module DeepL # rubocop:disable Metrics/ModuleLength
   end
 
   # @deprecated Use DeepL::Client instead.
-  def multilingual_glossaries(options = {})
-    deprecated(:multilingual_glossaries, 'DeepL::Client')
-    ensure_configured
-    MultilingualGlossaryApi.new(module_api, options)
-  end
-
-  # @deprecated Use DeepL::Client instead.
   def style_rules(options = {})
     deprecated(:style_rules, 'DeepL::Client')
     ensure_configured
@@ -293,13 +254,6 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     ensure_configured
     Requests::Rephrase.new(module_api, text, target_lang, writing_style, tone, options,
                            additional_headers).request
-  end
-
-  # @deprecated Use DeepL::Client#correct_text instead.
-  def correct(text, target_lang = nil, options = {}, additional_headers = {})
-    deprecated(:correct, 'DeepL::Client#correct_text')
-    ensure_configured
-    Requests::Correct.new(module_api, text, target_lang, options, additional_headers).request
   end
 
   # @deprecated Use DeepL::Client#get_usage instead.

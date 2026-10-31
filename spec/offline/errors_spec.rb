@@ -81,14 +81,12 @@ describe 'DeepL error mapping' do
   end
 
   it 'raises the errors of every endpoint family the same way' do
-    stub_request(:post, %r{/v2/(translate|write/correct)}).to_return(status: 403)
-    stub_request(:delete, url('/v3/glossaries/g-1')).to_return(status: 404,
+    stub_request(:post, %r{/v2/(translate|write/rephrase)}).to_return(status: 403)
+    stub_request(:delete, url('/v2/glossaries/g-1')).to_return(status: 404,
                                                                body: '{"message":"gone"}')
 
     expect { DeepL.translate('a', nil, 'DE') }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
-    expect { DeepL.correct('a') }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
-    expect do
-      DeepL.multilingual_glossaries.destroy('g-1')
-    end.to raise_error(DeepL::Exceptions::NotFound, 'gone')
+    expect { DeepL.rephrase('a') }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
+    expect { DeepL.glossaries.destroy('g-1') }.to raise_error(DeepL::Exceptions::NotFound, 'gone')
   end
 end

@@ -54,54 +54,6 @@ describe 'languages' do
     end
   end
 
-  describe 'DeepL.languages_for_resource' do
-    it 'sends the resource and every include value in the query' do
-      stub_request(:get, url('/v3/languages?resource=translate_text&include=beta&include=external'))
-        .with(headers: json_headers).to_return(reply([]))
-
-      DeepL.languages_for_resource(:translate_text, include: %w[beta external])
-    end
-
-    it 'sends a single include value' do
-      stub_request(:get, url('/v3/languages?resource=write&include=beta')).to_return(reply([]))
-
-      DeepL.languages_for_resource('write', include: 'beta')
-    end
-
-    it 'parses the usability and the feature support of the language' do
-      stub_request(:get, url('/v3/languages?resource=write')).to_return(
-        reply([{ lang: 'de', name: 'German', status: 'stable', usable_as_source: true,
-                 usable_as_target: false, features: { tone: { status: 'beta' } } }])
-      )
-
-      language = DeepL.languages_for_resource('write').first
-
-      expect([language.usable_as_source?, language.usable_as_target?]).to eq([true, false])
-      expect([language.supports?(:tone), language.supports?(:style)]).to eq([true, false])
-    end
-
-    it 'raises ArgumentError for an empty resource without sending a request' do
-      expect { DeepL.languages_for_resource('') }.to raise_error(ArgumentError, /must not be empty/)
-    end
-  end
-
-  describe 'DeepL.language_resources' do
-    it 'parses the resources with the features and their language requirements' do
-      stub_request(:get, url('/v3/languages/resources')).with(headers: json_headers).to_return(
-        reply([{ name: 'translate_text',
-                 features: [{ name: 'formality', needs_source_support: false,
-                              needs_target_support: true }] }])
-      )
-
-      resource = DeepL.language_resources.first
-      feature = resource.features['formality']
-
-      expect([resource.name, resource.supports?(:formality), resource.supports?(:glossary),
-              feature.needs_source_support?, feature.needs_target_support?])
-        .to eq(['translate_text', true, false, false, true])
-    end
-  end
-
   describe DeepL::Client do
     let(:client) { described_class.new('client-key', server_url: 'https://client.example.test') }
     let(:client_headers) do

@@ -18,7 +18,7 @@ module DeepL
       end
     end
 
-    # A language supported by a DeepL API resource, as returned by `DeepL.languages_for_resource`.
+    # A language supported by a DeepL API resource, as returned by `DeepL::Client#get_languages_for_resource`.
     class LanguageSupport < Base
       attr_reader :code, :name, :status, :features
 
