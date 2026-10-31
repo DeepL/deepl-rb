@@ -365,8 +365,6 @@ module DeepL # rubocop:disable Metrics/ModuleLength
     timeout = module_configuration.timeout
     http.open_timeout = timeout if client_options.open_timeout.nil? && timeout
     http.start
-  rescue *Requests::Base::NETWORK_ERRORS => e
-    raise Exceptions::ConnectionError.from_network_error(e)
   end
 
   def ensure_configured

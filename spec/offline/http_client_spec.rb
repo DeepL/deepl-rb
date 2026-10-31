@@ -52,30 +52,24 @@ describe 'DeepL HTTP client' do
         WebMock.reset!
         stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
 
-        expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |e|
-          expect([e.cause, e.should_retry?]).to match([be_a(error), false])
-        }
+        expect { DeepL.usage }.to raise_error(error)
         expect(stub).to have_been_requested.once
       end
     end
 
-    it 'raises a failed proxy CONNECT as a ConnectionError without retrying' do
+    it 'raises a failed proxy CONNECT without retrying' do
       error = Net::HTTPClientException.new('407 "Proxy Authentication Required"', nil)
       stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
 
-      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |e|
-        expect([e.cause, e.should_retry?]).to match([be_a(Net::HTTPClientException), false])
-      }
+      expect { DeepL.usage }.to raise_error(Net::HTTPClientException)
       expect(stub).to have_been_requested.once
     end
 
-    it 'retries a body shorter than its Content-Length and raises a ConnectionError' do
+    it 'retries a body shorter than its Content-Length and raises EOFError' do
       short = { status: 200, body: '{"char', headers: { 'Content-Length' => '46' } }
       stub = stub_usage(short)
 
-      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |e|
-        expect([e.cause, e.should_retry?]).to match([be_a(EOFError), true])
-      }
+      expect { DeepL.usage }.to raise_error(EOFError)
       expect(stub).to have_been_requested.times(3)
     end
 
@@ -125,9 +119,7 @@ describe 'DeepL HTTP client' do
     it 'raises the network error after max_network_retries retries' do
       stub = stub_request(:get, url('/v2/usage')).to_timeout
 
-      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::ConnectionError) { |error|
-        expect(error.cause).to be_a(Net::OpenTimeout)
-      }
+      expect { DeepL.usage }.to raise_error(Net::OpenTimeout)
       expect(stub).to have_been_requested.times(3)
     end
 
@@ -193,13 +185,12 @@ describe 'DeepL HTTP client' do
       expect(DeepL.with_session(options) { DeepL.api.http_client }.proxy_address).to be_nil
     end
 
-    it 'raises ConnectionError when the session cannot connect' do
+    it 'raises SocketError when the session cannot connect' do
       http = Net::HTTP.new('unresolvable.invalid', 443)
       allow(http).to receive(:start).and_raise(SocketError, 'getaddrinfo: Name not known')
       allow(DeepL::Utils::HTTPClientBuilder).to receive(:build).and_return(http)
 
-      expect { DeepL.with_session { nil } }
-        .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.cause).to be_a(SocketError) }
+      expect { DeepL.with_session { nil } }.to raise_error(SocketError)
     end
 
     it 'opens the session connection with the configured timeout' do

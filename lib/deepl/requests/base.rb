@@ -140,11 +140,18 @@ module DeepL
           wait_before_retry(e, files_to_reset)
           next
         rescue *NETWORK_ERRORS => e
-          raise Exceptions::ConnectionError.from_network_error(e) unless retry_network_error?(e)
+          raise_network_error(e) unless retry_network_error?(e)
 
           wait_before_retry(e, files_to_reset)
           next
         end
+      end
+
+      # Until the next major version, the module-level API raises the original network error.
+      def raise_network_error(error)
+        raise Exceptions::ConnectionError.from_network_error(error) if api.client?
+
+        raise error
       end
 
       # Before net-http 0.3, Net::HTTP cannot raise at EOF of a short body (+ignore_eof+), so the
