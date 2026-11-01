@@ -73,7 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failure in `DeepL::Exceptions::DocumentTranslationError`; `translate_document_wait_until_done`
   raises `DeepL::Exceptions::Error` with the API's message when the translation fails, and both
   raise when `timeout_s` expires. `translate_document` and `translate_document_upload` raise
-  `ArgumentError` for a missing input file before any request.
+  `ArgumentError` for a missing input file before any request; `translate_document` does not
+  wrap it in `DocumentTranslationError`.
 - Added `DeepL::Exceptions::DocumentNotReadyError` (a `ServerError`), raised for HTTP 503 on a
   document download.
 - Added `DeepL::Exceptions::DocumentTranslationError#document_handle`, the handle of the
@@ -192,6 +193,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.new` from a hash, source/target pairs or a TSV string) or a hash
   with the same keys. A source term that appears twice (after stripping) or a pair that is not
   exactly two strings raises `DeepL::Exceptions::ValidationError` before any request.
+  Entries given as a TSV string are parsed into pairs, and each term is stripped and checked
+  like terms given as pairs; a line that is not exactly two tab-separated terms raises
+  `DeepL::Exceptions::ValidationError`. CSV content is sent as given.
   Entries given as a hash or pairs are sent as TSV, also with `entries_format: 'csv'`.
   `get_multilingual_glossary_dictionary_entries` returns one dictionary
   and raises `DeepL::Exceptions::NotFound` if the glossary has none for the language pair;
@@ -242,9 +246,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raises `DocumentTranslationError`.
 - A non-2xx response from the translation memory storage URL (upload or export download) raises
   `DeepL::Exceptions::Error` with `http_status_code`, `should_retry?` true for 429 and 5xx
-  (previously the API status class such as `AuthorizationFailed`); a malformed API response
-  (invalid JSON or an unexpected structure) raises `DeepL::Exceptions::Error` instead of
-  `JSON::ParserError`, `NoMethodError` or `TypeError`.
+  (previously the API status class such as `AuthorizationFailed`).
+- A malformed API response (invalid JSON, missing or mistyped fields) now raises
+  `DeepL::Exceptions::Error` for every request; previously `JSON::ParserError`,
+  `NoMethodError`, `TypeError` or `KeyError`.
 - Reworked the test suite so that it no longer needs the `deepl-mock` server. The offline specs
   assert the exact outgoing requests with WebMock, and one real-API spec per resource calls each
   endpoint once. `webmock` and `webrick` are test dependencies again.
@@ -318,12 +323,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   handle); the file is kept and nothing is uploaded, as in `DeepL::Client#translate_document`.
   The doc comment of `DeepL.document.translate_document` no longer claims that an
   existing file is overwritten.
-- `DeepL::Client#translate_document` raises `ArgumentError` for a missing input file before
-  any request, instead of wrapping the `Errno::ENOENT` in `DocumentTranslationError`.
-- Multilingual glossary entries given as a TSV string are parsed into pairs, and each term is
-  stripped and checked like terms given as pairs, before anything is sent. A line that is not
-  exactly two tab-separated terms raises `DeepL::Exceptions::ValidationError`. CSV content is
-  still sent as given.
 - `wait_until_translation_memory_job_done` (and the file helpers) could wait up to five seconds
   past `timeout_s`; the last wait is now cut to the deadline.
 - Uploads to and downloads from the pre-signed translation memory storage URLs ignored the
