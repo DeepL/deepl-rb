@@ -8,7 +8,7 @@ module DeepL
     class DocumentHandle < Base
       attr_reader :document_id, :document_key
 
-      # +api+ is the connection the handle was created with; status queries go through it.
+      # The +api:+ keyword is kept for compatibility and not used.
       # A handle for a stored ID and key needs only those two: +DocumentHandle.new(id, key)+.
       def initialize(document_id, document_key, request = nil, response = nil, api: nil)
         super(request, response)
