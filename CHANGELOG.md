@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Ruby 3.0 or later is now required; the gem declares `required_ruby_version >= 3.0`. Migration:
   on Ruby 2.x, upgrade to Ruby 3.0 or later, or stay on deepl-rb 3.x.
+
 ### Removed
 - The `glossary_id` option of text translation (`DeepL::Client#translate_text`,
   `DeepL.translate`), deprecated in 3.10.0. Use `glossary` instead, which takes the glossary ID or
