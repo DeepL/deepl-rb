@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - The `glossary_id` option of text translation (`DeepL::Client#translate_text`,
   `DeepL.translate`), deprecated in 3.10.0. Use `glossary` instead, which takes the glossary ID or
-  a glossary object. `glossary_id` is no longer recognised: it is sent unchanged like any other
-  unknown option, without the deprecation warning or the check against `glossary` and
-  `glossary_ids`.
+  a glossary object. `glossary_id` on its own is sent unchanged like any other unknown option,
+  without the deprecation warning; together with `glossary` or `glossary_ids` it still raises
+  `ArgumentError`.
 - The `glossary_id` option of document translation (`DeepL::Client#translate_document`,
   `#translate_document_upload`, `DeepL.document.upload`), deprecated in 3.10.0. Use `glossary`
   instead. `glossary_id` is no longer sent.

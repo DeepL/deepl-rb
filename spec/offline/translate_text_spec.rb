@@ -198,6 +198,15 @@ describe 'DeepL.translate' do
       expect { DeepL.translate('a', 'EN', 'DE', glossary: 'g-1', glossary_ids: ['g-2']) }
         .to raise_error(ArgumentError, /together with the `glossary` option/)
     end
+
+    it 'raises ArgumentError for glossary together with glossary_id without sending a request' do
+      client = DeepL::Client.new(OfflineHelper::AUTH_KEY, server_url: OfflineHelper::HOST)
+
+      expect { client.translate_text('a', 'EN', 'DE', glossary: 'g-1', glossary_id: 'g-2') }
+        .to raise_error(ArgumentError,
+                        /`glossary` option cannot be used together with the `glossary_id`/)
+      expect(a_request(:any, //)).not_to have_been_made
+    end
   end
 
   describe 'result' do

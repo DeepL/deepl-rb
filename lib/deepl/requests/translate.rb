@@ -48,6 +48,7 @@ module DeepL
         text_arrayified = text.is_a?(Array) ? text : [text]
         payload = { text: text_arrayified, target_lang: target_lang, show_billed_characters: true }
         payload[:source_lang] = source_lang unless source_lang.nil?
+        validate_no_glossary_id!
 
         if option?(:style_rule)
           style_rule = delete_option(:style_rule)
@@ -105,6 +106,17 @@ module DeepL
       end
 
       private
+
+      # glossary_id is no longer an option, but would still override the glossary options.
+      def validate_no_glossary_id!
+        return if option(:glossary_id).nil?
+
+        other = %w[glossary glossary_ids].find { |name| !option(name).nil? }
+        return unless other
+
+        raise ArgumentError,
+              "The `#{other}` option cannot be used together with the `glossary_id` option"
+      end
 
       def tweak_parameters!
         OPTIONS_CONVERSIONS.each do |param, converter|
