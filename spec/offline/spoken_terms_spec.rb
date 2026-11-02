@@ -112,7 +112,7 @@ describe 'DeepL::Client spoken terms' do
 
     it 'turns a missing term_lists into an empty list' do
       stub_request(:get, url('/v3/spoken-terms'))
-        .to_return(reply(spoken_terms: [collection_json.reject { |k, _| k == :term_lists }]))
+        .to_return(reply(spoken_terms: [collection_json.except(:term_lists)]))
 
       expect(client.list_spoken_terms.map(&:term_lists)).to eq([[]])
     end

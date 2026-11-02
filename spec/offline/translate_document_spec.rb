@@ -57,7 +57,7 @@ describe DeepL::DocumentApi do
   end
 
   def form_fields(form)
-    form.reject { |name, _| name == 'file' }.to_h
+    form.to_h.except('file')
   end
 
   def stub_status(*statuses)

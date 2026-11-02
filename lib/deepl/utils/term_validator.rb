@@ -9,7 +9,7 @@ module DeepL
       extend self
 
       # C0 and C1 control characters plus the Unicode line and paragraph separators.
-      INVALID_CHARACTERS = /[\u0000-\u001F\u0080-\u009F  ]/.freeze
+      INVALID_CHARACTERS = /[\u0000-\u001F\u0080-\u009F  ]/
 
       ##
       # Strips surrounding whitespace from a single glossary or spoken term, then checks it

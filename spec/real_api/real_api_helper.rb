@@ -16,7 +16,7 @@ require_relative '../spec_helper'
 require_relative '../fixtures'
 
 module RealApiHelper
-  RUN_ID = "#{Time.now.utc.strftime('%Y%m%d%H%M')}-#{SecureRandom.alphanumeric(6).downcase}"
+  RUN_ID = "#{Time.now.utc.strftime('%Y%m%d%H%M')}-#{SecureRandom.alphanumeric(6).downcase}".freeze
 
   # Name of a resource created by this run, for example sdktest-ruby-202610151530-k3f9qz-glossary.
   def unique_name(label)

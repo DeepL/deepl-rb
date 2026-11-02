@@ -342,7 +342,7 @@ describe DeepL::AdminClient do
     end
 
     it 'raises when the response has no key_id' do
-      stub_create.to_return(reply(developer_key_json.reject { |k, _| k == :key_id }))
+      stub_create.to_return(reply(developer_key_json.except(:key_id)))
 
       expect { client.create_developer_key }
         .to raise_error(DeepL::Exceptions::Error, /missing key_id/)
