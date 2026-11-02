@@ -29,7 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   timeout_s: nil)`. Keywords left `nil` are not sent; the delete and download methods return
   `nil`. Please refer to the README for usage instructions. A missing input file raises
   `ArgumentError` before any request; other local file failures raise
-  `DeepL::Exceptions::Error` with the original error as `cause`.
+  `DeepL::Exceptions::Error` with the original error as `cause`. A non-2xx response from the
+  pre-signed storage URL (upload or export download) raises `DeepL::Exceptions::Error` with
+  `http_status_code`, `should_retry?` true for 429 and 5xx.
 - `DeepL.translation_memories.import_from_filepath` accepts `content_type:`, declared in the
   import job and sent with the upload, and `extra_body_parameters:`.
   `DeepL.translation_memories.create_import` accepts `extra_body_parameters:`.
@@ -244,9 +246,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   requests (about 50 seconds) and `translate_document` then downloaded the unfinished document.
   A configured `max_doc_status_queries` still limits the requests; `translate_document` then
   raises `DocumentTranslationError`.
-- A non-2xx response from the translation memory storage URL (upload or export download) raises
-  `DeepL::Exceptions::Error` with `http_status_code`, `should_retry?` true for 429 and 5xx
-  (previously the API status class such as `AuthorizationFailed`).
 - A malformed API response (invalid JSON, missing or mistyped fields) now raises
   `DeepL::Exceptions::Error` for every request; previously `JSON::ParserError`,
   `NoMethodError`, `TypeError` or `KeyError`.

@@ -113,9 +113,9 @@ module DeepL
     # upload URL is a pre-signed storage URL outside of the DeepL API, so no authorization header
     # is sent with this request.
     #
-    # @raise [DeepL::Exceptions::Error] If the storage URL replies with a non-2xx status. The error
-    #                                   carries `http_status_code`, and `should_retry?` is true
-    #                                   for 429 and 5xx.
+    # @raise [DeepL::Exceptions::RequestError] If the storage URL replies with a non-2xx status:
+    #                                          the API error class for that status, e.g.
+    #                                          `AuthorizationFailed` for 401 and 403.
     #
     # @param [String, DeepL::Resources::TranslationMemoryImport] translation_memory_import Import
     #        returned by `create_import`, or its upload URL.
@@ -204,9 +204,10 @@ module DeepL
     # URL outside of the DeepL API, so no authorization header is sent with this request.
     #
     # @raise [DeepL::Exceptions::Error] If the job carries no download URL, for example because
-    #                                   it has not completed yet, if the storage URL replies with
-    #                                   a non-2xx status (with `http_status_code`, `should_retry?`
-    #                                   true for 429 and 5xx).
+    #                                   it has not completed yet.
+    # @raise [DeepL::Exceptions::RequestError] If the storage URL replies with a non-2xx status:
+    #                                          the API error class for that status, e.g.
+    #                                          `AuthorizationFailed` for 401 and 403.
     # @raise [SystemCallError, IOError] If the file cannot be written.
     #
     # @param [DeepL::Resources::TranslationMemoryJob, String] job Completed export job carrying

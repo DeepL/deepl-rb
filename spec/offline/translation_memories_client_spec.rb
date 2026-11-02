@@ -106,6 +106,15 @@ describe 'DeepL::Client translation memories' do
       client.upload_translation_memory_file(upload_url, 'tmx', content_type: 'text/xml')
     end
 
+    it 'raises a plain Error with the status for a storage reply of 403' do
+      stub_request(:put, upload_url).to_return(status: 403, body: 'Request has expired')
+
+      expect { client.upload_translation_memory_file(upload_url, 'tmx') }.to(raise_error do |error|
+        expect([error.class, error.http_status_code, error.should_retry?])
+          .to eq([DeepL::Exceptions::Error, 403, false])
+      end)
+    end
+
     it 'imports a file: creates the job, uploads with the content type and waits' do # rubocop:disable RSpec/ExampleLength
       path = File.join(temp_dir, 'memory.tmx')
       File.write(path, 'tmx')

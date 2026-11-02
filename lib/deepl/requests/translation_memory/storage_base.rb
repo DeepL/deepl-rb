@@ -11,8 +11,9 @@ module DeepL
       # as a translation memory upload or download URL. Those URLs point outside of the DeepL
       # API, so they are requested over their own connection and send only the User-Agent: neither
       # the DeepL `Authorization` header nor other caller headers. That connection uses the same
-      # proxy, SSL and timeout options as the API connection. Every non-2xx response raises a
-      # plain DeepL::Exceptions::Error.
+      # proxy, SSL and timeout options as the API connection. A non-2xx response raises the API
+      # error class for its status (e.g. DeepL::Exceptions::AuthorizationFailed for 401/403) in the
+      # module-level API and a plain DeepL::Exceptions::Error in DeepL::Client.
 
       class StorageBase < DeepL::Requests::Base
         attr_reader :storage_url
@@ -51,9 +52,12 @@ module DeepL
         end
 
         # Storage responses are not DeepL API responses, so their statuses carry none of the API's
-        # meanings: an expired URL replies 403, which is no authorization failure.
-        def validate_response!(response, _request = nil)
+        # meanings: an expired URL replies 403, which is no authorization failure. DeepL::Client
+        # raises a plain error; until the next major version, the module-level API raises the API
+        # error classes it has released.
+        def validate_response!(response, request = nil)
           return if response.is_a?(Net::HTTPSuccess)
+          raise Utils::ExceptionBuilder.new(response, request).build unless api.client?
 
           status = response.code.to_i
           raise Exceptions::Error.new(
