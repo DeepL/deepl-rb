@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.
+New APIs on `DeepL::Client`: multilingual glossaries, style profiles, spoken terms and text correction.
+Read Changed and Deprecated before upgrading; no public API is removed in this release.
+
 ### Added
 - Added `DeepL::Resources::DocumentTranslationStatus#done?` (the status is `done`).
 - `DeepL::Resources::DocumentHandle.new(document_id, document_key)` creates a handle from a
