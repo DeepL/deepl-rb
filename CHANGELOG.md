@@ -23,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Resources::DocumentTranslationStatus#successful?`, deprecated in 3.10.0. Use `#done?`
   instead.
 
-
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.
 New APIs on `DeepL::Client`: multilingual glossaries, style profiles, spoken terms and text correction.
