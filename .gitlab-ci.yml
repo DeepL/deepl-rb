@@ -42,9 +42,11 @@ package:
   stage: install
   parallel:
       matrix:
-          - DOCKER_IMAGE: 'ruby:2.7'
+          - DOCKER_IMAGE: 'ruby:3.0'
           - DOCKER_IMAGE: 'ruby:3.2'
           - DOCKER_IMAGE: 'ruby:3.3'
+          - DOCKER_IMAGE: 'ruby:3.4'
+          - DOCKER_IMAGE: 'ruby:4.0'
   image:
     name: ${DOCKER_IMAGE}
     entrypoint: ['/builds/deepl/backend/oss-client-libs/deepl-ruby']
@@ -59,7 +61,7 @@ package:
 .rubocop_base:
   stage: check
   image:
-    name: ruby:2.7
+    name: ruby:3.0
     entrypoint: ['/builds/deepl/backend/oss-client-libs/deepl-ruby']
   variables:
     HOME: /tmp
@@ -123,9 +125,11 @@ semgrep-sast:
   stage: test
   parallel:
     matrix:
-      - DOCKER_IMAGE: 'ruby:2.7'
+      - DOCKER_IMAGE: 'ruby:3.0'
       - DOCKER_IMAGE: 'ruby:3.2'
       - DOCKER_IMAGE: 'ruby:3.3'
+      - DOCKER_IMAGE: 'ruby:3.4'
+      - DOCKER_IMAGE: 'ruby:4.0'
   image:
     name: ${DOCKER_IMAGE}
     entrypoint: ['/builds/deepl/backend/oss-client-libs/deepl-ruby']

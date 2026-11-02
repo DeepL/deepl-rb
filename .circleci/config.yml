@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/deepl-rb
     docker:
-    - image: circleci/ruby:2.7
+    - image: circleci/ruby:3.0
     steps:
     - checkout
 

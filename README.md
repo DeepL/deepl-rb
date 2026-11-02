@@ -12,6 +12,8 @@ To use the DeepL Ruby Library, you'll need an API authentication key. To get a k
 
 ## Installation
 
+Requires Ruby 3.0 and later.
+
 Install this gem with
 
 ```sh

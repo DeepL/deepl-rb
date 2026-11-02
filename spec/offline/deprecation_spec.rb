@@ -22,11 +22,7 @@ describe DeepL::Deprecation do
   it 'warns in the deprecated category when they are on' do
     Warning[:deprecated] = true
 
-    if RUBY_VERSION >= '3.0'
-      expect(Warning).to receive(:warn).with(/m/, category: :deprecated)
-      described_class.warn_once('spec-on', 'm')
-    else
-      expect { described_class.warn_once('spec-on', 'm') }.to output(/m/).to_stderr
-    end
+    expect(Warning).to receive(:warn).with(/m/, category: :deprecated)
+    described_class.warn_once('spec-on', 'm')
   end
 end

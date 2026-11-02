@@ -18,16 +18,11 @@ module DeepL
       first = @mutex.synchronize { @warned[key] ? false : (@warned[key] = true) }
       return unless first
 
-      if RUBY_VERSION >= '3.0'
-        Kernel.warn(message, uplevel: uplevel, category: :deprecated)
-      else
-        Kernel.warn(message, uplevel: uplevel)
-      end
+      Kernel.warn(message, uplevel: uplevel, category: :deprecated)
     end
 
-    # Ruby 2.6 has no Warning.[] and prints no deprecation warnings.
     def self.enabled?
-      Warning.respond_to?(:[]) && Warning[:deprecated]
+      Warning[:deprecated]
     end
 
     # Like +warn_once+, but points the warning at the first caller outside the library, for

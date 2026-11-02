@@ -24,6 +24,7 @@ Juwelier::Tasks.new do |gem|
     'Official Ruby library for the DeepL language translation API (v2). ' \
     'For more information, check this: https://www.deepl.com/docs/api-reference.html'
   gem.version = DeepL::VERSION
+  gem.required_ruby_version = '>= 3.0'
 
   gem.email = 'open-source@deepl.com'
   gem.authors = ['DeepL SE']

@@ -189,6 +189,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "https://github.com/DeepLcom/deepl-rb".freeze
   s.licenses = ["MIT".freeze]
+  s.required_ruby_version = Gem::Requirement.new(">= 3.0".freeze)
   s.rubygems_version = "3.6.2".freeze
   s.summary = "Official Ruby library for the DeepL language translation API.".freeze
 
