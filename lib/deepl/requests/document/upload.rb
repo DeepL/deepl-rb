@@ -77,7 +77,7 @@ module DeepL
           form_data.push(['glossary_ids', glossary_ids.join(',')]) unless glossary_ids.nil?
         end
 
-        # Resolves the `glossary` option (an ID string, a `DeepL::Resources::Glossary` or a
+        # Resolves the `glossary` option (an ID string or a
         # `DeepL::Resources::MultilingualGlossary`) and appends it as a `glossary_id` field.
         def add_glossary_to_form(form_data)
           glossary_id = build_glossary_param

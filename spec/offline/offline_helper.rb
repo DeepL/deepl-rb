@@ -45,23 +45,21 @@ module OfflineHelper
   def usage_reply
     reply(character_count: 1, character_limit: 10)
   end
+
+  # A client for HOST. The default of 5 retries would sleep for about 16 seconds in every retry
+  # example.
+  def api_client
+    @api_client ||= offline_client(max_retries: 2)
+  end
+
+  def offline_client(**options)
+    DeepL::Client.new(AUTH_KEY, server_url: HOST, **options)
+  end
 end
 
 RSpec.configure do |config|
   config.include OfflineHelper
   config.include Fixtures
-
-  config.before do
-    DeepL.configure do |c|
-      c.auth_key = OfflineHelper::AUTH_KEY
-      c.host = OfflineHelper::HOST
-      c.logger = nil
-      c.max_doc_status_queries = nil
-      c.headers = {}
-      # The default of 5 retries would sleep for about 16 seconds in every retry example.
-      c.max_network_retries = 2
-    end
-  end
 
   # A declared request that the SDK never sent is a failure. webmock/rspec resets the stubs
   # in an around hook, which runs after this one.

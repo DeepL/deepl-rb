@@ -40,10 +40,6 @@ describe 'DeepL::Client style profiles' do
     DeepL::Resources::StyleProfile.new(profile_json.transform_keys(&:to_s), nil, nil)
   end
 
-  def glossary
-    DeepL::Resources::Glossary.new({ 'glossary_id' => 'g1', 'name' => 'n' }, nil, nil)
-  end
-
   def multilingual_glossary
     DeepL::Resources::MultilingualGlossary.new({ 'glossary_id' => 'g3', 'name' => 'n' }, nil, nil)
   end
@@ -106,12 +102,12 @@ describe 'DeepL::Client style profiles' do
     end
 
     it 'sends the IDs of glossary, style rule and translation memory objects' do
-      body = { name: 'profile', glossary_ids: %w[g1 g2 g3], style_rule_ids: %w[s1 s2],
+      body = { name: 'profile', glossary_ids: %w[g2 g3], style_rule_ids: %w[s1 s2],
                translation_memory_ids: %w[t1 t2] }
       stub_request(:post, url('/v3/style_profiles')).with(body: body.to_json)
                                                     .to_return(reply(profile_json, 201))
 
-      client.create_style_profile('profile', glossary_ids: [glossary, 'g2', multilingual_glossary],
+      client.create_style_profile('profile', glossary_ids: ['g2', multilingual_glossary],
                                              style_rule_ids: [style_rule, 's2'],
                                              translation_memory_ids: ['t1', translation_memory])
     end
@@ -167,11 +163,11 @@ describe 'DeepL::Client style profiles' do
     end
 
     it 'sends the IDs of component objects' do
-      body = { glossary_ids: %w[g1 g3], style_rule_ids: %w[s1], translation_memory_ids: %w[t2] }
+      body = { glossary_ids: %w[g3], style_rule_ids: %w[s1], translation_memory_ids: %w[t2] }
       stub_request(:patch, url(profile_path)).with(body: body.to_json)
                                              .to_return(reply(profile_json))
 
-      client.update_style_profile(profile_id, glossary_ids: [glossary, multilingual_glossary],
+      client.update_style_profile(profile_id, glossary_ids: [multilingual_glossary],
                                               style_rule_ids: [style_rule],
                                               translation_memory_ids: [translation_memory])
     end

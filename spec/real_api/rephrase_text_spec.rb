@@ -5,9 +5,9 @@
 
 require_relative 'real_api_helper'
 
-describe 'DeepL.rephrase' do
+describe 'DeepL::Client#rephrase_text' do
   it 'sends POST /v2/write/rephrase and parses the result' do
-    result = DeepL.rephrase('Protonenstrahl', 'de')
+    result = real_api_client.rephrase_text('Protonenstrahl', 'de')
 
     expect(result).to be_a(DeepL::Resources::Text)
     expect(result.text).to be_a(String)

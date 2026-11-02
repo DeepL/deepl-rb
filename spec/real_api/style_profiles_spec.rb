@@ -11,7 +11,7 @@ describe 'DeepL::Client style profiles' do
   end
 
   it 'creates, reads, lists, updates and deletes a style profile' do
-    rule = DeepL.style_rules.create(unique_name('styleProfileRule'), 'de')
+    rule = client.create_style_rule(unique_name('styleProfileRule'), 'de')
     rule_id = rule.style_id
     id = nil
     begin
@@ -40,7 +40,7 @@ describe 'DeepL::Client style profiles' do
       expect { client.get_style_profile(id) }.to raise_error(DeepL::Exceptions::NotFound)
     ensure
       delete_quietly { client.delete_style_profile(id) } if id
-      delete_quietly { DeepL.style_rules.destroy(rule_id) }
+      delete_quietly { client.delete_style_rule(rule_id) }
     end
   end
 end

@@ -17,7 +17,7 @@ describe 'DeepL error mapping' do
     it "raises #{error_class.name.split('::').last} for status #{status} without retrying" do
       stub = stub_request(:get, url('/v2/usage')).to_return(status: status, body: '{"message":"m"}')
 
-      expect { DeepL.usage }.to raise_error(error_class, message)
+      expect { api_client.get_usage }.to raise_error(error_class, message)
       expect(stub).to have_been_requested.once
     end
   end
@@ -31,21 +31,21 @@ describe 'DeepL error mapping' do
                           url('/v2/usage')).to_return(reply({ message: 'Value for x invalid' },
                                                             status))
 
-      expect { DeepL.usage }.to raise_error(error_class, 'Value for x invalid')
+      expect { api_client.get_usage }.to raise_error(error_class, 'Value for x invalid')
       expect(stub).to have_been_requested.once
     end
 
     it "raises #{error_class.name.split('::').last} with a plain-text body as the message" do
       stub_request(:get, url('/v2/usage')).to_return(status: status, body: 'plain text')
 
-      expect { DeepL.usage }.to raise_error(error_class, 'plain text')
+      expect { api_client.get_usage }.to raise_error(error_class, 'plain text')
     end
   end
 
   it 'retries a 503 reply and raises ServerError with its status' do
     stub = stub_request(:get, url('/v2/usage')).to_return(status: 503, body: '')
 
-    expect { DeepL.usage }
+    expect { api_client.get_usage }
       .to raise_error(DeepL::Exceptions::ServerError) { |e| expect(e.http_status_code).to eq(503) }
     expect(stub).to have_been_requested.times(3)
   end
@@ -53,7 +53,7 @@ describe 'DeepL error mapping' do
   it 'keeps the status code and the failed request on the raised error' do
     stub_request(:get, url('/v2/usage')).to_return(status: 418, body: '')
 
-    expect { DeepL.usage }.to(raise_error(DeepL::Exceptions::RequestError) do |error|
+    expect { api_client.get_usage }.to(raise_error(DeepL::Exceptions::RequestError) do |error|
       expect([error.http_status_code, error.request.path, error.message])
         .to eq([418, '/v2/usage', 'Request failed with HTTP status 418.'])
     end)
@@ -62,14 +62,14 @@ describe 'DeepL error mapping' do
   it 'uses the raw body as the message of a 400 reply with a JSON array' do
     stub_request(:get, url('/v2/usage')).to_return(status: 400, body: '["x"]')
 
-    expect { DeepL.usage }.to raise_error(DeepL::Exceptions::BadRequest, '["x"]')
+    expect { api_client.get_usage }.to raise_error(DeepL::Exceptions::BadRequest, '["x"]')
   end
 
   ['not json', '[]', '{"translations":[1]}'].each do |body|
     it "raises DeepL::Exceptions::Error for the malformed response #{body}" do
       stub_request(:post, url('/v2/translate')).to_return(status: 200, body: body)
 
-      expect { DeepL.translate('a', nil, 'DE') }
+      expect { api_client.translate_text('a', nil, 'DE') }
         .to raise_error(an_instance_of(DeepL::Exceptions::Error), /Unexpected response/)
     end
   end
@@ -77,16 +77,21 @@ describe 'DeepL error mapping' do
   it 'keeps the response on the raised error' do
     stub_request(:get, url('/v2/usage')).to_return(status: 456, body: 'quota')
 
-    expect { DeepL.usage }.to(raise_error { |error| expect(error.response.body).to eq('quota') })
+    expect { api_client.get_usage }.to(raise_error do |error|
+      expect(error.response.body).to eq('quota')
+    end)
   end
 
   it 'raises the errors of every endpoint family the same way' do
     stub_request(:post, %r{/v2/(translate|write/rephrase)}).to_return(status: 403)
-    stub_request(:delete, url('/v2/glossaries/g-1')).to_return(status: 404,
+    stub_request(:delete, url('/v3/glossaries/g-1')).to_return(status: 404,
                                                                body: '{"message":"gone"}')
 
-    expect { DeepL.translate('a', nil, 'DE') }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
-    expect { DeepL.rephrase('a') }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
-    expect { DeepL.glossaries.destroy('g-1') }.to raise_error(DeepL::Exceptions::NotFound, 'gone')
+    expect { api_client.translate_text('a', nil, 'DE') }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
+    expect { api_client.rephrase_text('a') }.to raise_error(DeepL::Exceptions::AuthorizationFailed)
+    expect do
+      api_client.delete_multilingual_glossary('g-1')
+    end.to raise_error(DeepL::Exceptions::NotFound,
+                       'gone')
   end
 end

@@ -41,7 +41,7 @@ module DeepL
 
       def build_texts(request, response)
         texts = build_improvements(text.is_a?(Array) ? text.size : 1, request, response)
-        texts.size == 1 ? texts.first : texts
+        text.is_a?(Array) ? texts : texts.first
       end
 
       def path

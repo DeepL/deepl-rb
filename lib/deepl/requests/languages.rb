@@ -6,15 +6,10 @@
 module DeepL
   module Requests
     class Languages < Base
-      SUPPORTED_TYPES = %w[source target].freeze
-
-      def initialize(api, options = {})
-        super
-        @type = (delete_option(:type) || :source).to_s
-        return if SUPPORTED_TYPES.include?(@type)
-
-        raise Exceptions::ValidationError, "Unsupported `type` option: #{@type.inspect} " \
-                                           "(supported: #{SUPPORTED_TYPES.join(', ')})"
+      # +type+ is +:source+ or +:target+.
+      def initialize(api, type)
+        super(api, {})
+        @type = type
       end
 
       def request
@@ -28,7 +23,7 @@ module DeepL
       private
 
       def target?
-        @type == 'target'
+        @type == :target
       end
 
       def build_languages(request, response)
@@ -42,7 +37,7 @@ module DeepL
       def build_language(language, request, response)
         supports_formality = target? ? language.fetch('features', {}).to_h.key?('formality') : nil
         Resources::Language.new(language['lang'].upcase, language['name'], supports_formality,
-                                request, response, client: api.client?)
+                                request, response)
       end
 
       def uri

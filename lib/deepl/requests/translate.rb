@@ -138,7 +138,7 @@ module DeepL
           )
         end
 
-        texts.size == 1 ? texts.first : texts
+        text.is_a?(Array) ? texts : texts.first
       end
 
       def optional_string(value)

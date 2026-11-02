@@ -7,7 +7,7 @@ module DeepL
   module Exceptions
     ##
     # An invalid argument detected before any request is sent: an invalid glossary or spoken
-    # terms term, a malformed glossary TSV line, or an unsupported +DeepL.languages+ type.
+    # terms term, or a malformed glossary TSV line.
     class ValidationError < Error
     end
   end

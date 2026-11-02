@@ -6,8 +6,7 @@
 module DeepL
   ##
   # Client for the DeepL Admin API, used to manage the developer keys of your organization and
-  # to retrieve usage analytics. It is independent of +DeepL.configure+ and never reads the
-  # +DEEPL_AUTH_KEY+ or +DEEPL_SERVER_URL+ environment variables.
+  # to retrieve usage analytics. It owns its configuration and reads no environment variables.
   #
   # All methods may raise a +DeepL::Exceptions::Error+ or a subclass, for example
   # +DeepL::Exceptions::AuthorizationFailed+ if the admin key is not accepted.

@@ -11,7 +11,7 @@ module DeepL
     # mid-read), after the retries are used up. Transient failures (DNS, connection, timeout,
     # cut-off body) are retried and have +should_retry?+ true; TLS failures, proxy failures and
     # malformed responses are raised at once and have +should_retry?+ false. The original
-    # exception is available as +cause+. The module-level API raises the original exception.
+    # exception is available as +cause+.
     class ConnectionError < Error
       # Raised from a +rescue+ block, so the original exception becomes +cause+.
       # +should_retry: false+ marks a request that is unsafe to repeat once sent.

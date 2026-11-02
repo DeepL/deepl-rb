@@ -5,7 +5,7 @@
 
 require_relative 'offline_helper'
 
-describe 'DeepL.rephrase' do
+describe 'DeepL::Client#rephrase_text' do
   def stub_rephrase(body = nil)
     request = stub_request(:post, url('/v2/write/rephrase'))
     request = request.with(body: body, headers: json_headers) unless body.nil?
@@ -14,7 +14,7 @@ describe 'DeepL.rephrase' do
 
   it 'sends only the text when no other argument is given' do
     stub_rephrase(text: ['Hello']).to_return(reply(improvements: [{ text: 'Hi' }]))
-    DeepL.rephrase('Hello')
+    api_client.rephrase_text('Hello')
   end
 
   it 'sends the target language, writing style and tone' do
@@ -22,29 +22,21 @@ describe 'DeepL.rephrase' do
                   tone: 'diplomatic')
       .to_return(reply(improvements: [{ text: 'x' }, { text: 'y' }]))
 
-    DeepL.rephrase(%w[a b], 'en-GB', 'business', 'diplomatic')
-  end
-
-  it 'sends the additional headers' do
-    stub_request(:post, url('/v2/write/rephrase'))
-      .with(headers: { 'X-DeepL-Reporting-Tag' => 'tag' })
-      .to_return(reply(improvements: [{ text: 'Hi' }]))
-
-    DeepL.rephrase('Hello', nil, nil, nil, {}, { 'X-DeepL-Reporting-Tag' => 'tag' })
+    api_client.rephrase_text(%w[a b], 'en-GB', writing_style: 'business', tone: 'diplomatic')
   end
 
   it 'overrides built-in parameters with extra_body_parameters' do
     stub_rephrase(text: ['Hello'], target_lang: 'de', beta: true)
       .to_return(reply(improvements: [{ text: 'Hallo' }]))
 
-    DeepL.rephrase('Hello', 'en', nil, nil,
-                   extra_body_parameters: { target_lang: 'de', beta: true })
+    api_client.rephrase_text('Hello', 'en',
+                             extra_body_parameters: { target_lang: 'de', beta: true })
   end
 
   it 'returns a text for a string' do
     stub_rephrase.to_return(reply(improvements: [{ text: 'Hi' }]))
 
-    expect(DeepL.rephrase('Hello')).to be_a(DeepL::Resources::Text)
+    expect(api_client.rephrase_text('Hello')).to be_a(DeepL::Resources::Text)
   end
 
   it 'parses the target language of each improvement' do
@@ -53,20 +45,20 @@ describe 'DeepL.rephrase' do
                                       target_language: 'en-GB' }, { text: 'y', target_language: 1 }
                                   ]))
 
-    expect(DeepL.rephrase(%w[a b]).map(&:target_language)).to eq(['en-GB', nil])
+    expect(api_client.rephrase_text(%w[a b]).map(&:target_language)).to eq(['en-GB', nil])
   end
 
   it 'returns an array of texts for an array' do
     stub_rephrase.to_return(reply(improvements: [{ text: 'x' }, { text: 'y' }]))
 
-    expect(DeepL.rephrase(%w[a b]).map(&:class)).to eq([DeepL::Resources::Text] * 2)
+    expect(api_client.rephrase_text(%w[a b]).map(&:class)).to eq([DeepL::Resources::Text] * 2)
   end
 
   [['Hello', []], [%w[a b], [{ text: 'x' }]]].each do |text, improvements|
     it "raises DeepL::Exceptions::Error for #{improvements.size} improvements of #{text.inspect}" do
       stub_rephrase.to_return(reply(improvements: improvements))
 
-      expect { DeepL.rephrase(text) }
+      expect { api_client.rephrase_text(text) }
         .to raise_error(an_instance_of(DeepL::Exceptions::Error), /expected \d improvements/)
     end
   end

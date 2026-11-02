@@ -4,71 +4,23 @@
 # frozen_string_literal: true
 
 module DeepL
+  # The options of one DeepL::Client or DeepL::AdminClient, built by Utils::ClientBuilder.
+  # Nothing is read from the environment.
+  # @api private
   class Configuration
-    ATTRIBUTES = %i[auth_key host logger max_doc_status_queries max_network_retries user_agent
-                    version headers timeout].freeze
+    ATTRIBUTES = %i[auth_key host logger max_network_retries user_agent headers timeout].freeze
 
-    # max_doc_status_queries= is defined below, with its deprecation warning.
-    attr_accessor(*(ATTRIBUTES - %i[max_doc_status_queries]))
-    attr_reader :max_doc_status_queries
+    attr_reader(*ATTRIBUTES)
 
-    DEEPL_SERVER_URL = 'https://api.deepl.com'
-    DEEPL_SERVER_URL_FREE = 'https://api-free.deepl.com'
-    # Net::HTTP's 60-second default, kept for the module-level API; 10 in the next major version.
-    DEFAULT_TIMEOUT = 60.0
-    private_constant :DEEPL_SERVER_URL, :DEEPL_SERVER_URL_FREE, :DEFAULT_TIMEOUT
-
-    def initialize(data = {}, app_info_name = nil, app_info_version = nil, send_platform_info = true) # rubocop:disable all
-      data.each { |key, value| send("#{key}=", value) }
-      @auth_key ||= ENV.fetch('DEEPL_AUTH_KEY', nil)
-      @host ||= ENV.fetch('DEEPL_SERVER_URL', nil)
-      @version ||= 'v2'
-      @user_agent ||= construct_user_agent(send_platform_info, app_info_name, app_info_version)
-      @max_network_retries ||= 5
-      @logger ||= nil
-      @headers ||= {}
-      @timeout ||= DEFAULT_TIMEOUT
-    end
-
-    # The host is resolved when it is read, so that an auth key set after the configuration was
-    # created (e.g. in a +DeepL.configure+ block) still selects the Free API.
-    def host
-      return @host unless @host.nil?
-
-      self.class.free_account_auth_key?(auth_key) ? DEEPL_SERVER_URL_FREE : DEEPL_SERVER_URL
-    end
-
-    ##
-    # @deprecated Use the +timeout_s:+ of DeepL::Client#translate_document or
-    #   DeepL::Client#translate_document_wait_until_done instead.
-    def max_doc_status_queries=(value)
-      unless value.nil?
-        DeepL::Deprecation.warn_once_at_caller(
-          'DeepL::Configuration#max_doc_status_queries=',
-          '[DEPRECATION] DeepL::Configuration#max_doc_status_queries= is deprecated, use the ' \
-          'timeout_s: of DeepL::Client#translate_document instead.'
-        )
-      end
-      @max_doc_status_queries = value
-    end
-
-    ##
-    # @deprecated The API version is part of each endpoint; this setting will be removed in the
-    #   next major version.
-    def version=(value)
-      unless value.nil? || value == 'v2'
-        DeepL::Deprecation.warn_once('DeepL::Configuration#version=',
-                                     '[DEPRECATION] DeepL::Configuration#version= is deprecated ' \
-                                     'and will be removed in the next major version.')
-      end
-      @version = value
-    end
-
-    def validate!
-      return unless auth_key.nil? || auth_key.to_s.strip.empty?
-
-      raise Exceptions::Error,
-            'auth_key not provided'
+    def initialize(auth_key:, host:, max_network_retries:, timeout:, logger:, headers:, # rubocop:disable Metrics/ParameterLists
+                   user_agent:, send_platform_info:, app_info:)
+      @auth_key = auth_key
+      @host = host
+      @max_network_retries = max_network_retries
+      @timeout = timeout
+      @logger = logger
+      @headers = headers
+      @user_agent = user_agent || construct_user_agent(send_platform_info, app_info)
     end
 
     def attributes
@@ -76,7 +28,7 @@ module DeepL
     end
 
     def ==(other)
-      attributes == other.attributes
+      other.is_a?(Configuration) && attributes == other.attributes
     end
 
     # Redacts the auth key, so that it never shows in the inspect output of objects holding the
@@ -86,18 +38,15 @@ module DeepL
       "#<#{self.class.name} #{shown.map { |name, value| "#{name}=#{value.inspect}" }.join(', ')}>"
     end
 
-    # The key is trimmed like the one sent in the Authorization header.
-    def self.free_account_auth_key?(key)
-      key.to_s.strip.end_with?(':fx')
-    end
+    private
 
-    def construct_user_agent(send_platform_info, app_info_name, app_info_version)
+    def construct_user_agent(send_platform_info, app_info)
       library_info_str = "deepl-ruby/#{DeepL::VERSION}"
       if send_platform_info
         library_info_str += " (#{RbConfig::CONFIG['host_os']}) ruby/#{RUBY_VERSION}"
       end
-      if app_info_name && app_info_version
-        library_info_str += " #{app_info_name}/#{app_info_version}"
+      if app_info&.app_name && app_info.app_version
+        library_info_str += " #{app_info.app_name}/#{app_info.app_version}"
       end
       library_info_str
     end

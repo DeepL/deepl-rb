@@ -6,8 +6,7 @@
 module DeepL
   ##
   # Client for the DeepL API. Every client owns its configuration and HTTP connection: two
-  # clients never share options, and nothing is read from environment variables or from the
-  # deprecated module-level configuration (+DeepL.configure+).
+  # clients never share options, and nothing is read from environment variables.
   #
   #   client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), app_info: { app_name: 'my-app',
   #                                                                         app_version: '1.2.3' })
@@ -71,8 +70,8 @@ module DeepL
     # @param [String, nil] source_lang Source language, +nil+ to detect it.
     # @param [String] target_lang Target language.
     # @param [Hash] options Translation options, sent as given unless listed here:
-    #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
-    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
+    #   * +:glossary+ - A glossary ID or `DeepL::Resources::MultilingualGlossary`, sent as
+    #     +glossary_id+.
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Cannot be combined with
     #     +:glossary+. Without +source_lang+, the API detects it.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
@@ -86,8 +85,7 @@ module DeepL
     #   an array for an array (also for a one-element array).
     # @raise [ArgumentError] If the glossary options are combined or more than 5 are given.
     def translate_text(text, source_lang, target_lang, **options)
-      result = Requests::Translate.new(api, text, source_lang, target_lang, options).request
-      text.is_a?(Array) && !result.is_a?(Array) ? [result] : result
+      Requests::Translate.new(api, text, source_lang, target_lang, options).request
     end
 
     ##
@@ -140,8 +138,8 @@ module DeepL
     #     base name of +input_path+.
     #   * +:formality+, +:output_format+ - Sent unchanged.
     #   * +:enable_watermark+ - +true+ or +false+.
-    #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
-    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
+    #   * +:glossary+ - A glossary ID or `DeepL::Resources::MultilingualGlossary`, sent as
+    #     +glossary_id+.
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Requires +source_lang+ and
     #     cannot be combined with +:glossary+.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
@@ -209,9 +207,7 @@ module DeepL
     #   an array for an array (also for a one-element array).
     # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
     def rephrase_text(text, target_lang = nil, writing_style: nil, tone: nil, **options)
-      result = Requests::Rephrase.new(api, text, target_lang, writing_style, tone,
-                                      options.compact).request
-      text.is_a?(Array) && !result.is_a?(Array) ? [result] : result
+      Requests::Rephrase.new(api, text, target_lang, writing_style, tone, options.compact).request
     end
 
     ##
@@ -236,7 +232,7 @@ module DeepL
     # @return [Array<DeepL::Resources::Language>] The source languages;
     #   +supports_formality?+ is +nil+ for each.
     def get_source_languages # rubocop:disable Naming/AccessorMethodName
-      Requests::Languages.new(api, type: :source).request
+      Requests::Languages.new(api, :source).request
     end
 
     ##
@@ -245,7 +241,7 @@ module DeepL
     # @return [Array<DeepL::Resources::Language>] The target languages, each with
     #   +supports_formality?+ set to +true+ or +false+.
     def get_target_languages # rubocop:disable Naming/AccessorMethodName
-      Requests::Languages.new(api, type: :target).request
+      Requests::Languages.new(api, :target).request
     end
 
     ##
@@ -695,8 +691,8 @@ module DeepL
     # @param [String] name Name of the style profile.
     # @param [String, nil] description Free-text description.
     # @param [String, nil] industry The industry the style profile is written for.
-    # @param [Array<String, DeepL::Resources::Glossary, DeepL::Resources::MultilingualGlossary>,
-    #   nil] glossary_ids Glossaries to link (IDs or objects), highest priority first.
+    # @param [Array<String, DeepL::Resources::MultilingualGlossary>, nil] glossary_ids
+    #   Glossaries to link (IDs or objects), highest priority first.
     # @param [Array<String, DeepL::Resources::StyleRule>, nil] style_rule_ids Style rule lists.
     # @param [Array<String, DeepL::Resources::TranslationMemory>, nil] translation_memory_ids
     #   Translation memories.
@@ -951,10 +947,8 @@ module DeepL
 
     attr_reader :api
 
-    # The translation memory methods share the request, polling and ID handling of
-    # TranslationMemoryApi.
     def translation_memories
-      @translation_memories ||= TranslationMemoryApi.new(api)
+      @translation_memories ||= Utils::TranslationMemoryOperations.new(api)
     end
 
     def configuration

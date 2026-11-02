@@ -12,20 +12,19 @@ module DeepL
       extend self
 
       def build_api(key, key_name:, server_url:, default_server_url:, headers:, max_retries:,
-                    timeout:, proxy:, send_platform_info:, app_info:, http_client_options:, logger:) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity,Metrics/MethodLength,Metrics/ParameterLists
+                    timeout:, proxy:, send_platform_info:, app_info:, http_client_options:, logger:) # rubocop:disable Metrics/MethodLength,Metrics/ParameterLists
         key = key.to_s.strip
         raise ArgumentError, "#{key_name} must not be empty" if key.empty?
 
         headers = (headers || {}).to_h
-        app_info = AppInfo.from(app_info)
         configuration = Configuration.new(
-          { auth_key: key, host: server_url || default_server_url,
-            max_network_retries: max_retries, timeout: timeout, logger: logger,
-            headers: headers.reject { |name, _| user_agent_header?(name) },
-            user_agent: headers.find { |name, _| user_agent_header?(name) }&.last },
-          app_info&.app_name, app_info&.app_version, send_platform_info
+          auth_key: key, host: server_url || default_server_url, max_network_retries: max_retries,
+          timeout: timeout, logger: logger,
+          headers: headers.reject { |name, _| user_agent_header?(name) },
+          user_agent: headers.find { |name, _| user_agent_header?(name) }&.last,
+          send_platform_info: send_platform_info, app_info: AppInfo.from(app_info)
         )
-        API.new(configuration, merge_proxy(http_client_options, proxy), client: true)
+        API.new(configuration, merge_proxy(http_client_options, proxy))
       end
 
       private

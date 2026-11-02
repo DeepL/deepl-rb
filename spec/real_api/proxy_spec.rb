@@ -19,18 +19,18 @@ class RecordingProxy < WEBrick::HTTPProxyServer
   end
 end
 
-describe 'DeepL.with_session' do
+describe 'DeepL::Client proxy' do
   it 'sends requests through the configured proxy' do
     proxy = RecordingProxy.new(Port: 0, BindAddress: '127.0.0.1', AccessLog: [],
                                Logger: WEBrick::Log.new(File::NULL))
     thread = Thread.new { proxy.start }
     begin
       port = proxy.listeners.first.addr[1]
-      options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => '127.0.0.1', 'proxy_port' => port })
+      client = real_api_client(proxy: "http://127.0.0.1:#{port}")
 
-      usage = DeepL.with_session(options) { DeepL.usage }
+      usage = client.get_usage
 
-      host = URI(DeepL.configuration.host)
+      host = URI(client.send(:api).configuration.host)
       expect(usage.character.limit).to be_an(Integer)
       expect(proxy.connect_targets).to eq(["#{host.host}:#{host.port}"])
     ensure

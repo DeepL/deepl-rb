@@ -5,9 +5,9 @@
 
 require_relative 'real_api_helper'
 
-describe 'DeepL.translate' do
+describe 'DeepL::Client#translate_text' do
   it 'sends POST /v2/translate and parses the result' do
-    result = DeepL.translate('proton beam', nil, 'DE')
+    result = real_api_client.translate_text('proton beam', nil, 'DE')
 
     expect(result).to be_a(DeepL::Resources::Text)
     expect(result.text).to be_a(String)

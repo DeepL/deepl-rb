@@ -44,6 +44,12 @@ module RealApiHelper
     nil
   end
 
+  # A client for the API at DEEPL_SERVER_URL, the default server without it.
+  def real_api_client(**options)
+    DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), server_url: ENV.fetch('DEEPL_SERVER_URL', nil),
+                                                   **options)
+  end
+
   # Fetches pages of 0-based index until +id+ is in one of them. The block returns the IDs of a
   # page; an empty page ends the list.
   def found_on_any_page?(id, max_pages: 20)
@@ -55,9 +61,6 @@ module RealApiHelper
     false
   end
 end
-
-# The host comes from DEEPL_SERVER_URL, which Configuration reads itself.
-DeepL.configure { |config| config.auth_key = ENV.fetch('DEEPL_AUTH_KEY') }
 
 RSpec.configure do |config|
   config.include RealApiHelper

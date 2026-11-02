@@ -62,69 +62,40 @@ document translation (`translate_document` and its steps, see
 `correct_text`, see [Rephrase Text](#rephrase-text) and [Correct Text](#correct-text)),
 multilingual glossaries (see [Multilingual glossaries](#multilingual-glossaries)),
 spoken terms (see
-[Spoken terms](#spoken-terms)) and usage (`get_usage`, see [Monitor usage](#monitor-usage)); for the other operations, use the module-level API shown in the following sections. The module-level API (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`, ...)
-is deprecated and will be removed in the next major version: each method prints a deprecation
-warning once per process when Ruby's deprecation warnings are enabled (`ruby -W:deprecated` or
-`Warning[:deprecated] = true`). See [Migrating to DeepL::Client](#migrating-to-deeplclient).
+[Spoken terms](#spoken-terms)), style rules (see [Style Rules](#style-rules)), style profiles
+(see [Style profiles](#style-profiles)), translation memories (see
+[Translation Memories](#translation-memories)) and usage (`get_usage`, see
+[Monitor usage](#monitor-usage)).
 
-### Module-level configuration (deprecated)
+The module-level API of version 3 (`DeepL.configure`, `DeepL.translate`, `DeepL.glossaries`,
+...) has been removed, see [Migrating from the module-level API](#migrating-from-the-module-level-api).
 
-Setup an environment variable named `DEEPL_AUTH_KEY` with your authentication key:
+### Migrating from the module-level API
 
-```sh
-export DEEPL_AUTH_KEY="your-api-token"
-```
+Version 4 removes the module-level API of version 3, deprecated in 3.10.0. Create a
+`DeepL::Client` and call its methods instead:
 
-Alternatively, you can configure the API client within a ruby block:
-
-```rb
-DeepL.configure do |config|
-  config.auth_key = 'your-api-token'
-end
-```
-
-You can also configure the API host and the API version:
-
-```rb
-DeepL.configure do |config|
-  config.auth_key = 'your-api-token'
-  config.host = 'https://api-free.deepl.com' # Default value is 'https://api.deepl.com'
-end
-```
-
-Without a host, keys ending in `:fx` use `https://api-free.deepl.com`. The `version` setting
-is deprecated.
-
-### Migrating to DeepL::Client
-
-The module-level API keeps working until the next major version. Its deprecation warnings
-appear only with Ruby's deprecation warnings on (`ruby -W:deprecated` or
-`Warning[:deprecated] = true`). The `DeepL::Client` methods replacing it:
-
-| Module-level API | `DeepL::Client` |
-| ---------------- | --------------- |
-| `DeepL.configure` | `DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), ...)` |
+| Module-level API (removed) | `DeepL::Client` |
+| -------------------------- | --------------- |
+| `DeepL.configure`, `DeepL.configuration` | `DeepL::Client.new(auth_key, server_url:, headers:, max_retries:, timeout:, ...)` |
 | `DeepL.translate` | `translate_text` |
-| `DeepL.rephrase` | `rephrase_text` |
+| `DeepL.rephrase` | `rephrase_text` (`writing_style:` and `tone:` are keywords) |
 | `DeepL.usage` | `get_usage` |
 | `DeepL.languages(type:)` | `get_source_languages` / `get_target_languages` |
 | `DeepL.document.*` | `translate_document`, `translate_document_upload`, `translate_document_get_status`, `translate_document_wait_until_done`, `translate_document_download` |
 | `DeepL.glossaries` | the `*_multilingual_glossary*` methods |
 | `DeepL.style_rules` | the style rule methods (`get_all_style_rules`, `create_style_rule`, ...) |
 | `DeepL.translation_memories` | the translation memory methods (`list_translation_memories`, ...) |
-| `DeepL.with_session` / `DeepL.http_client` | the `http_client_options:` and `proxy:` options |
+| `DeepL.with_session`, `DeepL.http_client`, `DeepL.api` | the `proxy:` and `http_client_options:` options |
 | per-call `additional_headers` | the `headers:` option |
+| `config.user_agent` | `app_info:`, `send_platform_info:` or a `User-Agent` in `headers:` |
 
-`DeepL::Client` behaves differently from the module-level API in these points:
-
-- Network failures raise `DeepL::Exceptions::ConnectionError` (the module-level API raises the
-  original network error).
-- The timeout of each attempt defaults to 10 seconds (60 for the module-level API).
-- `translate_document` returns the final `DeepL::Resources::DocumentTranslationStatus` (the
-  module-level `DeepL.document.translate_document` returns the number of bytes written).
-- The translation memory file helpers raise `ArgumentError` for a missing input file and
-  `DeepL::Exceptions::Error` for other local file failures (the module-level API raises
-  `DeepL::Exceptions::Error` and the raw `Errno::*`).
+`DeepL::Client` reads no environment variables: pass the key (and the server URL, if needed)
+yourself. Its behaviour differs from the removed API: network failures raise
+`DeepL::Exceptions::ConnectionError` with the original error as `cause`; the timeout of each
+attempt defaults to 10 seconds instead of 60; an array of texts always returns an array;
+`translate_document` returns the final status; the delete methods return `nil`; and
+`supports_formality?` returns `nil` for a source language instead of raising.
 
 ### Available languages
 
@@ -145,14 +116,9 @@ puts german.supports_formality?
 ```
 
 `supports_formality?` is `true` or `false` for target languages and `nil` for source languages.
-For a source language of the module-level `DeepL.languages`, it raises
-`DeepL::Exceptions::NotSupported`, as in version 3.9.0.
 
 All languages are also defined on the
 [official API documentation](https://developers.deepl.com/docs/api-reference/translate).
-
-The module-level `DeepL.languages(type: :source)` and `DeepL.languages(type: :target)` are
-deprecated.
 
 #### Languages per resource
 
@@ -326,10 +292,6 @@ The following parameters will be automatically converted:
 
 `show_billed_characters: true` is always sent.
 
-The deprecated module-level `DeepL.translate(text, source_lang, target_lang, options = {},
-additional_headers = {})` takes the same options. Unlike `translate_text`, it returns a single
-result for a one-element array.
-
 ### Rephrase Text
 
 To rephrase or improve text, including changing the writing style or tone of the text, use
@@ -373,11 +335,6 @@ puts rephrased_text.text
 # => 'You'll get to enjoy new, rephrased text!'
 ```
 
-The deprecated module-level `DeepL.rephrase(text, target_lang = nil, writing_style = nil,
-tone = nil, options = {}, additional_headers = {})` takes the writing style and tone as
-positional arguments. Unlike `rephrase_text`, it returns a single result for a one-element
-array.
-
 ### Correct Text
 
 To fix grammar, spelling and punctuation, use the `correct_text` method of `DeepL::Client`.
@@ -398,25 +355,12 @@ array with one element). Empty text raises `ArgumentError`. It raises
 
 ### Glossaries
 
-To create a glossary, use the `glossaries.create` method. The glossary `entries` argument should be an array of text pairs. Each pair includes the source and the target translations.
+Glossaries are created and managed with the multilingual glossary methods of `DeepL::Client`,
+see [Multilingual glossaries](#multilingual-glossaries). They also manage glossaries created with
+the v2 glossary endpoints.
 
-```rb
-entries = [
-  ['Hello World', 'Hola Tierra'],
-  ['car', 'auto']
-]
-glossary = DeepL.glossaries.create 'Mi Glosario', 'EN', 'ES', entries
-
-puts glossary.class
-# => DeepL::Resources::Glossary
-puts glossary.id
-# => 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
-puts glossary.entry_count
-# => 2
-```
-
-Created glossaries can be used in text and document translation by specifying the
-`glossary` option, a glossary ID or a `Glossary` / `MultilingualGlossary` object. It is sent
+Glossaries can be used in text and document translation by specifying the
+`glossary` option, a glossary ID or a `MultilingualGlossary` object. It is sent
 as `glossary_id`:
 
 ```rb
@@ -427,6 +371,7 @@ puts translation.class
 puts translation.text
 # => 'Hola Tierra'
 
+glossary = client.get_multilingual_glossary 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
 translation = client.translate_text "I wish we had a car.", 'EN', 'ES', glossary: glossary
 
 puts translation.class
@@ -436,7 +381,7 @@ puts translation.text
 ```
 
 To use more than one glossary at once, specify the `glossary_ids` option with an
-array of up to 5 glossary IDs (as strings or `DeepL::Resources::Glossary`
+array of up to 5 glossary IDs (as strings or `DeepL::Resources::MultilingualGlossary`
 objects) instead of `glossary`. This works for both text and document
 translation. `glossary_ids` cannot be combined with `glossary`,
 and raises `ArgumentError` if this rule is violated or more than 5 IDs are
@@ -452,66 +397,9 @@ translation = client.translate_text 'Hello World', 'EN', 'ES',
                                                    'bb59d8g1-1e13-524f-9b17-e6ccg1db8b7f']
 
 # Document translation with multiple glossaries
-handle = DeepL.document.upload 'my_document.docx', 'EN', 'ES', 'my_document.docx',
-                              glossary_ids: ['aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e',
-                                             'bb59d8g1-1e13-524f-9b17-e6ccg1db8b7f']
-```
-
-To list all the glossaries available, use the `glossaries.list` method:
-
-```rb
-glossaries = DeepL.glossaries.list
-
-puts glossaries.class
-# => Array
-puts glossaries.first.class
-# => DeepL::Resources::Glossary
-```
-
-To find an existing glossary, use the `glossaries.find` method:
-
-```rb
-glossary = DeepL.glossaries.find 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
-
-puts glossary.class
-# => DeepL::Resources::Glossary
-```
-
-The glossary resource does not include the glossary entries. To list the glossary entries, use the `glossaries.entries` method:
-
-```rb
-entries = DeepL.glossaries.entries 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
-
-puts entries.class
-# => Array
-puts entries.size
-# => 2
-pp entries.first
-# => ["Hello World", "Hola Tierra"]
-```
-
-To delete an existing glossary, use the `glossaries.destroy` method:
-
-```rb
-glossary_id = DeepL.glossaries.destroy 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
-
-puts glossary_id
-# => aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e
-```
-
-You can list all the language pairs supported by glossaries using the `glossaries.language_pairs` method:
-
-```rb
-language_pairs = DeepL.glossaries.language_pairs
-
-puts language_pairs.class
-# => Array
-puts language_pairs.first.class
-# => DeepL::Resources::LanguagePair
-puts language_pairs.first.source_lang
-# => en
-puts language_pairs.first.target_lang
-# => de
+handle = client.translate_document_upload 'my_document.docx', 'EN', 'ES',
+                                          glossary_ids: ['aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e',
+                                                         'bb59d8g1-1e13-524f-9b17-e6ccg1db8b7f']
 ```
 
 ### Multilingual glossaries
@@ -824,11 +712,6 @@ Use `delete_style_rule` to delete a style rule list. It returns `nil`.
 ```rb
 client.delete_style_rule('YOUR_STYLE_ID')
 ```
-
-The deprecated module-level `DeepL.style_rules` (`list`, `create`, `find`,
-`update_name`, `update_configured_rules`, `destroy`, `create_custom_instruction`,
-`find_custom_instruction`, `update_custom_instruction`,
-`destroy_custom_instruction`) keeps working unchanged.
 
 #### Using style rules in translations
 
@@ -1198,16 +1081,6 @@ The status is one of `awaiting_input`, `processing`, `completed`, `downloaded`,
 client.delete_translation_memory('YOUR_TM_ID')
 ```
 
-The deprecated module-level `DeepL.translation_memories` (`list`, `find`,
-`segments`, `destroy`, `create_import`, `upload_file`, `import_from_filepath`,
-`create_export`, `download_export`, `export_to_filepath`, `find_job`,
-`wait_until_job_done`) keeps working unchanged. Its `import_from_filepath` also
-accepts `content_type` and `extra_body_parameters`, and `create_import` accepts
-`extra_body_parameters`. Its file helpers raise `DeepL::Exceptions::Error` for a
-missing input file and the raw `Errno::*` error for other local file failures,
-such as an unreadable input file or a missing output directory (checked before
-the export job is created).
-
 #### Using a translation memory in translations
 
 Pass the `translation_memory` option to `translate_text` to use a translation
@@ -1257,8 +1130,6 @@ puts 'Translation limit reached.' if usage.any_limit_reached?
 puts "Document usage: #{usage.document}" if usage.document
 # => Document usage: 5 of 10
 ```
-
-`DeepL.usage` is deprecated, use `client.get_usage` instead.
 
 For API Pro users, the response also contains this API key's usage, speech usage, the billing
 period and a per-product breakdown. These fields are `nil` when the response does not contain
@@ -1344,24 +1215,6 @@ A `DeepL::Resources::DocumentTranslationStatus` has `document_id`, `status` (a s
 `done?` (done), `error?` (failed), `ok?` (not failed, also while queued or translating)
 and `finished?` (done or failed).
 
-With the deprecated module-level API, the same methods are `DeepL.document.translate_document`,
-`upload`, `get_status` and `download`, which take the filename as a positional parameter and
-optional additional headers. `DeepL.document.translate_document` waits until the translation is
-done or failed and returns the number of bytes written; the deprecated configuration setting
-`max_doc_status_queries` limits the number of status requests. It raises
-`DeepL::Exceptions::DocumentTranslationError` if the output file already exists. To poll an
-uploaded document yourself, query `get_status` until the status is `finished?`:
-
-```rb
-doc_handle = DeepL.document.upload('/path/to/spanish_document.pdf', 'ES', 'EN')
-doc_status = DeepL.document.get_status(doc_handle)
-until doc_status.finished?
-  sleep 5
-  doc_status = DeepL.document.get_status(doc_handle)
-end
-DeepL.document.download(doc_handle, '/path/to/translated_document.pdf') unless doc_status.error?
-```
-
 You can also pass additional options to document translation methods, including `extra_body_parameters`:
 
 ```rb
@@ -1372,7 +1225,7 @@ doc_handle = client.translate_document_upload('/path/to/spanish_document.pdf', '
 
 Document translation options include:
 
-- `filename` (`DeepL::Client` only): the file name sent with the upload, including its
+- `filename`: the file name sent with the upload, including its
   extension. Defaults to the base name of the input path.
 - `formality`: same as for text translation.
 - `glossary` / `glossary_ids`: see the glossary sections above.
@@ -1396,7 +1249,7 @@ The `extra_body_parameters` option allows you to pass arbitrary parameters in th
 
 The Admin API lets you manage the developer keys of your organization and retrieve usage analytics. It requires an admin API key, which you can create in the "Admin API Keys" tab of your DeepL account. Admin keys cannot be used for translation, and developer keys cannot access the Admin API: the API rejects a wrong key with `DeepL::Exceptions::AuthorizationFailed`.
 
-Create a `DeepL::AdminClient` with your admin key. It is independent of `DeepL.configure`, does not read the `DEEPL_AUTH_KEY` and `DEEPL_SERVER_URL` environment variables, and uses the `https://api.deepl.com` server by default. The admin key is trimmed. It also accepts the `server_url:`, `headers:`, `max_retries:`, `timeout:`, `proxy:`, `send_platform_info:`, `app_info:`, `http_client_options:` and `logger:` keyword arguments of [`DeepL::Client`](#creating-a-client); without `server_url:` it uses `https://api.deepl.com`, also for keys ending in `:fx`.
+Create a `DeepL::AdminClient` with your admin key. It reads no environment variables and uses the `https://api.deepl.com` server by default. The admin key is trimmed. It also accepts the `server_url:`, `headers:`, `max_retries:`, `timeout:`, `proxy:`, `send_platform_info:`, `app_info:`, `http_client_options:` and `logger:` keyword arguments of [`DeepL::Client`](#creating-a-client); without `server_url:` it uses `https://api.deepl.com`, also for keys ending in `:fx`.
 
 ```rb
 admin_client = DeepL::AdminClient.new('YOUR_ADMIN_KEY')
@@ -1459,17 +1312,15 @@ end
 ### Sending additional HTTP headers
 
 `DeepL::Client.new(key, headers: { 'X-DeepL-Reporting-Tag' => 'my-tag' })` sends the headers
-with every DeepL API request of that client. With the module-level API, you can pass additional HTTP headers to `translate`, `rephrase` and the
-`document` methods. For example, to send the `X-DeepL-Reporting-Tag` header
+with every DeepL API request of that client, for example the `X-DeepL-Reporting-Tag` header
 for usage reporting (see the [cookbook entry](https://developers.deepl.com/docs/learning-how-tos/cookbook/sending-custom-reporting-tags-from-client-libraries)):
 
 ```rb
-additional_headers = { 'X-DeepL-Reporting-Tag' => 'my-tag' }
-translation = DeepL.translate 'Hello, world!', 'EN', 'DE', {}, additional_headers
-rephrased = DeepL.rephrase 'Hello, world!', 'EN', nil, nil, {}, additional_headers
+client = DeepL::Client.new(auth_key, headers: { 'X-DeepL-Reporting-Tag' => 'my-tag' })
+translation = client.translate_text 'Hello, world!', 'EN', 'DE'
 ```
 
-A header in `headers:` (or `config.headers`) or in the additional headers replaces a library
+A header in `headers:` replaces a library
 header of the same name, in any casing, `Authorization` and `User-Agent` included, except
 `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host`, which the library always sets.
 Pre-signed translation memory storage URLs get only the `User-Agent`, the caller's if one is
@@ -1483,16 +1334,15 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | --------------- | ----------- |
 | `DeepL::Exceptions::AuthorizationFailed` | The authorization process has failed. Check your `auth_key` value. |
 | `DeepL::Exceptions::BadRequest` | Something is wrong in your request. Check `exception.message` for more information. |
-| `DeepL::Exceptions::ConnectionError` | Raised by `DeepL::Client` and `DeepL::AdminClient` (the module-level API raises the original network error). No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
+| `DeepL::Exceptions::ConnectionError` | No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed; `http_status_code` and `should_retry?` are those of the DeepL error that caused it, if any. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
 | `DeepL::Exceptions::QuotaExceeded` | You've reached the API's character limit. |
 | `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |
-| `DeepL::Exceptions::NotSupported` | Deprecated. Raised only by the module-level API: `supports_formality?` of a source language from `DeepL.languages`. |
 | `DeepL::Exceptions::RequestEntityTooLarge` | Your request is too large, reduce the amount of data you are sending. The API has a request size limit of 128 KiB. |
 | `DeepL::Exceptions::ServerError` | An error occured in the DeepL API (HTTP 5xx), raised after all retries. |
-| `DeepL::Exceptions::ValidationError` | An invalid argument detected before any request: an invalid glossary or spoken terms term, or an unsupported `DeepL.languages` type. |
+| `DeepL::Exceptions::ValidationError` | An invalid argument detected before any request: an invalid glossary or spoken terms term. |
 
 All of them are subclasses of `DeepL::Exceptions::Error`, which is also raised for a response
 that cannot be parsed. Errors of an HTTP response carry the status as an `Integer` in
@@ -1502,7 +1352,7 @@ An exampling of handling a generic exception:
 
 ```rb
 def my_method
-  item = DeepL.translate 'This is my text', nil, 'ES'
+  item = client.translate_text 'This is my text', nil, 'ES'
 rescue DeepL::Exceptions::RequestError => e
   puts 'Oops!'
   puts "Code: #{e.response.code}"
@@ -1513,7 +1363,7 @@ end
 
 ### Logging
 
-To enable logging, pass a suitable logging object (e.g. the default `Logger` from the Ruby standard library) when configuring the library. The library logs HTTP requests to `INFO` and debug information to `DEBUG`. Example:
+To enable logging, pass a suitable logging object (e.g. the default `Logger` from the Ruby standard library) as the `logger:` of the client. The library logs HTTP requests to `INFO` and debug information to `DEBUG`. Example:
 
 ```rb
 require 'logger'
@@ -1521,10 +1371,7 @@ require 'logger'
 logger = Logger.new(STDOUT)
 logger.level = Logger::INFO
 
-DeepL.configure do |config|
-  config.auth_key = ENV.fetch('DEEPL_AUTH_KEY')
-  config.logger = logger
-end
+client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'), logger: logger)
 ```
 
 ### Retries and timeouts
@@ -1533,15 +1380,12 @@ Requests that fail with HTTP 429, any 5xx status or a transient network failure 
 or reset connection, broken pipe, unreachable host, timeout, response body cut off before its
 `Content-Length`) are retried up to `max_retries:`
 times (default 5) with exponential backoff; a request is sent at most `max_retries:` + 1 times.
-Each attempt has a timeout of `timeout:` seconds (default 10; the module-level
-`config.timeout` defaults to 60). After the last retry, network failures raise
-`DeepL::Exceptions::ConnectionError` in `DeepL::Client` and `DeepL::AdminClient`; the
-module-level API raises the original network error. TLS failures (including certificate
+Each attempt has a timeout of `timeout:` seconds (default 10). After the last retry, network
+failures raise `DeepL::Exceptions::ConnectionError`. TLS failures (including certificate
 verification), proxy failures (the proxy refuses `CONNECT`, e.g. with 407) and malformed
 responses are not retried and are raised the same way at once.
 `AdminClient#create_developer_key` is only retried when the request was not sent (HTTP 429,
-DNS failure, refused connection or connection timeout). With the module-level API, set
-`config.max_network_retries` and `config.timeout`.
+DNS failure, refused connection or connection timeout).
 
 ### Proxy configuration
 
@@ -1552,45 +1396,19 @@ client = DeepL::Client.new(auth_key, proxy: 'http://user:password@localhost:3128
 ```
 
 `DeepL::HTTPClientOptions` also takes the proxy as a URL or as a hash with `proxy_addr` and
-`proxy_port`, together with certificate, SSL verification and timeout options. With the
-module-level API, a session needs to be used; the proxy is configured as part of the HTTP client options:
+`proxy_port`, together with certificate, SSL verification and timeout options, given as
+`http_client_options:`:
 
 ```rb
-client_options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'http://localhost', 'proxy_port' => 80 })
-DeepL.with_session(client_options) do |session|
-  # ...
-end
+options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'localhost', 'proxy_port' => 3128 })
+client = DeepL::Client.new(auth_key, http_client_options: options)
 ```
 
 ### Anonymous platform information
 
-By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, create the client with `send_platform_info: false`, or with the module-level API set the `User-Agent` to the library name and version only:
+By default, we send some basic information about the platform the client library is running on with each request, see [here for an explanation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent). This data is completely anonymous and only used to improve our product, not track any individual users. If you do not wish to send this data, create the client with `send_platform_info: false`.
 
-```rb
-DeepL.configure do |config|
-  config.user_agent = "deepl-ruby/#{DeepL::VERSION}"
-end
-```
-
-You can also completely replace the `User-Agent` header with `headers: { 'User-Agent' => 'myCustomUserAgent' }`, or with the module-level API like so:
-
-```rb
-DeepL.configure do |config|
-  config.user_agent = 'myCustomUserAgent'
-end
-```
-
-### Sending multiple requests
-
-When writing an application that send multiple requests, using a HTTP session will give better performance through [HTTP Keep-Alive](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Keep-Alive). You can use it by simply wrapping your requests in a `with_session` block:
-
-```rb
-DeepL.with_session do |session|
-  DeepL.translate(sentence1, 'DE', 'EN-GB')
-  DeepL.translate(sentence2, 'DE', 'EN-GB')
-  DeepL.translate(sentence3, 'DE', 'EN-GB')
-end
-```
+You can also completely replace the `User-Agent` header with `headers: { 'User-Agent' => 'myCustomUserAgent' }`.
 
 ### Writing a plugin
 
@@ -1601,15 +1419,7 @@ client = DeepL::Client.new(auth_key, app_info: { app_name: 'MyTranslationPlugin'
                                                  app_version: '1.0.1' })
 ```
 
-With the module-level API, append them to the `User-Agent`:
-
-```rb
-DeepL.configure do |config|
-  config.user_agent = "#{config.user_agent} MyTranslationPlugin/1.0.1"
-end
-```
-
-This information is passed along when the library makes calls to the DeepL API. Both name and version are required. Please note that setting the `User-Agent` header via `DeepL.configure` will override this setting, if you need to use this, please manually identify your Application in the `User-Agent` header.
+This information is passed along when the library makes calls to the DeepL API. Both name and version are required. Please note that a `User-Agent` in `headers:` overrides this setting; if you set one, identify your application in it yourself.
 
 ## Options Constants
 
@@ -1639,18 +1449,13 @@ DeepL::Constants::Tone.valid?('rude') # false
 
 ### Ruby on Rails
 
-You may use this gem as a standalone service by creating an initializer on your
-`config/initializers` folder with your DeepL configuration. For example:
+You may create one client in an initializer on your `config/initializers` folder and use it
+anywhere in your code (controllers, models, views, jobs, plain ruby objects…). For example:
 
 ```rb
 # config/initializers/deepl.rb
-DeepL.configure do |config|
-  # Your configuration goes here
-end
+DEEPL_CLIENT = DeepL::Client.new(Rails.application.credentials.deepl_auth_key)
 ```
-
-Since the DeepL service is defined globally, you can use service anywhere in your code
-(controllers, models, views, jobs, plain ruby objects… you name it).
 
 ### i18n-tasks
 

@@ -6,25 +6,25 @@
 require_relative 'offline_helper'
 
 describe 'usage' do
-  describe 'DeepL.usage' do
+  describe 'DeepL::Client#get_usage' do
     it 'sends a GET without a body or Content-Type' do
       stub_request(:get, url('/v2/usage')).with(headers: auth_headers) { bodyless?(_1) }
                                           .to_return(usage_reply)
-      DeepL.usage
+      api_client.get_usage
     end
 
     it 'reports the character limit as not reached while the count is below it' do
       stub_request(:get, url('/v2/usage'))
         .to_return(reply(character_count: 42, character_limit: 100))
 
-      expect(DeepL.usage.character.limit_reached?).to be(false)
+      expect(api_client.get_usage.character.limit_reached?).to be(false)
     end
 
     it 'reports the character limit as reached when the count reaches it' do
       stub_request(:get,
                    url('/v2/usage')).to_return(reply(character_count: 100, character_limit: 100))
 
-      expect(DeepL.usage.character.limit_reached?).to be(true)
+      expect(api_client.get_usage.character.limit_reached?).to be(true)
     end
 
     context 'with an API Pro response' do
@@ -53,7 +53,7 @@ describe 'usage' do
       before { stub_request(:get, url('/v2/usage')).to_return(reply(pro_body)) }
 
       it 'parses the per-key, speech and billing period fields' do
-        usage = DeepL.usage
+        usage = api_client.get_usage
 
         expect(usage).to have_attributes(
           start_time: Time.utc(2025, 5, 13, 9, 18, 42), end_time: Time.utc(2025, 6, 13, 9, 18, 42),
@@ -66,7 +66,7 @@ describe 'usage' do
       end
 
       it 'parses the per-product usage' do
-        products = DeepL.usage.products
+        products = api_client.get_usage.products
 
         expect(products).to all(be_a(DeepL::Resources::UsageProduct))
         expect(products.map(&:product_type)).to eq(%w[write translate speechToText speechToSpeech])
@@ -79,7 +79,7 @@ describe 'usage' do
     it 'leaves the API Pro fields nil for a Free response' do
       stub_request(:get, url('/v2/usage')).to_return(reply(character_count: 180_118,
                                                            character_limit: 1_250_000))
-      usage = DeepL.usage
+      usage = api_client.get_usage
 
       expect(usage.character).to have_attributes(count: 180_118, limit: 1_250_000)
       expect(usage.to_s).to eq('180118 / 1250000')
@@ -93,7 +93,7 @@ describe 'usage' do
         reply(character_count: 1, character_limit: 100, document_count: 5, document_limit: 5,
               team_document_count: 2, team_document_limit: 10)
       )
-      usage = DeepL.usage
+      usage = api_client.get_usage
 
       expect(usage.document).to have_attributes(count: 5, limit: 5, limit_reached?: true)
       expect(usage.team_document).to have_attributes(count: 2, limit: 10, limit_reached?: false)
@@ -105,7 +105,7 @@ describe 'usage' do
         reply(character_count: 1, character_limit: 100, api_key_character_count: 50,
               api_key_character_limit: 50)
       )
-      usage = DeepL.usage
+      usage = api_client.get_usage
 
       expect(usage.api_key_character.limit_reached?).to be(true)
       expect(usage.any_limit_reached?).to be(false)
@@ -116,7 +116,7 @@ describe 'usage' do
         reply(character_count: 20, character_limit: 500_000, start_time: 'not a timestamp',
               end_time: '', products: [{ product_type: 'translate' }, 'not an object'])
       )
-      usage = DeepL.usage
+      usage = api_client.get_usage
 
       expect(usage.character.count).to eq(20)
       expect([usage.start_time, usage.end_time]).to eq([nil, nil])

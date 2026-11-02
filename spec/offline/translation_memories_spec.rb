@@ -5,8 +5,8 @@
 
 require_relative 'offline_helper'
 
-describe DeepL::TranslationMemoryApi do
-  let(:memories) { DeepL.translation_memories }
+describe 'DeepL::Client translation memory requests' do
+  let(:memories) { api_client }
   let(:upload_url) { 'https://storage.example.test/upload?sig=abc' }
   let(:download_url) { 'https://storage.example.test/download?sig=def' }
   let(:memory_json) do
@@ -39,7 +39,7 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:get, url('/v3/translation_memories'))
         .with(headers: json_headers).to_return(reply(translation_memories: [memory_json]))
 
-      memory = memories.list.first
+      memory = memories.list_translation_memories.first
 
       expect([memory.creation_time, memory.updated_time])
         .to eq([Time.utc(2026, 1, 2, 3, 4, 5), Time.utc(2026, 2, 3, 4, 5, 6)])
@@ -49,14 +49,14 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:get, url('/v3/translation_memories?page=1&page_size=20'))
         .to_return(reply(translation_memories: []))
 
-      memories.list(page: 1, page_size: 20)
+      memories.list_translation_memories(page: 1, page_size: 20)
     end
 
     it 'does not send an option set to nil' do
       stub_request(:get, url('/v3/translation_memories?page_size=20'))
         .to_return(reply(translation_memories: []))
 
-      memories.list(page: nil, page_size: 20)
+      memories.list_translation_memories(page: nil, page_size: 20)
     end
   end
 
@@ -69,16 +69,19 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:delete, url('/v3/translation_memories/tm-1'))
         .with(headers: json_headers).to_return(status: 204)
 
-      memories.find('tm-1')
-      memories.find(object)
+      memories.get_translation_memory('tm-1')
+      memories.get_translation_memory(object)
 
-      expect([memories.destroy('tm-1'), memories.destroy(object)]).to eq(%w[tm-1 tm-1])
+      expect([memories.delete_translation_memory('tm-1'),
+              memories.delete_translation_memory(object)]).to eq([nil, nil])
     end
 
     ['', nil].each do |id|
       it "raise Error for the ID #{id.inspect} without sending a request" do
-        expect { memories.find(id) }.to raise_error(DeepL::Exceptions::Error, /must not be empty/)
-        expect { memories.destroy(id) }
+        expect do
+          memories.get_translation_memory(id)
+        end.to raise_error(DeepL::Exceptions::Error, /must not be empty/)
+        expect { memories.delete_translation_memory(id) }
           .to raise_error(DeepL::Exceptions::Error, /must not be empty/)
       end
     end
@@ -95,11 +98,11 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:get, url('/v3/translation_memories/jobs/j%3F1'))
         .to_return(reply(job_json('processing')))
 
-      memories.find('a/b c')
-      memories.destroy('a/b c')
-      memories.segments('a/b c')
-      memories.create_export('a/b c')
-      memories.find_job('j?1')
+      memories.get_translation_memory('a/b c')
+      memories.delete_translation_memory('a/b c')
+      memories.list_translation_memory_segments('a/b c')
+      memories.create_translation_memory_export('a/b c')
+      memories.get_translation_memory_job('j?1')
     end
   end
 
@@ -133,23 +136,25 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:get, url("/v3/translation_memories/tm-1/segments?#{query}"))
         .with(headers: json_headers).to_return(reply(segments_json))
 
-      memories.segments('tm-1', page_size: 5, page_cursor: 'c-1', filter_text: 'a b',
-                                filter_case_sensitive: true)
+      memories.list_translation_memory_segments('tm-1', page_size: 5, page_cursor: 'c-1',
+                                                        filter_text: 'a b',
+                                                        filter_case_sensitive: true)
     end
 
     it 'does not send an option set to nil' do
       stub_request(:get, url('/v3/translation_memories/tm-1/segments?page_size=5'))
         .to_return(reply(segments_json))
 
-      memories.segments('tm-1', page_size: 5, page_cursor: nil, filter_text: nil,
-                                filter_case_sensitive: nil)
+      memories.list_translation_memory_segments('tm-1', page_size: 5, page_cursor: nil,
+                                                        filter_text: nil,
+                                                        filter_case_sensitive: nil)
     end
 
     it 'parses the timestamp of a target and the next page' do
       stub_request(:get, url('/v3/translation_memories/tm-1/segments'))
         .to_return(reply(segments_json))
 
-      page = memories.segments('tm-1')
+      page = memories.list_translation_memory_segments('tm-1')
       segment = page.segments.first
       target = segment.targets.first
 
@@ -160,7 +165,7 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:get, url('/v3/translation_memories/tm-1/segments'))
         .to_return(reply(segment_count: 0, segments: []))
 
-      expect(memories.segments('tm-1').next_page?).to be(false)
+      expect(memories.list_translation_memory_segments('tm-1').next_page?).to be(false)
     end
   end
 
@@ -171,7 +176,7 @@ describe DeepL::TranslationMemoryApi do
               headers: json_headers)
         .to_return(reply({ job_id: 'j-1', upload_url: upload_url }, 201))
 
-      memories.create_import('a.tmx', 12)
+      memories.create_translation_memory_import('a.tmx', 12)
     end
 
     it 'sends the content type and display name when given, and parses the expiry' do
@@ -182,8 +187,9 @@ describe DeepL::TranslationMemoryApi do
         .to_return(reply({ job_id: 'j-1', upload_url: upload_url,
                            expires_at: '2026-03-04T05:06:07Z' }, 201))
 
-      created = memories.create_import('a.tmx', 12, content_type: 'application/x-tmx',
-                                                    display_name: 'My memory')
+      created = memories.create_translation_memory_import('a.tmx', 12,
+                                                          content_type: 'application/x-tmx',
+                                                          display_name: 'My memory')
 
       expect(created.expires_at).to eq(Time.utc(2026, 3, 4, 5, 6, 7))
     end
@@ -196,10 +202,9 @@ describe DeepL::TranslationMemoryApi do
                       parameters: { display_name: 'replaced' }, extra: 1 })
         .to_return(reply({ job_id: 'j-1', upload_url: upload_url }, 201))
 
-      memories.create_import('a.tmx', 12, display_name: 'My memory',
-                                          extra_body_parameters: {
-                                            parameters: { display_name: 'replaced' }, extra: 1
-                                          })
+      extra = { parameters: { display_name: 'replaced' }, extra: 1 }
+      memories.create_translation_memory_import('a.tmx', 12, display_name: 'My memory',
+                                                             extra_body_parameters: extra)
     end
   end
 
@@ -209,15 +214,16 @@ describe DeepL::TranslationMemoryApi do
         .with(body: Fixtures::EXAMPLE_TMX, headers: { 'Content-Type' => 'application/xml' },
               &no_authorization).to_return(status: 200)
 
-      memories.upload_file(upload_url, Fixtures::EXAMPLE_TMX)
+      memories.upload_translation_memory_file(upload_url, Fixtures::EXAMPLE_TMX)
     end
 
-    it 'sends the User-Agent of config.headers to the storage URL' do
-      DeepL.configuration.headers = { 'user-agent' => 'mine/1' }
+    it 'sends the User-Agent of the headers option to the storage URL' do
       stub_request(:put, upload_url).with(headers: { 'User-Agent' => 'mine/1' }, &no_authorization)
                                     .to_return(status: 200)
 
-      memories.upload_file(upload_url, Fixtures::EXAMPLE_TMX)
+      offline_client(headers: { 'user-agent' => 'mine/1' }).upload_translation_memory_file(
+        upload_url, Fixtures::EXAMPLE_TMX
+      )
     end
 
     it 'takes the URL from an import and sends the given content type and bytes' do
@@ -227,14 +233,8 @@ describe DeepL::TranslationMemoryApi do
         .with(body: Fixtures::BINARY_CONTENT, headers: { 'Content-Type' => 'text/xml' },
               &no_authorization).to_return(status: 200)
 
-      memories.upload_file(created, Fixtures::BINARY_CONTENT, content_type: 'text/xml')
-    end
-
-    it 'raises AuthorizationFailed for a storage reply of 403' do
-      stub_request(:put, upload_url).to_return(status: 403, body: 'Request has expired')
-
-      expect { memories.upload_file(upload_url, 'tmx') }
-        .to raise_error(DeepL::Exceptions::AuthorizationFailed)
+      memories.upload_translation_memory_file(created, Fixtures::BINARY_CONTENT,
+                                              content_type: 'text/xml')
     end
   end
 
@@ -244,7 +244,7 @@ describe DeepL::TranslationMemoryApi do
                        .merge(parameters: { translation_memory_id: 'tm-1',
                                             display_name: 'memory' })))
 
-      job = memories.find_job('j-1')
+      job = memories.get_translation_memory_job('j-1')
 
       expect([job.status, job.finished?, job.error?, job.translation_memory_id, job.display_name])
         .to eq(['completed', true, false, 'tm-1', 'memory'])
@@ -262,14 +262,17 @@ describe DeepL::TranslationMemoryApi do
          "#{flags.inspect}" do
         stub_job(reply(job_json(status)))
 
-        job = memories.find_job('j-1')
+        job = memories.get_translation_memory_job('j-1')
 
         expect([job.finished?, job.awaiting_input?, job.error?, job.done?, job.ok?]).to eq(flags)
       end
     end
 
     it 'rejects an empty job ID without sending a request' do
-      expect { memories.find_job('') }.to raise_error(DeepL::Exceptions::Error, /must not be empty/)
+      expect do
+        memories.get_translation_memory_job('')
+      end.to raise_error(DeepL::Exceptions::Error,
+                         /must not be empty/)
     end
   end
 
@@ -277,16 +280,16 @@ describe DeepL::TranslationMemoryApi do
     it 'returns a finished job without sleeping' do
       stub = stub_job(reply(job_json('completed')))
 
-      expect(memories.wait_until_job_done('j-1').status).to eq('completed')
+      expect(memories.wait_until_translation_memory_job_done('j-1').status).to eq('completed')
       expect(stub).to have_been_requested.once
     end
 
     it 'polls until the job is completed' do
       stub = stub_job(reply(job_json('awaiting_input')), reply(job_json('completed')))
 
-      job = memories.wait_until_job_done(DeepL::Resources::TranslationMemoryJob.new(
-                                           { 'job_id' => 'j-1' }, nil, nil
-                                         ))
+      job = memories.wait_until_translation_memory_job_done(DeepL::Resources::TranslationMemoryJob.new(
+                                                              { 'job_id' => 'j-1' }, nil, nil
+                                                            ))
 
       expect(job.status).to eq('completed')
       expect(stub).to have_been_requested.twice
@@ -296,7 +299,7 @@ describe DeepL::TranslationMemoryApi do
       it "raises Error with the API message when the job is #{status}" do
         stub_job(reply(job_json(status, error: { message: 'bad file' })))
 
-        expect { memories.wait_until_job_done('j-1') }
+        expect { memories.wait_until_translation_memory_job_done('j-1') }
           .to raise_error(DeepL::Exceptions::Error, /import: bad file/)
       end
     end
@@ -305,26 +308,26 @@ describe DeepL::TranslationMemoryApi do
       stub_job(reply(job_json('failed')))
 
       expect do
-        memories.wait_until_job_done('j-1')
+        memories.wait_until_translation_memory_job_done('j-1')
       end.to raise_error(DeepL::Exceptions::Error, /: failed/)
     end
 
     it 'raises Error when timeout_s is exceeded while the job is not finished' do
       stub_job(reply(job_json('processing')))
 
-      expect { memories.wait_until_job_done('j-1', timeout_s: 0) }
+      expect { memories.wait_until_translation_memory_job_done('j-1', timeout_s: 0) }
         .to raise_error(DeepL::Exceptions::Error, /timeout of 0s exceeded/)
     end
 
     it 'cuts the last sleep to the deadline of timeout_s' do
       stub_job(reply(job_json('processing')))
       slept = []
-      allow(memories).to receive(:sleep) do |seconds|
+      allow(memories.send(:translation_memories)).to receive(:sleep) do |seconds|
         slept << seconds
         Kernel.sleep(seconds)
       end
 
-      expect { memories.wait_until_job_done('j-1', timeout_s: 0.2) }
+      expect { memories.wait_until_translation_memory_job_done('j-1', timeout_s: 0.2) }
         .to raise_error(DeepL::Exceptions::Error, /timeout of 0.2s exceeded/)
       expect(slept).to all(be <= 0.2)
     end
@@ -336,7 +339,7 @@ describe DeepL::TranslationMemoryApi do
         .with(body: '{}', headers: json_headers)
         .to_return(reply({ job_id: 'j-1', parameters: { translation_memory_id: 'tm-1' } }, 202))
 
-      export = memories.create_export('tm-1')
+      export = memories.create_translation_memory_export('tm-1')
 
       expect([export.translation_memory_id, export.reused_existing?]).to eq(['tm-1', false])
     end
@@ -345,7 +348,7 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:post, url('/v3/translation_memories/tm-1/export'))
         .to_return(reply({ job_id: 'j-1' }, 200))
 
-      expect(memories.create_export('tm-1').reused_existing?).to be(true)
+      expect(memories.create_translation_memory_export('tm-1').reused_existing?).to be(true)
     end
   end
 
@@ -358,7 +361,7 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:get, download_url).with(&no_authorization)
                                       .to_return(status: 200, body: Fixtures::BINARY_CONTENT)
 
-      memories.download_export(download_url, output)
+      memories.download_translation_memory_export(download_url, output)
 
       expect(File.binread(output)).to eq(Fixtures::BINARY_CONTENT)
     end
@@ -366,35 +369,23 @@ describe DeepL::TranslationMemoryApi do
     it 'takes the URL from a finished export job' do
       stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
 
-      memories.download_export(job_resource('completed', download_url: download_url), output)
+      memories.download_translation_memory_export(
+        job_resource('completed', download_url: download_url), output
+      )
 
       expect(File.read(output)).to eq('tmx')
     end
 
     it 'raises Error for a job without a download URL' do
-      expect { memories.download_export(job_resource('processing'), output) }
+      expect { memories.download_translation_memory_export(job_resource('processing'), output) }
         .to raise_error(DeepL::Exceptions::Error, /no download URL/)
     end
 
-    it 'raises the Errno error when the file cannot be written' do
-      stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
-
-      expect { memories.download_export(download_url, File.join(temp_dir, 'missing', 'x.tmx')) }
-        .to raise_error(Errno::ENOENT)
-    end
-
-    it 'raises AuthorizationFailed for a storage reply of 403' do
-      stub_request(:get, download_url).to_return(status: 403, body: 'Request has expired')
-
-      expect { memories.download_export(download_url, output) }
-        .to raise_error(DeepL::Exceptions::AuthorizationFailed)
-    end
-
-    it 'retries a storage reply of 503 and raises ServerError' do
+    it 'retries a storage reply of 503 and raises Error with the status' do
       stub = stub_request(:get, download_url).to_return(status: 503)
 
-      expect { memories.download_export(download_url, output) }
-        .to raise_error(DeepL::Exceptions::ServerError)
+      expect { memories.download_translation_memory_export(download_url, output) }
+        .to raise_error(DeepL::Exceptions::Error) { expect(_1.http_status_code).to eq(503) }
       expect(stub).to have_been_requested.times(3)
     end
   end
@@ -413,7 +404,7 @@ describe DeepL::TranslationMemoryApi do
       stub_request(:put, upload_url).with(body: Fixtures::EXAMPLE_TMX).to_return(status: 200)
       stub_job(reply(job_json('completed', translation_memory_id: 'tm-1')))
 
-      job = memories.import_from_filepath(path, display_name: 'imported')
+      job = memories.import_translation_memory_from_filepath(path, display_name: 'imported')
 
       expect(job.finished?).to be(true)
     end
@@ -430,22 +421,8 @@ describe DeepL::TranslationMemoryApi do
                                     .to_return(status: 200)
       stub_job(reply(job_json('completed')))
 
-      memories.import_from_filepath(path, content_type: 'text/xml',
-                                          extra_body_parameters: { extra: 'x' })
-    end
-
-    it 'raises Error for a missing import file without sending a request' do
-      expect { memories.import_from_filepath(File.join(temp_dir, 'missing.tmx')) }
-        .to raise_error(DeepL::Exceptions::Error, /No file found/)
-    end
-
-    it 'raises the Errno error for an unreadable import file without sending a request' do
-      expect { memories.import_from_filepath(temp_dir) }.to raise_error(Errno::EISDIR)
-    end
-
-    it 'raises Errno::ENOENT for a missing output directory before creating the export job' do
-      expect { memories.export_to_filepath('tm-1', File.join(temp_dir, 'missing', 'x.tmx')) }
-        .to raise_error(Errno::ENOENT, /missing/)
+      memories.import_translation_memory_from_filepath(path, content_type: 'text/xml',
+                                                             extra_body_parameters: { extra: 'x' })
     end
 
     it 'exports to a file: creates the export, waits for the job and downloads the result' do
@@ -455,7 +432,7 @@ describe DeepL::TranslationMemoryApi do
       stub_job(reply(job_json('completed', operation: 'export', download_url: download_url)))
       stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
 
-      job = memories.export_to_filepath('tm-1', output)
+      job = memories.export_translation_memory_to_filepath('tm-1', output)
 
       expect([File.read(output), job.status]).to eq(%w[tmx completed])
     end

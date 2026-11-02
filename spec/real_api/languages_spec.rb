@@ -7,7 +7,7 @@ require_relative 'real_api_helper'
 
 describe 'languages' do
   it 'sends GET /v3/languages and parses the source languages' do
-    languages = DeepL.languages
+    languages = real_api_client.get_source_languages
     codes = languages.map(&:code)
 
     expect(codes).to include('EN')
@@ -16,9 +16,7 @@ describe 'languages' do
   end
 
   it 'sends GET /v3/languages/resources and parses the resources and their features' do
-    client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'),
-                               server_url: ENV.fetch('DEEPL_SERVER_URL', nil))
-    resources = client.get_language_resources
+    resources = real_api_client.get_language_resources
 
     translate_text = resources.find { |resource| resource.name == 'translate_text' }
     expect(translate_text.features['glossary'].needs_source_support?).to be(true)

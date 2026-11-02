@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Ruby 3.0 or later is now required; the gem declares `required_ruby_version >= 3.0`. Migration:
   on Ruby 2.x, upgrade to Ruby 3.0 or later, or stay on deepl-rb 3.x.
+- Network failures always raise `DeepL::Exceptions::ConnectionError`, with the original error as
+  `cause`; the removed module-level API raised the original error. Migration: rescue
+  `DeepL::Exceptions::ConnectionError` (or `DeepL::Exceptions::Error`).
+- `DeepL::Resources::Language#supports_formality?` returns `nil` for a source language; the
+  removed `DeepL.languages` raised `DeepL::Exceptions::NotSupported`. Migration: check for `nil`.
 
 ### Removed
 - The `glossary_id` option of text translation (`DeepL::Client#translate_text`,
@@ -26,6 +31,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Exceptions::DocumentTranslationError` if the translation fails.
 - `DeepL::Resources::DocumentTranslationStatus#successful?`, deprecated in 3.10.0. Use `#done?`
   instead.
+- The module-level API, deprecated in 3.10.0: `DeepL.configure`, `DeepL.configuration`,
+  `DeepL.api`, `DeepL.http_client` and `DeepL.with_session`, with the global configuration and
+  connection, its `DEEPL_AUTH_KEY` and `DEEPL_SERVER_URL` fallbacks and its 60-second default
+  timeout. Create a `DeepL::Client` instead, see "Migrating from the module-level API" in the
+  README: `DeepL::Client.new(auth_key, server_url:, headers:, max_retries:, timeout:, proxy:,
+  send_platform_info:, app_info:, http_client_options:, logger:)`. The client reads no
+  environment variables and defaults to a 10-second timeout.
+- `DeepL::Configuration` is no longer public, and `version=` and `max_doc_status_queries=` are
+  removed with it. Pass the options to `DeepL::Client.new`.
+- `DeepL.translate`. Use `DeepL::Client#translate_text`, which returns an array for an array of
+  texts, also for a one-element array.
+- `DeepL.rephrase`. Use `DeepL::Client#rephrase_text(text, target_lang, writing_style:, tone:)`,
+  which returns an array for an array of texts and does not send options set to `nil`.
+- `DeepL.usage`. Use `DeepL::Client#get_usage`.
+- `DeepL.languages`. Use `DeepL::Client#get_source_languages` or `#get_target_languages`.
+- `DeepL.document` and `DeepL::DocumentApi`. Use `DeepL::Client#translate_document` (returns the
+  final `DocumentTranslationStatus` instead of the number of bytes written, and raises
+  `ArgumentError` for a missing input file), `#translate_document_upload` (`filename:` keyword),
+  `#translate_document_get_status`, `#translate_document_wait_until_done` and
+  `#translate_document_download` (returns `nil`).
+- `DeepL.style_rules` and `DeepL::StyleRuleApi`. Use the style rule methods of
+  `DeepL::Client` (`get_all_style_rules`, `create_style_rule`, ...). They take `source_language:`
+  as a keyword and the delete methods return `nil`.
+- `DeepL.translation_memories` and `DeepL::TranslationMemoryApi`. Use the translation memory
+  methods of `DeepL::Client` (`list_translation_memories`, ...). A missing input file raises
+  `ArgumentError`, other local file failures raise `DeepL::Exceptions::Error`, and a non-2xx
+  reply of a storage URL raises `DeepL::Exceptions::Error` with `http_status_code`.
+- `DeepL.glossaries`, `DeepL::GlossaryApi`, `DeepL::Resources::Glossary` and
+  `DeepL::Resources::LanguagePair` (v2 glossaries). Manage glossaries with the multilingual
+  glossary methods of `DeepL::Client`, which also cover glossaries created with v2; pass a
+  glossary ID or a `DeepL::Resources::MultilingualGlossary` as `glossary:` or `glossary_ids:`.
+- Per-call additional HTTP headers. Use the `headers:` option of `DeepL::Client.new`.
+- `DeepL::Exceptions::NotSupported`, deprecated in 3.10.0. Nothing raises it any more.
 
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.

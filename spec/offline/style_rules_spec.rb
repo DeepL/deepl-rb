@@ -6,8 +6,8 @@
 require_relative 'offline_helper'
 
 describe 'style rules' do
-  describe DeepL::StyleRuleApi do
-    let(:style_rules) { DeepL.style_rules }
+  describe 'DeepL::Client style rule requests' do
+    let(:style_rules) { api_client }
     let(:style_json) do
       { style_id: 's-1', name: 'house style', language: 'en', version: 3,
         creation_time: '2026-01-02T03:04:05Z', updated_time: '2026-02-03T04:05:06Z',
@@ -22,20 +22,20 @@ describe 'style rules' do
         stub_request(:get, url('/v3/style_rules')).with(headers: json_headers)
                                                   .to_return(reply(style_rules: [style_json]))
 
-        style_rules.list
+        style_rules.get_all_style_rules
       end
 
       it 'sends page, page_size and detailed in the query' do
         stub_request(:get, url('/v3/style_rules?page=2&page_size=5&detailed=true'))
           .to_return(reply(style_rules: []))
 
-        style_rules.list(page: 2, page_size: 5, detailed: true)
+        style_rules.get_all_style_rules(page: 2, page_size: 5, detailed: true)
       end
 
       it 'parses the timestamps of the style rules' do
         stub_request(:get, url('/v3/style_rules')).to_return(reply(style_rules: [style_json]))
 
-        rule = style_rules.list.first
+        rule = style_rules.get_all_style_rules.first
 
         expect([rule.creation_time, rule.updated_time])
           .to eq([Time.utc(2026, 1, 2, 3, 4, 5), Time.utc(2026, 2, 3, 4, 5, 6)])
@@ -45,7 +45,9 @@ describe 'style rules' do
         stub_request(:get, url('/v3/style_rules'))
           .to_return(reply(style_rules: [style_json.merge(creation_time: 'not a time')]))
 
-        expect { style_rules.list }.to raise_error(DeepL::Exceptions::Error, /invalid time/)
+        expect do
+          style_rules.get_all_style_rules
+        end.to raise_error(DeepL::Exceptions::Error, /invalid time/)
       end
     end
 
@@ -55,7 +57,7 @@ describe 'style rules' do
           .with(body: { name: 'house style', language: 'en' }, headers: json_headers)
           .to_return(reply(style_json, 201))
 
-        style_rules.create('house style', 'en')
+        style_rules.create_style_rule('house style', 'en')
       end
 
       it 'sends the configured rules and the custom instructions' do
@@ -66,23 +68,24 @@ describe 'style rules' do
                         custom_instructions: instructions })
           .to_return(reply(style_json, 201))
 
-        style_rules.create('n', 'en', configured_rules: rules, custom_instructions: instructions)
+        style_rules.create_style_rule('n', 'en', configured_rules: rules,
+                                                 custom_instructions: instructions)
       end
 
-      it 'keeps the configured rules and custom instructions in a reused options hash' do
+      it 'keeps the configured rules and custom instructions of a reused options hash' do
         options = { configured_rules: { numbers: { number_format: 'dot' } },
                     custom_instructions: [{ label: 'Tone', prompt: 'Be brief' }] }
         stub_request(:post, url('/v3/style_rules'))
           .with(body: { name: 'n', language: 'en' }.merge(options))
           .to_return(reply(style_json, 201)).times(2)
 
-        2.times { style_rules.create('n', 'en', options) }
+        2.times { style_rules.create_style_rule('n', 'en', **options) }
       end
 
       it 'parses the configured rules, defaulting missing rules to an empty hash' do
         stub_request(:post, url('/v3/style_rules')).to_return(reply(style_json, 201))
 
-        rule = style_rules.create('n', 'en')
+        rule = style_rules.create_style_rule('n', 'en')
 
         expect([rule.configured_rules.vocabulary, rule.custom_instructions.map(&:class)])
           .to eq([{}, [DeepL::Resources::CustomInstruction]])
@@ -94,7 +97,7 @@ describe 'style rules' do
         stub_request(:get, url('/v3/style_rules/s-1')).with(headers: auth_headers) { bodyless?(_1) }
                                                       .to_return(reply(style_json))
 
-        style_rules.find('s-1')
+        style_rules.get_style_rule('s-1')
       end
     end
 
@@ -104,8 +107,8 @@ describe 'style rules' do
         stub_request(:delete, url('/v3/style_rules/a%2Fb%20c/custom_instructions/i%2F1%20x'))
           .to_return(status: 204)
 
-        style_rules.find('a/b c')
-        style_rules.destroy_custom_instruction('a/b c', 'i/1 x')
+        style_rules.get_style_rule('a/b c')
+        style_rules.delete_style_rule_custom_instruction('a/b c', 'i/1 x')
       end
     end
 
@@ -119,10 +122,10 @@ describe 'style rules' do
         stub_request(:put, url('/v3/style_rules/s-1/configured_rules')).to_return(reply(style_json))
         stub_request(:delete, url('/v3/style_rules/s-1')).to_return(status: 204)
 
-        style_rules.find(rule)
-        style_rules.update_name(rule, 'new')
-        style_rules.update_configured_rules(rule, {})
-        style_rules.destroy(rule)
+        style_rules.get_style_rule(rule)
+        style_rules.update_style_rule_name(rule, 'new')
+        style_rules.update_style_rule_configured_rules(rule, {})
+        style_rules.delete_style_rule(rule)
       end
 
       it 'sends the IDs of StyleRule and CustomInstruction objects' do
@@ -133,10 +136,10 @@ describe 'style rules' do
         stub_request(:put, path).to_return(reply(instruction_json))
         stub_request(:delete, path).to_return(status: 204)
 
-        style_rules.create_custom_instruction(rule, 'Tone', 'Be brief')
-        style_rules.find_custom_instruction(rule, instruction)
-        style_rules.update_custom_instruction(rule, instruction, 'New', 'Be long')
-        style_rules.destroy_custom_instruction(rule, instruction)
+        style_rules.create_style_rule_custom_instruction(rule, 'Tone', 'Be brief')
+        style_rules.get_style_rule_custom_instruction(rule, instruction)
+        style_rules.update_style_rule_custom_instruction(rule, instruction, 'New', 'Be long')
+        style_rules.delete_style_rule_custom_instruction(rule, instruction)
       end
     end
 
@@ -145,7 +148,7 @@ describe 'style rules' do
         stub_request(:patch, url('/v3/style_rules/s-1'))
           .with(body: { name: 'new' }, headers: json_headers).to_return(reply(style_json))
 
-        style_rules.update_name('s-1', 'new')
+        style_rules.update_style_rule_name('s-1', 'new')
       end
     end
 
@@ -155,17 +158,17 @@ describe 'style rules' do
         stub_request(:put, url('/v3/style_rules/s-1/configured_rules'))
           .with(body: rules, headers: json_headers).to_return(reply(style_json))
 
-        style_rules.update_configured_rules('s-1', rules)
+        style_rules.update_style_rule_configured_rules('s-1', rules)
       end
     end
 
     describe '#destroy' do
-      it 'sends a DELETE without a body and returns the ID' do
+      it 'sends a DELETE without a body and returns nil' do
         stub_request(:delete, url('/v3/style_rules/s-1'))
           .with(headers: auth_headers) { bodyless?(_1) }
           .to_return(status: 204)
 
-        expect(style_rules.destroy('s-1')).to eq('s-1')
+        expect(style_rules.delete_style_rule('s-1')).to be_nil
       end
     end
 
@@ -178,15 +181,16 @@ describe 'style rules' do
           .with(body: { label: 'Tone', prompt: 'Be brief', source_language: 'de' })
           .to_return(reply(instruction_json.merge(source_language: 'de'), 201))
 
-        style_rules.create_custom_instruction('s-1', 'Tone', 'Be brief')
-        style_rules.create_custom_instruction('s-1', 'Tone', 'Be brief', 'de')
+        style_rules.create_style_rule_custom_instruction('s-1', 'Tone', 'Be brief')
+        style_rules.create_style_rule_custom_instruction('s-1', 'Tone', 'Be brief',
+                                                         source_language: 'de')
       end
 
       it 'sends a GET on find' do
         stub_request(:get, url('/v3/style_rules/s-1/custom_instructions/i-1'))
           .with(headers: auth_headers) { bodyless?(_1) }.to_return(reply(instruction_json))
 
-        style_rules.find_custom_instruction('s-1', 'i-1')
+        style_rules.get_style_rule_custom_instruction('s-1', 'i-1')
       end
 
       it 'sends the label and prompt on update, with the source language when given' do
@@ -197,15 +201,16 @@ describe 'style rules' do
           .with(body: { label: 'New', prompt: 'Be long', source_language: 'de' })
           .to_return(reply(instruction_json))
 
-        style_rules.update_custom_instruction('s-1', 'i-1', 'New', 'Be long')
-        style_rules.update_custom_instruction('s-1', 'i-1', 'New', 'Be long', 'de')
+        style_rules.update_style_rule_custom_instruction('s-1', 'i-1', 'New', 'Be long')
+        style_rules.update_style_rule_custom_instruction('s-1', 'i-1', 'New', 'Be long',
+                                                         source_language: 'de')
       end
 
-      it 'sends a DELETE on destroy and returns the instruction ID' do
+      it 'sends a DELETE on destroy and returns nil' do
         stub_request(:delete, url('/v3/style_rules/s-1/custom_instructions/i-1'))
           .with(headers: auth_headers) { bodyless?(_1) }.to_return(status: 204)
 
-        expect(style_rules.destroy_custom_instruction('s-1', 'i-1')).to eq('i-1')
+        expect(style_rules.delete_style_rule_custom_instruction('s-1', 'i-1')).to be_nil
       end
     end
   end

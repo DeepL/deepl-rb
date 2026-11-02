@@ -5,14 +5,15 @@
 
 require_relative 'real_api_helper'
 
-describe 'DeepL.document' do
+describe 'DeepL::Client#translate_document' do
   include_context 'with a temporary directory'
 
   it 'uploads, polls and downloads a .txt document' do
     input, output = create_text_document(temp_dir)
 
-    DeepL.document.translate_document(input, output, 'EN', 'DE')
+    status = real_api_client.translate_document(input, output, 'EN', 'DE')
 
+    expect(status.done?).to be(true)
     expect(File.size(output)).to be_positive
   end
 end

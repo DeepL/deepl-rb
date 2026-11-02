@@ -6,55 +6,6 @@
 require_relative 'offline_helper'
 
 describe 'languages' do
-  describe 'DeepL.languages' do
-    let(:languages_reply) do
-      reply([
-              { lang: 'en', name: 'English', usable_as_source: true, usable_as_target: false },
-              { lang: 'en-gb', name: 'English (British)', usable_as_source: false,
-                usable_as_target: true, features: { formality: { status: 'stable' } } },
-              { lang: 'de', name: 'German', usable_as_source: true, usable_as_target: true,
-                features: { formality: { status: 'stable' } } },
-              { lang: 'ja', name: 'Japanese', usable_as_source: true, usable_as_target: true }
-            ])
-    end
-
-    def stub_languages
-      stub_request(:get, url('/v3/languages?resource=translate_text'))
-        .with(headers: json_headers).to_return(languages_reply)
-    end
-
-    it 'lists the source languages with upper-case codes by default' do
-      stub_languages
-      languages = DeepL.languages
-
-      expect(languages.map(&:code)).to eq(%w[EN DE JA])
-    end
-
-    it 'lists the target languages with the formality support of each' do
-      stub_languages
-      languages = DeepL.languages(type: :target)
-
-      expect(languages.map { |l| [l.code, l.supports_formality?] })
-        .to eq([['EN-GB', true], ['DE', true], ['JA', false]])
-    end
-
-    it 'accepts the type as a string' do
-      stub_languages
-      expect(DeepL.languages('type' => 'target').map(&:code)).to eq(%w[EN-GB DE JA])
-    end
-
-    it 'raises NotSupported for the formality support of a source language' do
-      stub_languages
-      expect { DeepL.languages(type: :source).first.supports_formality? }
-        .to raise_error(DeepL::Exceptions::NotSupported, /only available on target languages/)
-    end
-
-    it 'raises ValidationError for an unknown type without sending a request' do
-      expect { DeepL.languages(type: :both) }
-        .to raise_error(DeepL::Exceptions::ValidationError, /Unsupported `type`/)
-    end
-  end
-
   describe DeepL::Client do
     let(:client) { described_class.new('client-key', server_url: 'https://client.example.test') }
     let(:client_headers) do
@@ -83,6 +34,11 @@ describe 'languages' do
 
       expect(languages.map { |l| [l.code, l.name, l.supports_formality?] })
         .to eq([['EN', 'English', nil], ['JA', 'Japanese', nil]])
+    end
+
+    it 'returns nil for the formality support of a language built without it' do
+      expect(DeepL::Resources::Language.new('EN', 'English', nil, nil,
+                                            nil).supports_formality?).to be_nil
     end
 
     it '#get_target_languages returns the target languages with their formality support' do
@@ -135,21 +91,6 @@ describe 'languages' do
       stub_client_get('/v3/languages?resource=new_resource&include=preview', [])
 
       client.get_languages_for_resource('new_resource', include: 'preview')
-    end
-  end
-
-  describe 'DeepL.glossaries.language_pairs' do
-    it 'requests the glossary languages and pairs every source with every other target' do
-      stub_request(:get,
-                   url('/v3/languages?resource=glossary')).with(headers: json_headers).to_return(
-                     reply([{ lang: 'en', usable_as_source: true, usable_as_target: true },
-                            { lang: 'de', usable_as_source: true, usable_as_target: true },
-                            { lang: 'fr', usable_as_source: false, usable_as_target: true }])
-                   )
-
-      pairs = DeepL.glossaries.language_pairs
-
-      expect(pairs.map(&:to_s)).to eq(['en - de', 'en - fr', 'de - en', 'de - fr'])
     end
   end
 end

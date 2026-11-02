@@ -8,9 +8,6 @@ require 'fileutils'
 require 'json'
 require 'net/http'
 
-# -- Deprecation
-require_relative 'deepl/deprecation'
-
 # -- Exceptions
 require_relative 'deepl/exceptions/error'
 require_relative 'deepl/exceptions/validation_error'
@@ -20,7 +17,6 @@ require_relative 'deepl/exceptions/bad_request'
 require_relative 'deepl/exceptions/limit_exceeded'
 require_relative 'deepl/exceptions/quota_exceeded'
 require_relative 'deepl/exceptions/not_found'
-require_relative 'deepl/exceptions/not_supported'
 require_relative 'deepl/exceptions/request_entity_too_large'
 require_relative 'deepl/exceptions/document_translation_error'
 require_relative 'deepl/exceptions/server_error'
@@ -32,12 +28,6 @@ require_relative 'deepl/requests/base'
 require_relative 'deepl/requests/document/download'
 require_relative 'deepl/requests/document/get_status'
 require_relative 'deepl/requests/document/upload'
-require_relative 'deepl/requests/glossary/create'
-require_relative 'deepl/requests/glossary/destroy'
-require_relative 'deepl/requests/glossary/entries'
-require_relative 'deepl/requests/glossary/find'
-require_relative 'deepl/requests/glossary/language_pairs'
-require_relative 'deepl/requests/glossary/list'
 require_relative 'deepl/requests/multilingual_glossary/helpers'
 require_relative 'deepl/requests/multilingual_glossary/create'
 require_relative 'deepl/requests/multilingual_glossary/destroy'
@@ -103,7 +93,6 @@ require_relative 'deepl/requests/admin/update_developer_key'
 require_relative 'deepl/resources/base'
 require_relative 'deepl/resources/document_handle'
 require_relative 'deepl/resources/document_translation_status'
-require_relative 'deepl/resources/glossary'
 require_relative 'deepl/resources/multilingual_glossary'
 require_relative 'deepl/resources/style_rule'
 require_relative 'deepl/resources/spoken_terms'
@@ -114,7 +103,6 @@ require_relative 'deepl/resources/translation_memory_import'
 require_relative 'deepl/resources/translation_memory_export'
 require_relative 'deepl/resources/translation_memory_job'
 require_relative 'deepl/resources/language'
-require_relative 'deepl/resources/language_pair'
 require_relative 'deepl/resources/language_resource'
 require_relative 'deepl/resources/language_support'
 require_relative 'deepl/resources/text'
@@ -132,6 +120,7 @@ require_relative 'deepl/utils/time_parser'
 require_relative 'deepl/utils/number_parser'
 require_relative 'deepl/utils/term_validator'
 require_relative 'deepl/utils/document_poller'
+require_relative 'deepl/utils/translation_memory_operations'
 
 # -- Constants
 require_relative 'deepl/constants/base_constant'
@@ -157,176 +146,12 @@ require_relative 'version'
 # -- Other wrappers
 require_relative 'deepl/api'
 require_relative 'deepl/configuration'
-require_relative 'deepl/document_api'
-require_relative 'deepl/glossary_api'
-require_relative 'deepl/style_rule_api'
-require_relative 'deepl/translation_memory_api'
 require_relative 'deepl/app_info'
 require_relative 'deepl/client'
 require_relative 'deepl/admin_client'
 
 # -- Gem interface
 #
-# The module-level API (+DeepL.configure+, +DeepL.translate+, +DeepL.glossaries+, ...) keeps its
-# configuration in module state. It is deprecated in favour of DeepL::Client and will be removed
-# in the next major version.
+# Create a DeepL::Client (or a DeepL::AdminClient for the Admin API) to send requests.
 module DeepL
-  extend self
-
-  ## -- API shortcuts
-
-  # @deprecated Use DeepL::Client instead.
-  def api
-    deprecated(:api, 'DeepL::Client')
-    module_api
-  end
-
-  # @deprecated Use DeepL::Client#get_source_languages or DeepL::Client#get_target_languages
-  #   instead.
-  def languages(options = {})
-    deprecated(:languages,
-               'DeepL::Client#get_source_languages or DeepL::Client#get_target_languages')
-    Requests::Languages.new(module_api, options).request
-  end
-
-  ##
-  # Translates +text+ from +source_lang+ into +target_lang+.
-  #
-  # @param [String, Array<String>] text Text(s) to translate.
-  # @param [String, nil] source_lang Source language. `nil` enables automatic detection.
-  # @param [String] target_lang Target language.
-  # @param [Hash] options Additional (body) options for the translation. Notable options:
-  #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
-  #     `DeepL::Resources::MultilingualGlossary` to use for the translation, sent as
-  #     +glossary_id+. Cannot be combined with +:glossary_ids+.
-  #   * +:glossary_ids+ - An array of up to 5 glossary IDs (strings,
-  #     `DeepL::Resources::Glossary` or `DeepL::Resources::MultilingualGlossary` objects) to
-  #     use for the translation. Glossaries are applied in order (first match wins). Without
-  #     +source_lang+, the API detects it. Cannot be combined with +:glossary+. Raises
-  #     `ArgumentError` if these rules are violated or more than 5 IDs are provided.
-  #   * +:style_rule+ - A style rule ID string or a `DeepL::Resources::StyleRule` object.
-  #   * +:style_profile+ - A style profile ID string or a `DeepL::Resources::StyleProfile`
-  #     object. Applies the profile's glossaries, style rule lists and translation memories.
-  # @param [Hash] additional_headers Additional HTTP headers for the translation.
-  # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] Translated text resource(s).
-  # @deprecated Use DeepL::Client#translate_text instead.
-  def translate(text, source_lang, target_lang, options = {}, additional_headers = {})
-    deprecated(:translate, 'DeepL::Client#translate_text')
-    ensure_configured
-    Requests::Translate.new(module_api, text, source_lang, target_lang, options,
-                            additional_headers).request
-  end
-
-  # @deprecated Use DeepL::Client instead.
-  def document(options = {})
-    deprecated(:document, 'DeepL::Client')
-    ensure_configured
-    DocumentApi.new(module_api, options)
-  end
-
-  # @deprecated Use DeepL::Client instead.
-  def glossaries(options = {})
-    deprecated(:glossaries, 'DeepL::Client')
-    ensure_configured
-    GlossaryApi.new(module_api, options)
-  end
-
-  # @deprecated Use DeepL::Client instead.
-  def style_rules(options = {})
-    deprecated(:style_rules, 'DeepL::Client')
-    ensure_configured
-    StyleRuleApi.new(module_api, options)
-  end
-
-  # @deprecated Use DeepL::Client instead.
-  def translation_memories(options = {})
-    deprecated(:translation_memories, 'DeepL::Client')
-    ensure_configured
-    TranslationMemoryApi.new(module_api, options)
-  end
-
-  # @deprecated Use DeepL::Client#rephrase_text instead.
-  def rephrase(text, target_lang = nil, writing_style = nil, tone = nil, options = {}, # rubocop:disable Metrics/ParameterLists
-               additional_headers = {})
-    deprecated(:rephrase, 'DeepL::Client#rephrase_text')
-    ensure_configured
-    Requests::Rephrase.new(module_api, text, target_lang, writing_style, tone, options,
-                           additional_headers).request
-  end
-
-  # @deprecated Use DeepL::Client#get_usage instead.
-  def usage(options = {})
-    deprecated(:usage, 'DeepL::Client#get_usage')
-    ensure_configured
-    Requests::Usage.new(module_api, options).request
-  end
-
-  # @deprecated Use DeepL::Client with +http_client_options:+ instead.
-  def http_client
-    deprecated(:http_client, 'DeepL::Client')
-    @http_client
-  end
-
-  # @deprecated Use DeepL::Client with +http_client_options:+ instead.
-  def with_session(client_options = HTTPClientOptions.new) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
-    raise ArgumentError, 'This method requires a block to be passed in which contains the actual API calls, see README for example usage.' unless block_given? # rubocop:disable Layout/LineLength
-
-    deprecated(:with_session, 'DeepL::Client')
-    previous_api_client = module_api.http_client
-    previous_api_options = module_api.http_client_options
-    previous_http_client = @http_client
-    begin
-      http = Utils::HTTPClientBuilder.build(module_configuration.host, client_options)
-      start_session(http, client_options)
-      @http_client = http
-      module_api.update_http_client(http, client_options)
-      yield
-    ensure
-      module_api.update_http_client(previous_api_client, previous_api_options)
-      @http_client = previous_http_client
-      http.finish if http&.started?
-    end
-  end
-
-  # -- Configuration
-
-  # @deprecated Use DeepL::Client.new instead.
-  def configuration
-    deprecated(:configuration, 'DeepL::Client.new')
-    module_configuration
-  end
-
-  # @deprecated Use DeepL::Client.new instead.
-  def configure
-    deprecated(:configure, 'DeepL::Client.new')
-    yield module_configuration if block_given?
-    module_configuration.validate!
-  end
-
-  private
-
-  def module_configuration
-    @configuration ||= Configuration.new # rubocop:disable Naming/MemoizedInstanceVariableName
-  end
-
-  def module_api
-    @api ||= API.new(module_configuration) # rubocop:disable Naming/MemoizedInstanceVariableName
-  end
-
-  # Opens the session connection within the configured timeout, unless the options set one.
-  def start_session(http, client_options)
-    timeout = module_configuration.timeout
-    http.open_timeout = timeout if client_options.open_timeout.nil? && timeout
-    http.start
-  end
-
-  def ensure_configured
-    module_configuration.validate! if @configuration.nil?
-  end
-
-  def deprecated(name, replacement)
-    Deprecation.warn_once("DeepL.#{name}",
-                          "[DEPRECATION] DeepL.#{name} is deprecated, use #{replacement} instead.",
-                          uplevel: 3)
-  end
 end

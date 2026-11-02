@@ -16,14 +16,14 @@ describe 'DeepL HTTP client' do
     it 'retries a 429 reply' do
       stub = stub_usage(reply({}, 429), usage_reply)
 
-      DeepL.usage
+      api_client.get_usage
       expect(stub).to have_been_requested.twice
     end
 
     it 'retries a 500 reply' do
       stub = stub_usage(reply({}, 500), usage_reply)
 
-      DeepL.usage
+      api_client.get_usage
 
       expect(stub).to have_been_requested.twice
     end
@@ -31,7 +31,7 @@ describe 'DeepL HTTP client' do
     it 'retries a 503 reply' do
       stub = stub_usage(reply({}, 503), usage_reply)
 
-      DeepL.usage
+      api_client.get_usage
 
       expect(stub).to have_been_requested.twice
     end
@@ -41,7 +41,7 @@ describe 'DeepL HTTP client' do
         WebMock.reset!
         stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
 
-        DeepL.usage
+        api_client.get_usage
 
         expect(stub).to have_been_requested.twice
       end
@@ -52,7 +52,8 @@ describe 'DeepL HTTP client' do
         WebMock.reset!
         stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
 
-        expect { DeepL.usage }.to raise_error(error)
+        expect { api_client.get_usage }
+          .to raise_error(DeepL::Exceptions::ConnectionError) { expect(_1.cause).to be_a(error) }
         expect(stub).to have_been_requested.once
       end
     end
@@ -61,15 +62,17 @@ describe 'DeepL HTTP client' do
       error = Net::HTTPClientException.new('407 "Proxy Authentication Required"', nil)
       stub = stub_request(:get, url('/v2/usage')).to_raise(error).then.to_return(usage_reply)
 
-      expect { DeepL.usage }.to raise_error(Net::HTTPClientException)
+      expect { api_client.get_usage }
+        .to raise_error(DeepL::Exceptions::ConnectionError) { expect(_1.should_retry?).to be(false) }
       expect(stub).to have_been_requested.once
     end
 
-    it 'retries a body shorter than its Content-Length and raises EOFError' do
+    it 'retries a body shorter than its Content-Length and raises ConnectionError' do
       short = { status: 200, body: '{"char', headers: { 'Content-Length' => '46' } }
       stub = stub_usage(short)
 
-      expect { DeepL.usage }.to raise_error(EOFError)
+      expect { api_client.get_usage }
+        .to raise_error(DeepL::Exceptions::ConnectionError) { expect(_1.cause).to be_a(EOFError) }
       expect(stub).to have_been_requested.times(3)
     end
 
@@ -93,17 +96,10 @@ describe 'DeepL HTTP client' do
       expect(clients.map(&:ignore_eof)).to eq([false, false, false, false])
     end
 
-    it 'trims the auth key' do
-      DeepL.configuration.auth_key = " k \n"
-      stub_request(:get, url('/v2/usage')).with(headers: auth_headers).to_return(usage_reply)
-
-      DeepL.usage
-    end
-
     it 'retries a network error' do
       stub = stub_request(:get, url('/v2/usage')).to_raise(SocketError).then.to_return(usage_reply)
 
-      DeepL.usage
+      api_client.get_usage
 
       expect(stub).to have_been_requested.twice
     end
@@ -111,115 +107,31 @@ describe 'DeepL HTTP client' do
     it 'retries a timeout' do
       stub = stub_request(:get, url('/v2/usage')).to_timeout.then.to_return(usage_reply)
 
-      DeepL.usage
+      api_client.get_usage
 
       expect(stub).to have_been_requested.twice
     end
 
-    it 'raises the network error after max_network_retries retries' do
+    it 'raises ConnectionError after max_retries retries, with the network error as cause' do
       stub = stub_request(:get, url('/v2/usage')).to_timeout
 
-      expect { DeepL.usage }.to raise_error(Net::OpenTimeout)
+      expect { api_client.get_usage }
+        .to raise_error(DeepL::Exceptions::ConnectionError) { expect(_1.cause).to be_a(Net::OpenTimeout) }
       expect(stub).to have_been_requested.times(3)
     end
 
-    it 'raises LimitExceeded after max_network_retries retries' do
+    it 'raises LimitExceeded after max_retries retries' do
       stub = stub_usage(reply({}, 429))
 
-      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::LimitExceeded)
+      expect { api_client.get_usage }.to raise_error(DeepL::Exceptions::LimitExceeded)
       expect(stub).to have_been_requested.times(3)
     end
 
-    it 'does not retry when max_network_retries is 0' do
-      DeepL.configuration.max_network_retries = 0
+    it 'does not retry when max_retries is 0' do
       stub = stub_usage(reply({}, 429))
 
-      expect { DeepL.usage }.to raise_error(DeepL::Exceptions::LimitExceeded)
+      expect { offline_client(max_retries: 0).get_usage }.to raise_error(DeepL::Exceptions::LimitExceeded)
       expect(stub).to have_been_requested.once
-    end
-  end
-
-  describe '.with_session' do
-    it 'runs the block without client options' do
-      stub = stub_usage(usage_reply)
-
-      DeepL.with_session { DeepL.usage }
-
-      expect(stub).to have_been_requested.once
-    end
-
-    it 'raises ArgumentError without a block' do
-      expect { DeepL.with_session }.to raise_error(ArgumentError, /requires a block/)
-    end
-
-    it 'applies the proxy and the timeouts to the client inside the block' do
-      options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test',
-                                               'proxy_port' => 8080 },
-                                             nil, open_timeout: 3, read_timeout: 4)
-      stub_usage(usage_reply)
-
-      client = DeepL.with_session(options) do
-        DeepL.usage
-        DeepL.api.http_client
-      end
-
-      expect([client.proxy_address, client.proxy_port, client.open_timeout, client.read_timeout])
-        .to eq(['proxy.example.test', 8080, 3, 4])
-    end
-
-    it 'enables SSL from the URL scheme and verifies certificates unless disabled' do
-      session_client = lambda do |host, verify|
-        DeepL.configuration.host = host
-        options = DeepL::HTTPClientOptions.new({}, nil, enable_ssl_verification: verify)
-        DeepL.with_session(options) { DeepL.api.http_client }
-      end
-
-      expect(session_client.call('http://localhost:3000', true)).to have_attributes(use_ssl?: false)
-      expect(session_client.call('https://api.deepl.com', false))
-        .to have_attributes(use_ssl?: true, verify_mode: OpenSSL::SSL::VERIFY_NONE)
-    end
-
-    it 'uses no proxy when only the proxy address is given' do
-      options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test' })
-
-      expect(DeepL.with_session(options) { DeepL.api.http_client }.proxy_address).to be_nil
-    end
-
-    it 'raises SocketError when the session cannot connect' do
-      http = Net::HTTP.new('unresolvable.invalid', 443)
-      allow(http).to receive(:start).and_raise(SocketError, 'getaddrinfo: Name not known')
-      allow(DeepL::Utils::HTTPClientBuilder).to receive(:build).and_return(http)
-
-      expect { DeepL.with_session { nil } }.to raise_error(SocketError)
-    end
-
-    it 'opens the session connection with the configured timeout' do
-      DeepL.configuration.timeout = 4
-      options = DeepL::HTTPClientOptions.new({}, nil, read_timeout: 7)
-
-      client = DeepL.with_session(options) { DeepL.api.http_client }
-
-      expect([client.open_timeout, client.read_timeout]).to eq([4, 7])
-    end
-
-    it 'restores the previous client when the block ends' do
-      previous = DeepL.api.http_client
-      options = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test',
-                                               'proxy_port' => 8080 })
-      stub_usage(usage_reply)
-
-      DeepL.with_session(options) { DeepL.usage }
-
-      expect(DeepL.api.http_client).to equal(previous)
-      expect(DeepL.api.http_client.proxy_address).to be_nil
-      expect(DeepL.http_client).to be_nil
-    end
-
-    it 'restores the previous client when the block raises' do
-      previous = DeepL.api.http_client
-
-      expect { DeepL.with_session { raise 'boom' } }.to raise_error('boom')
-      expect(DeepL.api.http_client).to equal(previous)
     end
   end
 
@@ -227,19 +139,18 @@ describe 'DeepL HTTP client' do
     let(:log) { StringIO.new }
 
     it 'logs the request and the retry' do
-      DeepL.configuration.logger = Logger.new(log)
       stub_usage(reply({}, 429), usage_reply)
 
-      DeepL.usage
+      offline_client(logger: Logger.new(log)).get_usage
 
       expect(log.string).to include('Request to the DeepL API: GET /v2/usage')
                         .and include('Starting retry 1 for request GET /v2/usage')
     end
 
     context 'with a debug logger' do
-      before do
-        DeepL.configuration.auth_key = 'sdktest-secret-key'
-        DeepL.configuration.logger = Logger.new(log, level: Logger::DEBUG)
+      def debug_client(headers = {})
+        DeepL::Client.new('sdktest-secret-key', server_url: OfflineHelper::HOST,
+                                                headers: headers, logger: Logger.new(log, level: Logger::DEBUG))
       end
 
       def expect_key_redacted
@@ -250,7 +161,7 @@ describe 'DeepL HTTP client' do
       it 'redacts the auth key in the request details' do
         stub_usage(usage_reply)
 
-        DeepL.usage
+        debug_client.get_usage
 
         expect_key_redacted
       end
@@ -259,7 +170,7 @@ describe 'DeepL HTTP client' do
         stub_request(:post, url('/v2/translate'))
           .to_return(reply(translations: [{ text: 'Hallo' }]))
 
-        DeepL.translate('Hello', nil, 'DE')
+        debug_client.translate_text('Hello', nil, 'DE')
 
         expect_key_redacted
       end
@@ -268,8 +179,8 @@ describe 'DeepL HTTP client' do
         stub_request(:post, url('/v2/translate'))
           .to_return(reply(translations: [{ text: 'Hallo' }]))
 
-        other = { 'authorization' => 'DeepL-Auth-Key sdktest-other-key' }
-        DeepL.translate('Hello', nil, 'DE', {}, other)
+        debug_client({ 'authorization' => 'DeepL-Auth-Key sdktest-other-key' })
+          .translate_text('Hello', nil, 'DE')
 
         expect(log.string).not_to include('sdktest-other-key')
       end
@@ -277,31 +188,22 @@ describe 'DeepL HTTP client' do
   end
 
   describe 'headers' do
-    it 'lets per-call headers replace the Authorization header in any casing' do
-      stub_request(:post, url('/v2/translate'))
-        .with(headers: { 'Authorization' => 'DeepL-Auth-Key other', 'X-Custom' => 'v' })
-        .to_return(reply(translations: [{ text: 'Hallo' }]))
-
-      DeepL.translate('Hello', nil, 'DE', {}, { 'authorization' => 'DeepL-Auth-Key other',
-                                                'X-Custom' => 'v' })
-    end
-
-    it "keeps the SDK's Host and Content-Type over per-call headers" do
+    it "keeps the SDK's Host and Content-Type over the configured headers" do
       sdk_host = ->(request) { [nil, 'api.deepl.com'].include?(request.headers['Host']) }
       stub_request(:post, 'https://api.deepl.com/v2/translate')
         .with(headers: { 'Content-Type' => 'application/json' }, &sdk_host)
         .to_return(reply(translations: [{ text: 'Hallo' }]))
 
-      DeepL.translate('Hello', nil, 'DE', {}, { 'host' => 'other.example.test',
-                                                'content-type' => 'text/plain' })
+      offline_client(headers: { 'host' => 'other.example.test', 'content-type' => 'text/plain' })
+        .translate_text('Hello', nil, 'DE')
     end
 
     it 'sends no caller Content-Type with a request without a body' do
-      DeepL.configuration.headers = { 'content-type' => 'text/plain' }
       stub_request(:get, url('/v2/usage'))
         .with { |request| !request.headers.key?('Content-Type') }.to_return(usage_reply)
 
-      DeepL.usage
+      offline_client(headers: { 'content-type' => 'text/plain' })
+        .get_usage
     end
   end
 
