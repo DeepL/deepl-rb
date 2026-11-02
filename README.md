@@ -725,7 +725,7 @@ puts "Created: #{style_rule.name} (#{style_rule.style_id})"
 style_rule = client.create_style_rule(
   'Formal English',
   'en',
-  configured_rules: { style_and_tone: { formality: 'formal' } },
+  configured_rules: { dates_and_times: { calendar_era: 'use_bc_and_ad' } },
   custom_instructions: [{ label: 'Tone', prompt: 'Always use formal language' }]
 )
 ```
@@ -774,7 +774,7 @@ updated = client.update_style_rule_name(style_rule, 'New Name')
 # Update configured rules
 updated = client.update_style_rule_configured_rules(
   style_rule,
-  { style_and_tone: { formality: 'formal' } }
+  { dates_and_times: { calendar_era: 'use_bc_and_ad' } }
 )
 ```
 
@@ -1363,7 +1363,7 @@ DeepL.document.download(doc_handle, '/path/to/translated_document.pdf') unless d
 You can also pass additional options to document translation methods, including `extra_body_parameters`:
 
 ```rb
-doc_handle = client.translate_document_upload('/path/to/spanish_document.pdf', 'ES', 'EN',
+doc_handle = client.translate_document_upload('/path/to/spanish_document.pdf', 'ES', 'DE',
                                               formality: 'more',
                                               extra_body_parameters: { example_param: 'true' })
 ```
@@ -1624,14 +1624,14 @@ The available values for various possible options are provided under the `DeepL:
 To view all the possible options for a given constant, call `options`:
 
 ```rb
-all_available_tones = DeepL::Constants::Tones.options
+all_available_tones = DeepL::Constants::Tone.options
 ```
 
 To check if a given string is a possible option for a given constant, call `valid?`:
 
 ```rb
-DeepL::Constants::Tones.valid?('friendly') # true
-DeepL::Constants::Tones.valid?('rude') # false
+DeepL::Constants::Tone.valid?('friendly') # true
+DeepL::Constants::Tone.valid?('rude') # false
 ```
 
 ## Integrations
