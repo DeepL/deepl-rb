@@ -31,7 +31,7 @@ describe 'DeepL.with_session' do
       usage = DeepL.with_session(options) { DeepL.usage }
 
       host = URI(DeepL.configuration.host)
-      expect(usage.character_limit).to be_an(Integer)
+      expect(usage.character.limit).to be_an(Integer)
       expect(proxy.connect_targets).to eq(["#{host.host}:#{host.port}"])
     ensure
       proxy.shutdown

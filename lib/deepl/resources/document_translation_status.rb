@@ -32,18 +32,6 @@ module DeepL
       end
 
       ##
-      # Checks if the translation finished successfully
-      #
-      # @deprecated Use #done? instead.
-      # @return [true] if so
-      def successful?
-        Deprecation.warn_once('DeepL::Resources::DocumentTranslationStatus#successful?',
-                              '[DEPRECATION] DeepL::Resources::DocumentTranslationStatus#' \
-                              'successful? is deprecated, use #done? instead.')
-        done?
-      end
-
-      ##
       # Checks if there was an error during translation
       #
       # @return [true] if so

@@ -9,7 +9,7 @@ module DeepL
       class Upload < Base
         attr_reader :input_file_path, :source_lang, :target_lang, :filename
 
-        SUPPORTED_OPTIONS = %w[formality glossary_id output_format enable_watermark].freeze
+        SUPPORTED_OPTIONS = %w[formality output_format enable_watermark].freeze
 
         def initialize(api, input_file_path, source_lang, target_lang, filename = nil, # rubocop:disable Metrics/ParameterLists
                        options = {}, additional_headers = {})
@@ -66,7 +66,7 @@ module DeepL
         # Validates and serializes the `glossary_ids` option (see
         # `DeepL::Requests::Base#build_glossary_ids_param`) and appends it to the form data as a
         # comma-separated `glossary_ids` field. Requires `source_lang`, cannot be combined with
-        # the singular `glossary_id` option, and allows at most 5 IDs.
+        # the singular `glossary` option, and allows at most 5 IDs.
         def add_glossary_ids_to_form(form_data)
           glossary_ids = build_glossary_ids_param
           # Text translation detects the source language for glossaries; documents do not.

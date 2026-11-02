@@ -67,7 +67,6 @@ describe 'DeepL.translate' do
       tag_handling_version: 'v2',
       context: 'A greeting',
       model_type: 'latency_optimized',
-      glossary_id: 'g-1',
       show_billed_characters: true
     }.each do |option, value|
       it "sends #{option}" do
@@ -195,9 +194,7 @@ describe 'DeepL.translate' do
       DeepL.translate('a', 'EN', 'DE', 'glossary' => multilingual)
     end
 
-    it 'raises ArgumentError together with glossary_id or glossary_ids' do
-      expect { DeepL.translate('a', 'EN', 'DE', glossary: 'g-1', glossary_id: 'g-2') }
-        .to raise_error(ArgumentError, /`glossary` option cannot be used together/)
+    it 'raises ArgumentError together with glossary_ids' do
       expect { DeepL.translate('a', 'EN', 'DE', glossary: 'g-1', glossary_ids: ['g-2']) }
         .to raise_error(ArgumentError, /together with the `glossary` option/)
     end
@@ -242,11 +239,6 @@ describe 'DeepL.translate' do
       expect_body(text: ['a'], target_lang: 'DE', glossary_ids: ['g-1'])
 
       DeepL.translate('a', nil, 'DE', glossary_ids: ['g-1'])
-    end
-
-    it 'raises ArgumentError together with glossary_id' do
-      expect { DeepL.translate('a', 'EN', 'DE', glossary_ids: ['g-1'], glossary_id: 'g-2') }
-        .to raise_error(ArgumentError, /cannot be used together/)
     end
 
     it 'raises ArgumentError for more than 5 glossaries' do

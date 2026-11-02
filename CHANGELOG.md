@@ -5,6 +5,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Removed
+- The `glossary_id` option of text translation (`DeepL::Client#translate_text`,
+  `DeepL.translate`), deprecated in 3.10.0. Use `glossary` instead, which takes the glossary ID or
+  a glossary object. `glossary_id` is no longer recognised: it is sent unchanged like any other
+  unknown option, without the deprecation warning or the check against `glossary` and
+  `glossary_ids`.
+- The `glossary_id` option of document translation (`DeepL::Client#translate_document`,
+  `#translate_document_upload`, `DeepL.document.upload`), deprecated in 3.10.0. Use `glossary`
+  instead. `glossary_id` is no longer sent.
+- `DeepL::Resources::Usage#character_count`, `#character_limit` and `#quota_exceeded?`,
+  deprecated in 3.10.0. Use `character.count`, `character.limit` and
+  `character.limit_reached?` (or `any_limit_reached?`) instead.
+- `DeepL::Resources::DocumentHandle#wait_until_document_translation_finished`, deprecated in
+  3.10.0. Use `DeepL::Client#translate_document_wait_until_done`, which raises
+  `DeepL::Exceptions::DocumentTranslationError` if the translation fails.
+- `DeepL::Resources::DocumentTranslationStatus#successful?`, deprecated in 3.10.0. Use `#done?`
+  instead.
+
 
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.

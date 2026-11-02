@@ -313,7 +313,6 @@ The following parameters will be automatically converted:
 | `ignore_tags`         | Converts arrays to strings joining by commas
 | `formality`           | No conversion applied
 | `glossary`            | A glossary ID string, a `Glossary` or a `MultilingualGlossary` object, sent as `glossary_id` (see [Glossaries](#glossaries))
-| `glossary_id`         | Deprecated, use `glossary`. No conversion applied
 | `style_rule`          | No conversion applied (can be a string ID or a StyleRule object)
 | `style_profile`       | No conversion applied (can be a string ID or a StyleProfile object, see [Style profiles](#style-profiles))
 | `translation_memory`  | No conversion applied (can be a string ID or a TranslationMemory object)
@@ -416,7 +415,7 @@ puts glossary.entry_count
 
 Created glossaries can be used in text and document translation by specifying the
 `glossary` option, a glossary ID or a `Glossary` / `MultilingualGlossary` object. It is sent
-as `glossary_id` and replaces the deprecated `glossary_id` option:
+as `glossary_id`:
 
 ```rb
 translation = client.translate_text 'Hello World', 'EN', 'ES', glossary: 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
@@ -437,7 +436,7 @@ puts translation.text
 To use more than one glossary at once, specify the `glossary_ids` option with an
 array of up to 5 glossary IDs (as strings or `DeepL::Resources::Glossary`
 objects) instead of `glossary`. This works for both text and document
-translation. `glossary_ids` cannot be combined with `glossary` or `glossary_id`,
+translation. `glossary_ids` cannot be combined with `glossary`,
 and raises `ArgumentError` if this rule is violated or more than 5 IDs are
 provided. For text translation, a glossary (`glossary` or `glossary_ids`) can be
 used without `source_lang`: the API detects the source language and uses the
@@ -945,7 +944,7 @@ Pass the `style_profile` option, a style profile ID string or a `StyleProfile` o
 `translate_text`, `translate_document` or `translate_document_upload` to apply the
 profile's glossaries, style rule lists and translation memories. A component that does not
 fit the language pair is left out. The option cannot be combined with `glossary`,
-`glossary_id`, `glossary_ids`, `style_rule`, `translation_memory`,
+`glossary_ids`, `style_rule`, `translation_memory`,
 `translation_memory_threshold` or `custom_instructions`; the API rejects such requests.
 
 ```rb
@@ -1257,9 +1256,7 @@ puts "Document usage: #{usage.document}" if usage.document
 # => Document usage: 5 of 10
 ```
 
-`DeepL.usage` and the `Usage` readers `character_count`, `character_limit` and
-`quota_exceeded?` are deprecated. Use `client.get_usage`, `character.count`,
-`character.limit` and `character.limit_reached?` (or `any_limit_reached?`) instead.
+`DeepL.usage` is deprecated, use `client.get_usage` instead.
 
 For API Pro users, the response also contains this API key's usage, speech usage, the billing
 period and a per-product breakdown. These fields are `nil` when the response does not contain
@@ -1343,20 +1340,23 @@ A `DeepL::Resources::DocumentTranslationStatus` has `document_id`, `status` (a s
 `DeepL::Constants::DocumentStatusCode` has the values `QUEUED`, `TRANSLATING`, `DONE` and
 `ERROR`), `seconds_remaining`, `billed_characters` and `error_message`, and the predicates
 `done?` (done), `error?` (failed), `ok?` (not failed, also while queued or translating)
-and `finished?` (done or failed). `successful?` is a deprecated alias of `done?`.
+and `finished?` (done or failed).
 
 With the deprecated module-level API, the same methods are `DeepL.document.translate_document`,
 `upload`, `get_status` and `download`, which take the filename as a positional parameter and
 optional additional headers. `DeepL.document.translate_document` waits until the translation is
 done or failed and returns the number of bytes written; the deprecated configuration setting
-`max_doc_status_queries` limits the number of status requests. The deprecated
-`DocumentHandle#wait_until_document_translation_finished` returns the final status also when
-the translation failed. `DeepL.document.translate_document` raises
-`DeepL::Exceptions::DocumentTranslationError` if the output file already exists.
+`max_doc_status_queries` limits the number of status requests. It raises
+`DeepL::Exceptions::DocumentTranslationError` if the output file already exists. To poll an
+uploaded document yourself, query `get_status` until the status is `finished?`:
 
 ```rb
 doc_handle = DeepL.document.upload('/path/to/spanish_document.pdf', 'ES', 'EN')
-doc_status = doc_handle.wait_until_document_translation_finished
+doc_status = DeepL.document.get_status(doc_handle)
+until doc_status.finished?
+  sleep 5
+  doc_status = DeepL.document.get_status(doc_handle)
+end
 DeepL.document.download(doc_handle, '/path/to/translated_document.pdf') unless doc_status.error?
 ```
 
@@ -1373,8 +1373,7 @@ Document translation options include:
 - `filename` (`DeepL::Client` only): the file name sent with the upload, including its
   extension. Defaults to the base name of the input path.
 - `formality`: same as for text translation.
-- `glossary` / `glossary_ids`: see the glossary sections above. `glossary_id` is deprecated,
-  use `glossary`.
+- `glossary` / `glossary_ids`: see the glossary sections above.
 - `output_format`: file extension of the desired output format, e.g. `'pdf'` to translate
   a `docx` into a PDF.
 - `enable_watermark`: `true` adds a "Translated by DeepL" watermark to the translated

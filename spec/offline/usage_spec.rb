@@ -13,18 +13,18 @@ describe 'usage' do
       DeepL.usage
     end
 
-    it 'reports no exceeded quota while the count is below the limit' do
+    it 'reports the character limit as not reached while the count is below it' do
       stub_request(:get, url('/v2/usage'))
         .to_return(reply(character_count: 42, character_limit: 100))
 
-      expect(DeepL.usage.quota_exceeded?).to be(false)
+      expect(DeepL.usage.character.limit_reached?).to be(false)
     end
 
-    it 'reports an exceeded quota when the count reaches the limit' do
+    it 'reports the character limit as reached when the count reaches it' do
       stub_request(:get,
                    url('/v2/usage')).to_return(reply(character_count: 100, character_limit: 100))
 
-      expect(DeepL.usage.quota_exceeded?).to be(true)
+      expect(DeepL.usage.character.limit_reached?).to be(true)
     end
 
     context 'with an API Pro response' do
@@ -56,7 +56,6 @@ describe 'usage' do
         usage = DeepL.usage
 
         expect(usage).to have_attributes(
-          character_count: 5_947_223, character_limit: 1_000_000_000_000,
           start_time: Time.utc(2025, 5, 13, 9, 18, 42), end_time: Time.utc(2025, 6, 13, 9, 18, 42),
           to_s: '5947223 / 1000000000000'
         )
@@ -84,7 +83,6 @@ describe 'usage' do
 
       expect(usage.character).to have_attributes(count: 180_118, limit: 1_250_000)
       expect(usage.to_s).to eq('180118 / 1250000')
-      expect(usage.quota_exceeded?).to be(false)
       DeepL::Resources::Usage::KEYWORD_FIELDS.each do |field|
         expect(usage.public_send(field)).to be_nil
       end
@@ -120,7 +118,7 @@ describe 'usage' do
       )
       usage = DeepL.usage
 
-      expect(usage.character_count).to eq(20)
+      expect(usage.character.count).to eq(20)
       expect([usage.start_time, usage.end_time]).to eq([nil, nil])
       expect(usage.products.map(&:product_type)).to eq(['translate'])
     end
@@ -128,7 +126,7 @@ describe 'usage' do
     it 'keeps the positional constructor working' do
       usage = DeepL::Resources::Usage.new(1, 10, nil, nil)
 
-      expect([usage.character_count, usage.character_limit, usage.products]).to eq([1, 10, nil])
+      expect([usage.character.count, usage.character.limit, usage.products]).to eq([1, 10, nil])
     end
   end
 

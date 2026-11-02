@@ -56,29 +56,8 @@ module DeepL
         KEYWORD_FIELDS.each { |field| instance_variable_set("@#{field}", fields[field]) }
       end
 
-      ##
-      # @deprecated Use +character.count+ instead.
-      def character_count
-        deprecated(:character_count, 'character.count')
-        @character_count
-      end
-
-      ##
-      # @deprecated Use +character.limit+ instead.
-      def character_limit
-        deprecated(:character_limit, 'character.limit')
-        @character_limit
-      end
-
       def to_s
         "#{@character_count} / #{@character_limit}"
-      end
-
-      ##
-      # @deprecated Use +character.limit_reached?+ or +any_limit_reached?+ instead.
-      def quota_exceeded?
-        deprecated(:quota_exceeded?, 'character.limit_reached? or any_limit_reached?')
-        @character_count >= @character_limit
       end
 
       ##
@@ -87,14 +66,6 @@ module DeepL
       # limit_reached? on them directly.
       def any_limit_reached?
         [character, document, team_document].compact.any?(&:limit_reached?)
-      end
-
-      private
-
-      def deprecated(name, replacement)
-        Deprecation.warn_once("DeepL::Resources::Usage##{name}",
-                              "[DEPRECATION] DeepL::Resources::Usage##{name} is deprecated, " \
-                              "use #{replacement} instead.", uplevel: 3)
       end
     end
 

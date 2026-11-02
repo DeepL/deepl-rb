@@ -198,14 +198,12 @@ module DeepL
   # @param [Hash] options Additional (body) options for the translation. Notable options:
   #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
   #     `DeepL::Resources::MultilingualGlossary` to use for the translation, sent as
-  #     +glossary_id+. Cannot be combined with +:glossary_id+ or +:glossary_ids+.
-  #   * +:glossary_id+ - Deprecated, use +:glossary+. A single glossary ID (string).
+  #     +glossary_id+. Cannot be combined with +:glossary_ids+.
   #   * +:glossary_ids+ - An array of up to 5 glossary IDs (strings,
   #     `DeepL::Resources::Glossary` or `DeepL::Resources::MultilingualGlossary` objects) to
   #     use for the translation. Glossaries are applied in order (first match wins). Without
-  #     +source_lang+, the API detects it. Cannot be combined with +:glossary+ or
-  #     +:glossary_id+. Raises `ArgumentError` if these rules are violated or more than 5 IDs
-  #     are provided.
+  #     +source_lang+, the API detects it. Cannot be combined with +:glossary+. Raises
+  #     `ArgumentError` if these rules are violated or more than 5 IDs are provided.
   #   * +:style_rule+ - A style rule ID string or a `DeepL::Resources::StyleRule` object.
   #   * +:style_profile+ - A style profile ID string or a `DeepL::Resources::StyleProfile`
   #     object. Applies the profile's glossaries, style rule lists and translation memories.

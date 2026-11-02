@@ -27,11 +27,10 @@ module DeepL
     #                               the filename of +input_file_path+.
     # @param [Hash] options Additional (body) options for the upload. Notable glossary options:
     #                       +:glossary+ (a glossary ID, `DeepL::Resources::Glossary` or
-    #                       `DeepL::Resources::MultilingualGlossary`; replaces the deprecated
-    #                       +:glossary_id+) or +:glossary_ids+ (an array of up to 5 glossary IDs
-    #                       or objects).
+    #                       `DeepL::Resources::MultilingualGlossary`) or +:glossary_ids+ (an
+    #                       array of up to 5 glossary IDs or objects).
     #                       +:glossary_ids+ requires +source_lang+ to be set, cannot be combined
-    #                       with +:glossary+ or +:glossary_id+, and raises `ArgumentError` if
+    #                       with +:glossary+, and raises `ArgumentError` if
     #                       these rules are violated or more than 5 IDs are provided. Notable
     #                       style/translation memory options (mirroring text translation):
     #                       +:style_rule+ (a style rule ID string or a
