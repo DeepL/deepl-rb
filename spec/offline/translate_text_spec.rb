@@ -175,10 +175,14 @@ describe 'DeepL::Client#translate_text' do
       api_client.translate_text('a', 'EN', 'DE', glossary: 'g-1')
     end
 
-    it 'sends the ID of a multilingual glossary object as glossary_id' do
+    it 'sends the ID of a glossary or multilingual glossary object as glossary_id' do
+      glossary = DeepL::Resources::Glossary.new({ 'glossary_id' => 'g-2' }, nil, nil)
       multilingual = DeepL::Resources::MultilingualGlossary.new({ 'glossary_id' => 'g-3' }, nil,
                                                                 nil)
+      expect_body(base.merge(glossary_id: 'g-2'))
       expect_body(base.merge(glossary_id: 'g-3'))
+
+      api_client.translate_text('a', 'EN', 'DE', glossary: glossary)
 
       api_client.translate_text('a', 'EN', 'DE', 'glossary' => multilingual)
     end
@@ -222,12 +226,13 @@ describe 'DeepL::Client#translate_text' do
   describe 'glossary_ids' do
     let(:base) { { text: ['a'], source_lang: 'EN', target_lang: 'DE' } }
 
-    it 'sends glossary IDs and multilingual glossary objects as IDs' do
+    it 'sends glossary IDs, glossary objects and multilingual glossary objects as IDs' do
+      glossary = DeepL::Resources::Glossary.new({ 'glossary_id' => 'g-2' }, nil, nil)
       multilingual = DeepL::Resources::MultilingualGlossary.new({ 'glossary_id' => 'g-3' }, nil,
                                                                 nil)
-      expect_body(base.merge(glossary_ids: %w[g-1 g-3]))
+      expect_body(base.merge(glossary_ids: %w[g-1 g-2 g-3]))
 
-      api_client.translate_text('a', 'EN', 'DE', glossary_ids: ['g-1', multilingual])
+      api_client.translate_text('a', 'EN', 'DE', glossary_ids: ['g-1', glossary, multilingual])
     end
 
     it 'sends glossary_ids without a source language' do

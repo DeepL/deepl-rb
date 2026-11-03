@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added v2 glossaries to `DeepL::Client`: `create_glossary(name, source_lang, target_lang,
+  entries, **options)`, `create_glossary_from_csv(name, source_lang, target_lang, csv,
+  **options)`, `list_glossaries`, `get_glossary(glossary)`, `get_glossary_entries(glossary)`,
+  `delete_glossary(glossary)` and `get_glossary_languages`. A glossary argument is an ID or a
+  `DeepL::Resources::Glossary`; the entries are returned as a hash and `delete_glossary` returns
+  `nil`. Please refer to the README for usage instructions.
+
 ### Changed
 - Ruby 3.0 or later is now required; the gem declares `required_ruby_version >= 3.0`. Migration:
   on Ruby 2.x, upgrade to Ruby 3.0 or later, or stay on deepl-rb 3.x.
@@ -58,10 +66,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   methods of `DeepL::Client` (`list_translation_memories`, ...). A missing input file raises
   `ArgumentError`, other local file failures raise `DeepL::Exceptions::Error`, and a non-2xx
   reply of a storage URL raises `DeepL::Exceptions::Error` with `http_status_code`.
-- `DeepL.glossaries`, `DeepL::GlossaryApi`, `DeepL::Resources::Glossary` and
-  `DeepL::Resources::LanguagePair` (v2 glossaries). Manage glossaries with the multilingual
-  glossary methods of `DeepL::Client`, which also cover glossaries created with v2; pass a
-  glossary ID or a `DeepL::Resources::MultilingualGlossary` as `glossary:` or `glossary_ids:`.
+- `DeepL.glossaries` and `DeepL::GlossaryApi`. Use the v2 glossary methods of `DeepL::Client`:
+  `create` becomes `create_glossary` (entries as a hash; for CSV use
+  `create_glossary_from_csv`), `list` `list_glossaries`, `find` `get_glossary`, `entries`
+  `get_glossary_entries` (returns a hash of source term to target term instead of pairs),
+  `destroy` `delete_glossary` (returns `nil` instead of the ID) and `language_pairs`
+  `get_glossary_languages`.
 - Per-call additional HTTP headers. Use the `headers:` option of `DeepL::Client.new`.
 - `DeepL::Exceptions::NotSupported`, deprecated in 3.10.0. Nothing raises it any more.
 

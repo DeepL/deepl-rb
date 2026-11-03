@@ -70,8 +70,8 @@ module DeepL
     # @param [String, nil] source_lang Source language, +nil+ to detect it.
     # @param [String] target_lang Target language.
     # @param [Hash] options Translation options, sent as given unless listed here:
-    #   * +:glossary+ - A glossary ID or `DeepL::Resources::MultilingualGlossary`, sent as
-    #     +glossary_id+.
+    #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
+    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Cannot be combined with
     #     +:glossary+. Without +source_lang+, the API detects it.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
@@ -138,8 +138,8 @@ module DeepL
     #     base name of +input_path+.
     #   * +:formality+, +:output_format+ - Sent unchanged.
     #   * +:enable_watermark+ - +true+ or +false+.
-    #   * +:glossary+ - A glossary ID or `DeepL::Resources::MultilingualGlossary`, sent as
-    #     +glossary_id+.
+    #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
+    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Requires +source_lang+ and
     #     cannot be combined with +:glossary+.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
@@ -275,6 +275,95 @@ module DeepL
     # @return [DeepL::Resources::Usage] Usage per type; a type absent from the response is +nil+.
     def get_usage # rubocop:disable Naming/AccessorMethodName
       Requests::Usage.new(api).request
+    end
+
+    ##
+    # Creates a v2 glossary for one language pair. Glossaries are not regional, so a regional
+    # variant is sent as its base language (+EN-GB+ as +EN+).
+    #
+    # @param [String] name Name of the glossary.
+    # @param [String] source_lang Source language.
+    # @param [String] target_lang Target language.
+    # @param [Hash, Array<Array(String, String)>, String] entries Source term to target term, as a
+    #   hash, source/target pairs or a TSV string. Sent as TSV.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::Glossary] The created glossary.
+    # @raise [ArgumentError] If +name+ or +entries+ is empty.
+    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping surrounding
+    #   whitespace or contains a control character, a TSV line is not exactly two terms, or a
+    #   source term appears twice.
+    def create_glossary(name, source_lang, target_lang, entries, **options)
+      raise ArgumentError, 'Glossary entries must not be empty' if entries.nil? || entries.empty?
+
+      tsv = Utils::GlossaryEntries.to_tsv(entries)
+      Requests::Glossary::Create.new(api, name, source_lang, target_lang, tsv, 'tsv',
+                                     options).request
+    end
+
+    ##
+    # Creates a v2 glossary from CSV content, for example a file downloaded from the DeepL
+    # website.
+    #
+    # @param [String] name Name of the glossary.
+    # @param [String] source_lang Source language.
+    # @param [String] target_lang Target language.
+    # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
+    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @return [DeepL::Resources::Glossary] The created glossary.
+    # @raise [ArgumentError] If +name+ is empty or +csv+ is neither a string nor readable.
+    def create_glossary_from_csv(name, source_lang, target_lang, csv, **options)
+      csv = csv.read if csv.respond_to?(:read)
+      raise ArgumentError, 'CSV content must be a String or an IO' unless csv.is_a?(String)
+
+      Requests::Glossary::Create.new(api, name, source_lang, target_lang, csv, 'csv',
+                                     options).request
+    end
+
+    ##
+    # Lists all v2 glossaries.
+    #
+    # @return [Array<DeepL::Resources::Glossary>]
+    def list_glossaries
+      Requests::Glossary::List.new(api).request
+    end
+
+    ##
+    # Retrieves a v2 glossary, without its entries.
+    #
+    # @param [String, DeepL::Resources::Glossary] glossary ID or glossary.
+    # @return [DeepL::Resources::Glossary]
+    # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist.
+    def get_glossary(glossary)
+      Requests::Glossary::Find.new(api, glossary).request
+    end
+
+    ##
+    # Retrieves the entries of a v2 glossary.
+    #
+    # @param [String, DeepL::Resources::Glossary] glossary ID or glossary.
+    # @return [Hash{String => String}] Source term to target term.
+    # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist.
+    def get_glossary_entries(glossary)
+      Requests::Glossary::Entries.new(api, glossary).request
+    end
+
+    ##
+    # Deletes a v2 glossary.
+    #
+    # @param [String, DeepL::Resources::Glossary] glossary ID or glossary.
+    # @return [nil]
+    # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist.
+    def delete_glossary(glossary)
+      Requests::Glossary::Destroy.new(api, glossary).request
+    end
+
+    ##
+    # Retrieves the language pairs supported by glossaries: every source language combined with
+    # every other target language of +/v3/languages?resource=glossary+.
+    #
+    # @return [Array<DeepL::Resources::LanguagePair>]
+    def get_glossary_languages # rubocop:disable Naming/AccessorMethodName
+      Requests::Glossary::LanguagePairs.new(api).request
     end
 
     ##
@@ -691,8 +780,8 @@ module DeepL
     # @param [String] name Name of the style profile.
     # @param [String, nil] description Free-text description.
     # @param [String, nil] industry The industry the style profile is written for.
-    # @param [Array<String, DeepL::Resources::MultilingualGlossary>, nil] glossary_ids
-    #   Glossaries to link (IDs or objects), highest priority first.
+    # @param [Array<String, DeepL::Resources::Glossary, DeepL::Resources::MultilingualGlossary>,
+    #   nil] glossary_ids Glossaries to link (IDs or objects), highest priority first.
     # @param [Array<String, DeepL::Resources::StyleRule>, nil] style_rule_ids Style rule lists.
     # @param [Array<String, DeepL::Resources::TranslationMemory>, nil] translation_memory_ids
     #   Translation memories.

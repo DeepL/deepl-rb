@@ -60,7 +60,7 @@ The authentication key is trimmed; an empty key raises `ArgumentError`.
 document translation (`translate_document` and its steps, see
 [Translate documents](#translate-documents)), rephrasing and correction (`rephrase_text` and
 `correct_text`, see [Rephrase Text](#rephrase-text) and [Correct Text](#correct-text)),
-multilingual glossaries (see [Multilingual glossaries](#multilingual-glossaries)),
+glossaries (see [Glossaries](#glossaries) and [Multilingual glossaries](#multilingual-glossaries)),
 spoken terms (see
 [Spoken terms](#spoken-terms)), style rules (see [Style Rules](#style-rules)), style profiles
 (see [Style profiles](#style-profiles)), translation memories (see
@@ -83,7 +83,7 @@ Version 4 removes the module-level API of version 3, deprecated in 3.10.0. Creat
 | `DeepL.usage` | `get_usage` |
 | `DeepL.languages(type:)` | `get_source_languages` / `get_target_languages` |
 | `DeepL.document.*` | `translate_document`, `translate_document_upload`, `translate_document_get_status`, `translate_document_wait_until_done`, `translate_document_download` |
-| `DeepL.glossaries` | the `*_multilingual_glossary*` methods |
+| `DeepL.glossaries` | `create_glossary`, `create_glossary_from_csv`, `list_glossaries`, `get_glossary`, `get_glossary_entries`, `delete_glossary`, `get_glossary_languages` |
 | `DeepL.style_rules` | the style rule methods (`get_all_style_rules`, `create_style_rule`, ...) |
 | `DeepL.translation_memories` | the translation memory methods (`list_translation_memories`, ...) |
 | `DeepL.with_session`, `DeepL.http_client`, `DeepL.api` | the `proxy:` and `http_client_options:` options |
@@ -355,12 +355,51 @@ array with one element). Empty text raises `ArgumentError`. It raises
 
 ### Glossaries
 
-Glossaries are created and managed with the multilingual glossary methods of `DeepL::Client`,
-see [Multilingual glossaries](#multilingual-glossaries). They also manage glossaries created with
-the v2 glossary endpoints.
+A v2 glossary holds the entries of one language pair. To create one, call `create_glossary`
+with a name, the source and target languages and the entries, a hash of source term to target
+term (source/target pairs or a TSV string work too). Glossaries are not regional: `EN-GB` is
+sent as `EN`. The entries are sent as TSV; each term is stripped of surrounding whitespace, and
+an empty term, one with a control character or a source term that appears twice raises
+`DeepL::Exceptions::ValidationError` before anything is sent. An empty name or no entries raise
+`ArgumentError`:
+
+```rb
+glossary = client.create_glossary('My Glossary', 'EN', 'ES',
+                                  { 'Hello World' => 'Hola Tierra', 'car' => 'auto' })
+
+puts glossary.class
+# => DeepL::Resources::Glossary
+puts glossary.id
+# => 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
+puts glossary.entry_count
+# => 2
+```
+
+`create_glossary_from_csv` creates a glossary from CSV content (a string or an IO), for example
+a file downloaded from the DeepL website; the content is sent as given:
+
+```rb
+glossary = client.create_glossary_from_csv('My Glossary', 'EN', 'ES', File.open('entries.csv'))
+```
+
+Every method that takes a glossary accepts its ID or a `DeepL::Resources::Glossary`:
+
+```rb
+client.list_glossaries               # => Array of DeepL::Resources::Glossary
+client.get_glossary(glossary)        # => DeepL::Resources::Glossary, without the entries
+client.get_glossary_entries(glossary)
+# => {"Hello World"=>"Hola Tierra", "car"=>"auto"}
+client.delete_glossary(glossary)     # => nil
+```
+
+`get_glossary_languages` returns the language pairs supported by glossaries, as
+`DeepL::Resources::LanguagePair` objects with `source_lang` and `target_lang`. A missing
+glossary raises `DeepL::Exceptions::NotFound`. Glossaries with several language pairs are
+managed with the methods in [Multilingual glossaries](#multilingual-glossaries), which also
+handle v2 glossaries.
 
 Glossaries can be used in text and document translation by specifying the
-`glossary` option, a glossary ID or a `MultilingualGlossary` object. It is sent
+`glossary` option, a glossary ID or a `Glossary` / `MultilingualGlossary` object. It is sent
 as `glossary_id`:
 
 ```rb
@@ -371,7 +410,6 @@ puts translation.class
 puts translation.text
 # => 'Hola Tierra'
 
-glossary = client.get_multilingual_glossary 'aa48c7f0-0d02-413e-8a06-d5bbf0ca7a6e'
 translation = client.translate_text "I wish we had a car.", 'EN', 'ES', glossary: glossary
 
 puts translation.class
@@ -381,8 +419,8 @@ puts translation.text
 ```
 
 To use more than one glossary at once, specify the `glossary_ids` option with an
-array of up to 5 glossary IDs (as strings or `DeepL::Resources::MultilingualGlossary`
-objects) instead of `glossary`. This works for both text and document
+array of up to 5 glossary IDs (as strings, `DeepL::Resources::Glossary` or
+`DeepL::Resources::MultilingualGlossary` objects) instead of `glossary`. This works for both text and document
 translation. `glossary_ids` cannot be combined with `glossary`,
 and raises `ArgumentError` if this rule is violated or more than 5 IDs are
 provided. For text translation, a glossary (`glossary` or `glossary_ids`) can be

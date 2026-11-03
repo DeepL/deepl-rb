@@ -46,7 +46,7 @@ module DeepL
 
         def component_id(component)
           case component
-          when DeepL::Resources::MultilingualGlossary then component.id
+          when DeepL::Resources::Glossary, DeepL::Resources::MultilingualGlossary then component.id
           when DeepL::Resources::StyleRule then component.style_id
           when DeepL::Resources::TranslationMemory then component.translation_memory_id
           else component

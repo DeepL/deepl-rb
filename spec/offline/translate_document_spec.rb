@@ -47,11 +47,12 @@ describe 'document translation' do
   def resource_options
     resources = DeepL::Resources
     memory = resources::TranslationMemory.new({ 'translation_memory_id' => 'tm-obj' }, nil, nil)
+    glossary = resources::Glossary.new({ 'glossary_id' => 'g-obj' }, nil, nil)
     multilingual = resources::MultilingualGlossary.new({ 'glossary_id' => 'g-ml', 'name' => 'n' },
                                                        nil, nil)
     { style_rule: resources::StyleRule.new({ 'style_id' => 's-obj' }, nil, nil),
       style_profile: resources::StyleProfile.new({ 'style_profile_id' => 'sp-obj' }, nil, nil),
-      translation_memory: memory, glossary_ids: [multilingual, 'g-str'] }
+      translation_memory: memory, glossary_ids: [glossary, multilingual, 'g-str'] }
   end
 
   def form_fields(form)
@@ -133,7 +134,7 @@ describe 'document translation' do
 
       expect(form_fields(form)).to include(
         'style_id' => 's-obj', 'style_profile_id' => 'sp-obj', 'translation_memory_id' => 'tm-obj',
-        'glossary_ids' => 'g-ml,g-str'
+        'glossary_ids' => 'g-obj,g-ml,g-str'
       )
     end
 

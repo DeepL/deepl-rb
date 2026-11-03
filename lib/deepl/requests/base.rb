@@ -278,8 +278,8 @@ module DeepL
       # Validates the +glossary_ids+ option and resolves it to an array of glossary ID strings.
       #
       # The +glossary_ids+ option accepts an array of up to `MAX_GLOSSARY_IDS` glossary
-      # identifiers. Each entry may be a glossary ID string or a
-      # `DeepL::Resources::MultilingualGlossary` object. It:
+      # identifiers. Each entry may be a glossary ID string, a
+      # `DeepL::Resources::Glossary` or a `DeepL::Resources::MultilingualGlossary` object. It:
       # * cannot be combined with the singular +glossary+ option,
       # * allows at most `MAX_GLOSSARY_IDS` identifiers.
       #
@@ -300,8 +300,8 @@ module DeepL
         ids.map { |glossary| glossary_id_string(glossary) }
       end
 
-      # Resolves the +glossary+ option (a glossary ID string or a
-      # `DeepL::Resources::MultilingualGlossary`) to the ID sent as +glossary_id+.
+      # Resolves the +glossary+ option (a glossary ID string, a `DeepL::Resources::Glossary` or
+      # a `DeepL::Resources::MultilingualGlossary`) to the ID sent as +glossary_id+.
       #
       # @return [String, nil] The glossary ID, or nil if the +glossary+ option is unset.
       def build_glossary_param
@@ -314,6 +314,7 @@ module DeepL
       end
 
       def glossary_id_string(glossary)
+        return glossary.id if glossary.is_a?(DeepL::Resources::Glossary)
         return glossary.id if glossary.is_a?(DeepL::Resources::MultilingualGlossary)
 
         glossary.to_s

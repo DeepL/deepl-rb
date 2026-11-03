@@ -39,15 +39,8 @@ module DeepL
             entries_format: csv ? 'csv' : 'tsv' }
         end
 
-        # A hash, source/target pairs or a TSV string of them, checked and joined as TSV.
         def entries_to_string(entries)
-          entries_class = Resources::MultilingualGlossaryDictionaryEntries
-          entries = entries.is_a?(String) ? entries_class.tsv_to_pairs(entries) : entries.to_a
-          entries_class.check_pairs!(entries).map do |entry|
-            source = Utils::TermValidator.validate!(entry.first)
-            target = Utils::TermValidator.validate!(entry.last)
-            "#{source}\t#{target}"
-          end.join("\n")
+          Utils::GlossaryEntries.to_tsv(entries)
         end
 
         def build_glossary(request, response)
