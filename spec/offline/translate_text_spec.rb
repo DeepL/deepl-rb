@@ -58,8 +58,7 @@ describe 'DeepL::Client#translate_text' do
       tag_handling: 'xml',
       tag_handling_version: 'v2',
       context: 'A greeting',
-      model_type: 'latency_optimized',
-      show_billed_characters: true
+      model_type: 'latency_optimized'
     }.each do |option, value|
       it "sends #{option}" do
         expect_body({ text: ['Hello'], source_lang: 'EN', target_lang: 'DE', option => value })
@@ -190,13 +189,6 @@ describe 'DeepL::Client#translate_text' do
     it 'raises ArgumentError together with glossary_ids' do
       expect { api_client.translate_text('a', 'EN', 'DE', glossary: 'g-1', glossary_ids: ['g-2']) }
         .to raise_error(ArgumentError, /together with the `glossary` option/)
-    end
-
-    it 'raises ArgumentError for glossary together with glossary_id without sending a request' do
-      expect { api_client.translate_text('a', 'EN', 'DE', glossary: 'g-1', glossary_id: 'g-2') }
-        .to raise_error(ArgumentError,
-                        /`glossary` option cannot be used together with the `glossary_id`/)
-      expect(a_request(:any, //)).not_to have_been_made
     end
   end
 

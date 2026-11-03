@@ -7,6 +7,8 @@ module DeepL
   module Requests
     module TranslationMemory
       class CreateImport < Base
+        accepts_options :content_type, :display_name
+
         attr_reader :file_name, :content_length
 
         def initialize(api, file_name, content_length, options = {}, additional_headers = {})

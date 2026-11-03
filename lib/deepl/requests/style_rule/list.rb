@@ -7,6 +7,8 @@ module DeepL
   module Requests
     module StyleRule
       class List < Base
+        accepts_options :page, :page_size, :detailed
+
         def initialize(api, options = {})
           super
         end

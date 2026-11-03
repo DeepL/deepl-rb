@@ -7,7 +7,7 @@ module DeepL
   module Requests
     module TranslationMemory
       class List < Base
-        SUPPORTED_OPTIONS = %w[page page_size].freeze
+        accepts_options :page, :page_size
 
         def initialize(api, options = {})
           super
@@ -31,7 +31,7 @@ module DeepL
         end
 
         def query_params
-          SUPPORTED_OPTIONS.each_with_object({}) do |option_name, params|
+          self.class.accepted_options.each_with_object({}) do |option_name, params|
             value = option(option_name)
             params[option_name] = value.to_s unless value.nil?
           end

@@ -69,7 +69,8 @@ module DeepL
     # @param [String, Array<String>] text Text or texts to translate.
     # @param [String, nil] source_lang Source language, +nil+ to detect it.
     # @param [String] target_lang Target language.
-    # @param [Hash] options Translation options, sent as given unless listed here:
+    # @param [Hash] options Translation options. Any other option raises ArgumentError before a
+    #   request is sent:
     #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
     #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Cannot be combined with
@@ -79,11 +80,13 @@ module DeepL
     #   * +:custom_instructions+ - An array of instructions; a string is one instruction.
     #   * +:extra_body_parameters+ - A hash added to the request body last; replaces fields of
     #     the same name.
-    #   Other options (+:formality+, +:tag_handling+, +:tag_handling_version+, +:context+,
-    #   +:model_type+, ...) are sent unchanged.
+    #   * +:formality+, +:context+, +:tag_handling+, +:tag_handling_version+, +:model_type+,
+    #     +:preserve_formatting+, +:outline_detection+, +:splitting_tags+, +:non_splitting_tags+,
+    #     +:ignore_tags+, +:translation_memory_threshold+ - Sent unchanged.
     # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
     #   an array for an array (also for a one-element array).
-    # @raise [ArgumentError] If the glossary options are combined or more than 5 are given.
+    # @raise [ArgumentError] If an option is unknown, the glossary options are combined or more
+    #   than 5 are given.
     def translate_text(text, source_lang, target_lang, **options)
       Requests::Translate.new(api, text, source_lang, target_lang, options).request
     end
@@ -100,7 +103,8 @@ module DeepL
     #   the upload, +nil+ to wait until it is done.
     # @param [Hash] options The options of #translate_document_upload, including +:filename+.
     # @return [DeepL::Resources::DocumentTranslationStatus] The final status, +done+.
-    # @raise [ArgumentError] If +input_path+ does not exist; nothing is uploaded.
+    # @raise [ArgumentError] If +input_path+ does not exist or an option is unknown; nothing is
+    #   uploaded.
     # @raise [DeepL::Exceptions::DocumentTranslationError] For any other failure, also an
     #   existing +output_path+ (nothing is uploaded and the file is kept), a failed translation
     #   or an expired +timeout_s+. Its +document_handle+ is set once the upload succeeded, so the
@@ -109,6 +113,8 @@ module DeepL
     def translate_document(input_path, output_path, source_lang, target_lang, timeout_s: nil, # rubocop:disable Metrics/MethodLength
                            **options)
       raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
+
+      Requests::Document::Upload.validate_options!(options.except(:filename))
       if File.exist?(output_path)
         raise Exceptions::DocumentTranslationError.new('File already exists at output path', nil)
       end
@@ -133,7 +139,8 @@ module DeepL
     # @param [String] input_path Path of the document to translate.
     # @param [String, nil] source_lang Source language, +nil+ to detect it.
     # @param [String] target_lang Target language.
-    # @param [Hash] options Document translation options:
+    # @param [Hash] options Document translation options. Any other option raises ArgumentError
+    #   before a request is sent:
     #   * +:filename+ - File name sent with the upload, including its extension. Defaults to the
     #     base name of +input_path+.
     #   * +:formality+, +:output_format+ - Sent unchanged.
@@ -147,8 +154,8 @@ module DeepL
     #   * +:extra_body_parameters+ - A hash added to the form last; replaces fields of the same
     #     name.
     # @return [DeepL::Resources::DocumentHandle] Handle of the uploaded document.
-    # @raise [ArgumentError] If +input_path+ does not exist (nothing is uploaded), or the glossary
-    #   options are combined or more than 5 are given.
+    # @raise [ArgumentError] If +input_path+ does not exist (nothing is uploaded), an option is
+    #   unknown, or the glossary options are combined or more than 5 are given.
     def translate_document_upload(input_path, source_lang, target_lang, **options)
       raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
 
@@ -202,12 +209,12 @@ module DeepL
     #   Cannot be combined with +tone+.
     # @param [String, nil] tone Tone, see +DeepL::Constants::Tone+.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last;
-    #   replaces fields of the same name. Other options are sent unchanged.
+    #   replaces fields of the same name. Any other option raises ArgumentError.
     # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
     #   an array for an array (also for a one-element array).
     # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
     def rephrase_text(text, target_lang = nil, writing_style: nil, tone: nil, **options)
-      Requests::Rephrase.new(api, text, target_lang, writing_style, tone, options.compact).request
+      Requests::Rephrase.new(api, text, target_lang, writing_style, tone, options).request
     end
 
     ##
@@ -217,13 +224,13 @@ module DeepL
     # @param [String, Array<String>] text Text or texts to correct.
     # @param [String, nil] target_lang Target language, +nil+ to keep the language of the text.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last;
-    #   replaces fields of the same name. Other options are sent unchanged.
+    #   replaces fields of the same name. Any other option raises ArgumentError.
     # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
     #   an array for an array (also for a one-element array).
     # @raise [ArgumentError] If +text+ is empty or contains an empty string.
     # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
     def correct_text(text, target_lang = nil, **options)
-      Requests::Correct.new(api, text, target_lang, options.compact).request
+      Requests::Correct.new(api, text, target_lang, options).request
     end
 
     ##
@@ -905,13 +912,13 @@ module DeepL
     # @param [String, nil] content_type MIME type of the file (API default: +application/xml+).
     # @param [String, nil] display_name Name of the translation memory (API default: the file
     #   name).
-    # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
+    # @param [Hash, nil] extra_body_parameters A hash added to the request body last.
     # @return [DeepL::Resources::TranslationMemoryImport] The job ID and the upload URL.
     def create_translation_memory_import(file_name, content_length, content_type: nil,
-                                         display_name: nil, **options)
+                                         display_name: nil, extra_body_parameters: nil)
       translation_memories.create_import(file_name, content_length,
                                          content_type: content_type, display_name: display_name,
-                                         extra_body_parameters: options[:extra_body_parameters])
+                                         extra_body_parameters: extra_body_parameters)
     end
 
     ##
@@ -943,18 +950,18 @@ module DeepL
     #   sent with the upload. +nil+ uses +application/xml+.
     # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the job, +nil+ to wait
     #   until it is completed. The API reports +awaiting_input+ for a while after the upload.
-    # @param [Hash] options +:extra_body_parameters+, a hash added to the body of the import job
-    #   request last.
+    # @param [Hash, nil] extra_body_parameters A hash added to the body of the import job request
+    #   last.
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job; its result carries the
     #   ID of the new translation memory.
     # @raise [ArgumentError] If the file does not exist, before any request is sent.
     # @raise [DeepL::Exceptions::Error] If the file cannot be read, the upload fails, the job fails
     #   or expires (with the API's error message), or +timeout_s+ expires.
     def import_translation_memory_from_filepath(input_path, display_name: nil, content_type: nil,
-                                                timeout_s: nil, **options)
+                                                timeout_s: nil, extra_body_parameters: nil)
       translation_memories.import_from_filepath(
         input_path, display_name: display_name, content_type: content_type, timeout_s: timeout_s,
-                    extra_body_parameters: options[:extra_body_parameters]
+                    extra_body_parameters: extra_body_parameters
       )
     end
 

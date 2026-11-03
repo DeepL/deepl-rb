@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `nil`. Please refer to the README for usage instructions.
 
 ### Changed
+- Every `DeepL::Client` method that takes options accepts only the options it documents. Any
+  other option, also a misspelled one, raises `ArgumentError` naming it before a request is sent.
+  Previously, text translation, rephrasing, correction and the glossary, spoken terms, style rule
+  and style profile methods sent it as a body field, and document translation and translation
+  memory import dropped it. This includes `show_billed_characters` (always sent as `true`) and
+  `glossary_id` for text translation. Migration: fix misspelled options, and send fields the
+  library does not model with `extra_body_parameters:`.
 - `DeepL::Resources::Usage#any_limit_reached?` also checks `api_key_character`, so it returns
   `true` when an API Pro key has used up its own character limit. The speech minutes are still
   not considered. Migration: code that needs the previous result checks `character`, `document`
@@ -42,9 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Resources::ConfiguredRules`. `StyleRule#configured_rules` is now a hash (see Changed).
 - The `glossary_id` option of text translation (`DeepL::Client#translate_text`,
   `DeepL.translate`), deprecated in 3.10.0. Use `glossary` instead, which takes the glossary ID or
-  a glossary object. `glossary_id` on its own is sent unchanged like any other unknown option,
-  without the deprecation warning; together with `glossary` or `glossary_ids` it still raises
-  `ArgumentError`.
+  a glossary object. `glossary_id` now raises `ArgumentError` like any other unknown option.
 - The `glossary_id` option of document translation (`DeepL::Client#translate_document`,
   `#translate_document_upload`, `DeepL.document.upload`), deprecated in 3.10.0. Use `glossary`
   instead. `glossary_id` is no longer sent.

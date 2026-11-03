@@ -287,10 +287,16 @@ The following parameters will be automatically converted:
 | `translation_memory_threshold` | No conversion applied (integer 0-100, recommended minimum 75)
 | `context`             | No conversion applied
 | `custom_instructions` | An array of strings; a string is sent as a one-element array
+| `tag_handling`        | No conversion applied (`DeepL::Constants::TagHandling`)
 | `tag_handling_version` | No conversion applied (`DeepL::Constants::TagHandlingVersion`)
+| `model_type`          | No conversion applied (`DeepL::Constants::ModelType`)
 | `extra_body_parameters` | Hash of extra parameters to pass in the body of the HTTP request. Can be used to access beta features, or to override built-in parameters for testing purposes. Extra parameters can override keys explicitly set by the client.
 
 `show_billed_characters: true` is always sent.
+
+Every method accepts only the options it documents. Any other option, also a misspelled one,
+raises `ArgumentError` naming it before a request is sent. To send a field the library does not
+model, add it to `extra_body_parameters`; every method that takes options accepts it.
 
 ### Rephrase Text
 
@@ -1213,8 +1219,8 @@ puts status.billed_characters
 # => 2045
 ```
 
-A missing input file raises `ArgumentError` before anything is sent. Every other failure (also
-an existing output file, which is kept, and a failed translation) raises
+A missing input file or an unknown option raises `ArgumentError` before anything is sent.
+Every other failure (also an existing output file, which is kept, and a failed translation) raises
 `DeepL::Exceptions::DocumentTranslationError`. Once the upload succeeded, its `document_handle`
 is set, so you can still query the status and download the document. If a DeepL error caused
 it, its `http_status_code` and `should_retry?` are copied from that error. `timeout_s:` limits the wait after the upload in seconds; by default

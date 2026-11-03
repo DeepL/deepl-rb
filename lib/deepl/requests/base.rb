@@ -44,11 +44,34 @@ module DeepL
         subclass.prepend(ResponseFormatGuard)
       end
 
+      # Declares the options a request class accepts besides +extra_body_parameters+. Any other
+      # option raises ArgumentError before a request is sent.
+      def self.accepts_options(*names)
+        @accepted_options = names.map(&:to_s).freeze
+      end
+
+      def self.accepted_options
+        @accepted_options || []
+      end
+
+      # @raise [ArgumentError] If +options+ has an option the class does not accept.
+      def self.validate_options!(options)
+        accepted = accepted_options + ['extra_body_parameters']
+        unknown = options.keys.reject { |name| accepted.include?(name.to_s) }
+        return if unknown.empty?
+
+        names = unknown.map { |name| "`#{name}`" }.join(', ')
+        raise ArgumentError, "Unknown option#{'s' if unknown.size > 1} #{names}; use " \
+                             '`extra_body_parameters` to send fields the SDK does not model'
+      end
+
       attr_reader :api, :response, :options
 
+      # Options set to nil are unset and not sent.
       def initialize(api, options = {}, additional_headers = {})
         @api = api
-        @options = options
+        self.class.validate_options!(options)
+        @options = options.compact
         @additional_headers = additional_headers
         @num_retries = 0
         @backoff_timer = Utils::BackoffTimer.new
@@ -220,8 +243,8 @@ module DeepL
           error.is_a?(Errno::ECONNREFUSED)
       end
 
-      # The request body: the SDK's payload, then the options, then +extra_body_parameters+,
-      # which replace an SDK field of the same name.
+      # The request body: the SDK's payload, then the remaining declared options, then
+      # +extra_body_parameters+, which replace an SDK field of the same name.
       def json_body(payload)
         body = payload.merge(options_without_extra_params).transform_keys(&:to_s)
         apply_extra_body_parameters_to_json(body)

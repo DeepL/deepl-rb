@@ -6,15 +6,16 @@
 module DeepL
   module Requests
     module Document
-      class Upload < Base
+      class Upload < Base # rubocop:disable Metrics/ClassLength
         attr_reader :input_file_path, :source_lang, :target_lang, :filename
 
         SUPPORTED_OPTIONS = %w[formality output_format enable_watermark].freeze
+        accepts_options(*SUPPORTED_OPTIONS, :glossary, :glossary_ids, :style_rule, :style_profile,
+                        :translation_memory, :translation_memory_threshold)
 
         def initialize(api, input_file_path, source_lang, target_lang, filename = nil, # rubocop:disable Metrics/ParameterLists
                        options = {}, additional_headers = {})
-          # Options set to nil are unset and not sent.
-          super(api, options.compact, additional_headers)
+          super(api, options, additional_headers)
           @input_file_path = input_file_path
           @source_lang = source_lang
           @target_lang = target_lang

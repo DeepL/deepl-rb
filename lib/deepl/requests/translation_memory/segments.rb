@@ -7,7 +7,7 @@ module DeepL
   module Requests
     module TranslationMemory
       class Segments < Base
-        SUPPORTED_OPTIONS = %w[page_size page_cursor filter_text filter_case_sensitive].freeze
+        accepts_options :page_size, :page_cursor, :filter_text, :filter_case_sensitive
 
         attr_reader :translation_memory_id
 
@@ -32,7 +32,7 @@ module DeepL
         end
 
         def query_params
-          SUPPORTED_OPTIONS.each_with_object({}) do |option_name, params|
+          self.class.accepted_options.each_with_object({}) do |option_name, params|
             value = option(option_name)
             params[option_name] = value.to_s unless value.nil?
           end

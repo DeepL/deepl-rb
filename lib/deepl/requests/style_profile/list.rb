@@ -7,7 +7,7 @@ module DeepL
   module Requests
     module StyleProfile
       class List < Base
-        SUPPORTED_OPTIONS = %w[page page_size].freeze
+        accepts_options :page, :page_size
 
         def request
           build_style_profile_list(*execute_request_with_retries(get_request))
@@ -29,7 +29,7 @@ module DeepL
         end
 
         def query_params
-          SUPPORTED_OPTIONS.each_with_object({}) do |option_name, params|
+          self.class.accepted_options.each_with_object({}) do |option_name, params|
             params[option_name] = option(option_name).to_s if option?(option_name)
           end
         end

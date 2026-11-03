@@ -6,6 +6,8 @@
 module DeepL
   module Requests
     class LanguagesForResource < Base
+      accepts_options :include
+
       def initialize(api, resource, options = {})
         super(api, options)
         @resource = resource.to_s

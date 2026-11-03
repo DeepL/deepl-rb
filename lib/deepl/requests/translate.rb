@@ -31,12 +31,17 @@ module DeepL
         custom_instructions: STRING_TO_SINGLE_ELEMENT_ARRAY_CONVERSION
       }.freeze
 
+      accepts_options :glossary, :glossary_ids, :style_rule, :style_profile, :translation_memory,
+                      :translation_memory_threshold, :formality, :split_sentences,
+                      :preserve_formatting, :context, :tag_handling, :tag_handling_version,
+                      :outline_detection, :splitting_tags, :non_splitting_tags, :ignore_tags,
+                      :model_type, :custom_instructions
+
       attr_reader :text, :source_lang, :target_lang, :ignore_tags, :splitting_tags,
                   :non_splitting_tags, :model_type, :custom_instructions, :tag_handling_version
 
       def initialize(api, text, source_lang, target_lang, options = {}, additional_headers = {})
-        # Options set to nil are unset and not sent.
-        super(api, options.compact, additional_headers)
+        super(api, options, additional_headers)
         @text = text
         @source_lang = source_lang
         @target_lang = target_lang
@@ -48,7 +53,6 @@ module DeepL
         text_arrayified = text.is_a?(Array) ? text : [text]
         payload = { text: text_arrayified, target_lang: target_lang, show_billed_characters: true }
         payload[:source_lang] = source_lang unless source_lang.nil?
-        validate_no_glossary_id!
 
         if option?(:style_rule)
           style_rule = delete_option(:style_rule)
@@ -106,17 +110,6 @@ module DeepL
       end
 
       private
-
-      # glossary_id is no longer an option, but would still override the glossary options.
-      def validate_no_glossary_id!
-        return if option(:glossary_id).nil?
-
-        other = %w[glossary glossary_ids].find { |name| !option(name).nil? }
-        return unless other
-
-        raise ArgumentError,
-              "The `#{other}` option cannot be used together with the `glossary_id` option"
-      end
 
       def tweak_parameters!
         OPTIONS_CONVERSIONS.each do |param, converter|

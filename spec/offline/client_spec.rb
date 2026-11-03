@@ -232,7 +232,8 @@ describe DeepL::Client do
                     [{ text: 'Hi', detected_source_language: 'en', target_language: 'en-GB' }])
 
       result = client.rephrase_text('Hello', 'en-GB', writing_style: 'business',
-                                                      tone: 'friendly', context: nil)
+                                                      tone: 'friendly',
+                                                      extra_body_parameters: nil)
       expect([result.class, result.text, result.target_language])
         .to eq([DeepL::Resources::Text, 'Hi', 'en-GB'])
     end
