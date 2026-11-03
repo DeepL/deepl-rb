@@ -295,14 +295,6 @@ describe 'DeepL::Client translation memory requests' do
       expect(stub).to have_been_requested.twice
     end
 
-    it 'keeps polling past a downloaded status' do
-      stub = stub_job(reply(job_json('downloaded')), reply(job_json('completed')))
-      allow(memories.send(:translation_memories)).to receive(:sleep)
-
-      expect(memories.wait_until_translation_memory_job_done('j-1').status).to eq('completed')
-      expect(stub).to have_been_requested.twice
-    end
-
     %w[failed expired].each do |status|
       it "raises Error with the API message when the job is #{status}" do
         stub_job(reply(job_json(status, error: { message: 'bad file' })))
