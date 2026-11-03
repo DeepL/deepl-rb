@@ -254,7 +254,7 @@ describe 'DeepL::Client translation memory requests' do
       'awaiting_input' => [false, true, false, false, true],
       'processing' => [false, false, false, false, true],
       'completed' => [true, false, false, true, true],
-      'downloaded' => [true, false, false, false, true],
+      'downloaded' => [false, false, false, false, true],
       'failed' => [true, false, true, false, false],
       'expired' => [true, false, true, false, false]
     }.each do |status, flags|
@@ -292,6 +292,14 @@ describe 'DeepL::Client translation memory requests' do
                                                             ))
 
       expect(job.status).to eq('completed')
+      expect(stub).to have_been_requested.twice
+    end
+
+    it 'keeps polling past a downloaded status' do
+      stub = stub_job(reply(job_json('downloaded')), reply(job_json('completed')))
+      allow(memories.send(:translation_memories)).to receive(:sleep)
+
+      expect(memories.wait_until_translation_memory_job_done('j-1').status).to eq('completed')
       expect(stub).to have_been_requested.twice
     end
 

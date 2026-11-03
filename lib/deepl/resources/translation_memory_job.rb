@@ -12,7 +12,6 @@ module DeepL
       STATUS_AWAITING_INPUT = 'awaiting_input'
       STATUS_PROCESSING = 'processing'
       STATUS_COMPLETED = 'completed'
-      STATUS_DOWNLOADED = 'downloaded'
       STATUS_FAILED = 'failed'
       STATUS_EXPIRED = 'expired'
 
@@ -33,13 +32,13 @@ module DeepL
       end
 
       ##
-      # Checks if the job terminated. Note that this could be due to an error as well, but means
-      # no further waiting is necessary.
+      # Checks if the job terminated: its status is +completed+, +failed+ or +expired+. Note that
+      # this could be due to an error as well, but means no further waiting is necessary.
       #
       # @return [true] if so
 
       def finished?
-        [STATUS_COMPLETED, STATUS_DOWNLOADED, STATUS_FAILED, STATUS_EXPIRED].include?(status)
+        [STATUS_COMPLETED, STATUS_FAILED, STATUS_EXPIRED].include?(status)
       end
 
       ##

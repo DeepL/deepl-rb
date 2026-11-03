@@ -26,8 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   categories beyond the seven fixed readers are kept and absent categories are not filled with
   `{}`. Migration: replace `configured_rules.numbers` with
   `configured_rules.fetch('numbers', {})`, likewise for the other categories.
+- `DeepL::Resources::TranslationMemoryJob#finished?` (and `TranslationMemoryJobResult#finished?`)
+  is `false` for the status `downloaded`, which the API does not send, so
+  `wait_until_translation_memory_job_done` keeps polling on it instead of returning the job.
+  Migration: none for jobs the API returns; code that built a job with status `downloaded` itself
+  should use `completed`.
 
 ### Removed
+- `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job
+  status of the API. Migration: compare with `STATUS_COMPLETED` (or call `done?`) instead.
 - `DeepL::Resources::ConfiguredRules`. `StyleRule#configured_rules` is now a hash (see Changed).
 - The `glossary_id` option of text translation (`DeepL::Client#translate_text`,
   `DeepL.translate`), deprecated in 3.10.0. Use `glossary` instead, which takes the glossary ID or

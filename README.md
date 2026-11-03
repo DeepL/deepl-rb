@@ -1095,8 +1095,8 @@ waiting forever; the last wait is cut so that the call never waits longer than
 `timeout_s`.
 
 `done?` is `true` once the job is completed, `ok?` is `false` once it failed or
-expired (and `true` while it runs), and `finished?` is `true` for any terminal
-status.
+expired (and `true` while it runs), and `finished?` is `true` once it is
+completed, failed or expired.
 
 ```rb
 job = client.get_translation_memory_job('YOUR_JOB_ID')
@@ -1109,8 +1109,8 @@ puts [job.done?, job.ok?, job.finished?].inspect
 # => [false, true, false]
 ```
 
-The status is one of `awaiting_input`, `processing`, `completed`, `downloaded`,
-`failed` or `expired`.
+The status is one of `awaiting_input`, `processing`, `completed`, `failed` or
+`expired`.
 
 #### Deleting a translation memory
 
