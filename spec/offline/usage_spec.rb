@@ -100,15 +100,13 @@ describe 'usage' do
       expect(usage.any_limit_reached?).to be(true)
     end
 
-    it 'does not count the API Pro usage types in any_limit_reached?' do
+    it 'counts the API key character limit in any_limit_reached?' do
       stub_request(:get, url('/v2/usage')).to_return(
         reply(character_count: 1, character_limit: 100, api_key_character_count: 50,
               api_key_character_limit: 50)
       )
-      usage = api_client.get_usage
 
-      expect(usage.api_key_character.limit_reached?).to be(true)
-      expect(usage.any_limit_reached?).to be(false)
+      expect(api_client.get_usage.any_limit_reached?).to be(true)
     end
 
     it 'ignores an unparseable billing period and malformed products' do

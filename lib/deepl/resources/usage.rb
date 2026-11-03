@@ -61,11 +61,10 @@ module DeepL
       end
 
       ##
-      # True if the character, document or team document limit has been reached. The API Pro
-      # usage types (api_key_character and the speech minutes) are not considered; call
-      # limit_reached? on them directly.
+      # True if the character, document, team document or API key character limit has been
+      # reached. The speech minutes are not considered; call limit_reached? on them directly.
       def any_limit_reached?
-        [character, document, team_document].compact.any?(&:limit_reached?)
+        [character, document, team_document, api_key_character].compact.any?(&:limit_reached?)
       end
     end
 

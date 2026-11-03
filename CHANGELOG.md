@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `nil`. Please refer to the README for usage instructions.
 
 ### Changed
+- `DeepL::Resources::Usage#any_limit_reached?` also checks `api_key_character`, so it returns
+  `true` when an API Pro key has used up its own character limit. The speech minutes are still
+  not considered. Migration: code that needs the previous result checks `character`, `document`
+  and `team_document` with `limit_reached?` itself.
 - Ruby 3.0 or later is now required; the gem declares `required_ruby_version >= 3.0`. Migration:
   on Ruby 2.x, upgrade to Ruby 3.0 or later, or stay on deepl-rb 3.x.
 - Network failures always raise `DeepL::Exceptions::ConnectionError`, with the original error as

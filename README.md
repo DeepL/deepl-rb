@@ -1156,7 +1156,8 @@ handle = client.translate_document_upload('my_document.docx', 'EN', 'DE',
 To check current API usage, call `get_usage`. It returns a `DeepL::Resources::Usage`. Each
 usage type is a `DeepL::Resources::Usage::Detail` with `count`, `limit` and `limit_reached?`:
 `character`, plus `document` and `team_document` for accounts with a document limit.
-`any_limit_reached?` checks `character`, `document` and `team_document`:
+`any_limit_reached?` checks `character`, `document`, `team_document` and, for API Pro users,
+`api_key_character`:
 
 ```rb
 usage = client.get_usage
@@ -1172,8 +1173,9 @@ puts "Document usage: #{usage.document}" if usage.document
 
 For API Pro users, the response also contains this API key's usage, speech usage, the billing
 period and a per-product breakdown. These fields are `nil` when the response does not contain
-them (e.g. for API Free users). `any_limit_reached?` does not consider them; call
-`limit_reached?` on them directly, e.g. `usage.api_key_character.limit_reached?`:
+them (e.g. for API Free users). `any_limit_reached?` considers `api_key_character` but not the
+speech usage; call `limit_reached?` on it directly, e.g.
+`usage.speech_to_text_minutes.limit_reached?`:
 
 ```rb
 usage = client.get_usage
