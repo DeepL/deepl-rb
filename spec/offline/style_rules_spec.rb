@@ -11,7 +11,7 @@ describe 'style rules' do
     let(:style_json) do
       { style_id: 's-1', name: 'house style', language: 'en', version: 3,
         creation_time: '2026-01-02T03:04:05Z', updated_time: '2026-02-03T04:05:06Z',
-        configured_rules: { numbers: { number_format: 'dot' } },
+        configured_rules: { numbers: { number_format: 'dot' }, new_category: { rule: 'on' } },
         custom_instructions: [{ id: 'i-1', label: 'Tone', prompt: 'Be brief',
                                 source_language: 'en' }] }
     end
@@ -82,13 +82,15 @@ describe 'style rules' do
         2.times { style_rules.create_style_rule('n', 'en', **options) }
       end
 
-      it 'parses the configured rules, defaulting missing rules to an empty hash' do
+      it 'returns the configured rules as the wire hash, keeping every category' do
         stub_request(:post, url('/v3/style_rules')).to_return(reply(style_json, 201))
 
         rule = style_rules.create_style_rule('n', 'en')
 
-        expect([rule.configured_rules.vocabulary, rule.custom_instructions.map(&:class)])
-          .to eq([{}, [DeepL::Resources::CustomInstruction]])
+        wire_rules = { 'numbers' => { 'number_format' => 'dot' },
+                       'new_category' => { 'rule' => 'on' } }
+        expect([rule.configured_rules, rule.custom_instructions.map(&:class)])
+          .to eq([wire_rules, [DeepL::Resources::CustomInstruction]])
       end
     end
 

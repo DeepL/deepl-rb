@@ -7,27 +7,6 @@ require 'time'
 
 module DeepL
   module Resources
-    class ConfiguredRules
-      attr_reader :dates_and_times, :formatting, :numbers, :punctuation,
-                  :spelling_and_grammar, :style_and_tone, :vocabulary
-
-      def initialize(configured_rules_data)
-        @dates_and_times = extract_rule(configured_rules_data, 'dates_and_times')
-        @formatting = extract_rule(configured_rules_data, 'formatting')
-        @numbers = extract_rule(configured_rules_data, 'numbers')
-        @punctuation = extract_rule(configured_rules_data, 'punctuation')
-        @spelling_and_grammar = extract_rule(configured_rules_data, 'spelling_and_grammar')
-        @style_and_tone = extract_rule(configured_rules_data, 'style_and_tone')
-        @vocabulary = extract_rule(configured_rules_data, 'vocabulary')
-      end
-
-      private
-
-      def extract_rule(data, key)
-        data[key] || {}
-      end
-    end
-
     class CustomInstruction
       attr_reader :id, :label, :prompt, :source_language
 
@@ -62,8 +41,7 @@ module DeepL
       end
 
       def extract_configured_rules(style_rule)
-        configured_rules_data = style_rule['configured_rules']
-        @configured_rules = configured_rules_data ? ConfiguredRules.new(configured_rules_data) : nil
+        @configured_rules = style_rule['configured_rules']
       end
 
       def extract_custom_instructions(style_rule)

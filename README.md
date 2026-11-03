@@ -683,7 +683,7 @@ style_rules = client.get_all_style_rules(page: 0, page_size: 10)
 # List with detailed configuration
 client.get_all_style_rules(detailed: true).each do |rule|
   if rule.configured_rules
-    puts "  Number formatting: #{rule.configured_rules.numbers.keys.join(', ')}"
+    puts "  Number formatting: #{rule.configured_rules.fetch('numbers', {}).keys.join(', ')}"
   end
 end
 ```
@@ -705,9 +705,10 @@ updated = client.update_style_rule_configured_rules(
 )
 ```
 
-The `configured_rules` hash supports the following categories: `dates_and_times`,
-`formatting`, `numbers`, `punctuation`, `spelling_and_grammar`, `style_and_tone`,
-and `vocabulary`.
+`StyleRule#configured_rules` returns the configured rules as the API sends them: a
+hash of category -> rule -> value with string keys, or `nil` when the response omits
+them. Category and rule names are not validated; the API reference lists the
+supported ones.
 
 #### Managing custom instructions
 

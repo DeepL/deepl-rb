@@ -21,8 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Exceptions::ConnectionError` (or `DeepL::Exceptions::Error`).
 - `DeepL::Resources::Language#supports_formality?` returns `nil` for a source language; the
   removed `DeepL.languages` raised `DeepL::Exceptions::NotSupported`. Migration: check for `nil`.
+- `DeepL::Resources::StyleRule#configured_rules` returns the hash the API sends (category ->
+  rule -> value, string keys) instead of a `DeepL::Resources::ConfiguredRules` object, so
+  categories beyond the seven fixed readers are kept and absent categories are not filled with
+  `{}`. Migration: replace `configured_rules.numbers` with
+  `configured_rules.fetch('numbers', {})`, likewise for the other categories.
 
 ### Removed
+- `DeepL::Resources::ConfiguredRules`. `StyleRule#configured_rules` is now a hash (see Changed).
 - The `glossary_id` option of text translation (`DeepL::Client#translate_text`,
   `DeepL.translate`), deprecated in 3.10.0. Use `glossary` instead, which takes the glossary ID or
   a glossary object. `glossary_id` on its own is sent unchanged like any other unknown option,
