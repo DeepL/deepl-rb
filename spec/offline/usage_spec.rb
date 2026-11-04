@@ -88,25 +88,46 @@ describe 'usage' do
       end
     end
 
-    it 'parses the document and team document usage' do
-      stub_request(:get, url('/v2/usage')).to_return(
-        reply(character_count: 1, character_limit: 100, document_count: 5, document_limit: 5,
-              team_document_count: 2, team_document_limit: 10)
-      )
-      usage = api_client.get_usage
+    describe '#any_character_limit_reached?' do
+      def usage_with(**fields)
+        stub_request(:get, url('/v2/usage'))
+          .to_return(reply(character_count: 1, character_limit: 100, **fields))
+        api_client.get_usage
+      end
 
-      expect(usage.document).to have_attributes(count: 5, limit: 5, limit_reached?: true)
-      expect(usage.team_document).to have_attributes(count: 2, limit: 10, limit_reached?: false)
-      expect(usage.any_limit_reached?).to be(true)
+      it 'is true when the account character limit is reached' do
+        usage = usage_with(character_count: 100, api_key_character_count: 1,
+                           api_key_character_limit: 100)
+
+        expect(usage.any_character_limit_reached?).to be(true)
+      end
+
+      it 'is true when the API key character limit is reached' do
+        usage = usage_with(api_key_character_count: 50, api_key_character_limit: 50)
+
+        expect(usage.any_character_limit_reached?).to be(true)
+      end
+
+      it 'is false when only a speech minute limit is reached' do
+        usage = usage_with(speech_to_text_minutes_count: 600, speech_to_text_minutes_limit: 600,
+                           speech_to_speech_minutes_count: 600,
+                           speech_to_speech_minutes_limit: 600)
+
+        expect(usage.any_character_limit_reached?).to be(false)
+      end
     end
 
-    it 'counts the API key character limit in any_limit_reached?' do
+    it 'ignores document usage fields in the response' do
       stub_request(:get, url('/v2/usage')).to_return(
-        reply(character_count: 1, character_limit: 100, api_key_character_count: 50,
-              api_key_character_limit: 50)
+        reply(character_count: 1, character_limit: 100, document_count: 5, document_limit: 5,
+              team_document_count: 10, team_document_limit: 10)
       )
 
-      expect(api_client.get_usage.any_limit_reached?).to be(true)
+      usage = api_client.get_usage
+
+      expect(usage.character).to have_attributes(count: 1, limit: 100)
+      expect(usage).not_to respond_to(:document)
+      expect(usage).not_to respond_to(:team_document)
     end
 
     it 'ignores an unparseable billing period and malformed products' do
@@ -134,14 +155,12 @@ describe 'usage' do
     it '#get_usage sends GET /v2/usage and parses the usage' do
       stub_request(:get, 'https://client.example.test/v2/usage')
         .with(headers: { 'Authorization' => 'DeepL-Auth-Key client-key' })
-        .to_return(reply(character_count: 42, character_limit: 100, document_count: 5,
-                         document_limit: 5))
+        .to_return(reply(character_count: 42, character_limit: 100))
 
       usage = client.get_usage
 
       expect(usage.character).to have_attributes(count: 42, limit: 100, limit_reached?: false)
-      expect(usage.document).to have_attributes(count: 5, limit: 5)
-      expect([usage.any_limit_reached?, usage.team_document]).to eq([true, nil])
+      expect(usage.any_character_limit_reached?).to be(false)
     end
   end
 end

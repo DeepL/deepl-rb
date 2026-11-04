@@ -1160,10 +1160,10 @@ handle = client.translate_document_upload('my_document.docx', 'EN', 'DE',
 ### Monitor usage
 
 To check current API usage, call `get_usage`. It returns a `DeepL::Resources::Usage`. Each
-usage type is a `DeepL::Resources::Usage::Detail` with `count`, `limit` and `limit_reached?`:
-`character`, plus `document` and `team_document` for accounts with a document limit.
-`any_limit_reached?` checks `character`, `document`, `team_document` and, for API Pro users,
-`api_key_character`:
+usage type is a `DeepL::Resources::Usage::Detail` with `count`, `limit` and `limit_reached?`.
+`any_character_limit_reached?` is `true` if the account's character limit (`character`) or this
+API key's character limit (`api_key_character`, API Pro) is reached; the speech minutes have
+their own details:
 
 ```rb
 usage = client.get_usage
@@ -1172,15 +1172,13 @@ puts usage.character.count
 # => 180118
 puts usage.character.limit
 # => 1250000
-puts 'Translation limit reached.' if usage.any_limit_reached?
-puts "Document usage: #{usage.document}" if usage.document
-# => Document usage: 5 of 10
+puts 'Character limit reached.' if usage.any_character_limit_reached?
 ```
 
 For API Pro users, the response also contains this API key's usage, speech usage, the billing
 period and a per-product breakdown. These fields are `nil` when the response does not contain
-them (e.g. for API Free users). `any_limit_reached?` considers `api_key_character` but not the
-speech usage; call `limit_reached?` on it directly, e.g.
+them (e.g. for API Free users). `any_character_limit_reached?` considers `api_key_character`
+but not the speech usage; call `limit_reached?` on it directly, e.g.
 `usage.speech_to_text_minutes.limit_reached?`:
 
 ```rb

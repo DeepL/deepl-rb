@@ -15,6 +15,6 @@ describe 'DeepL::Client#get_usage' do
 
     expect(usage.character.count).to be_an(Integer)
     expect(usage.character.limit).to be_an(Integer)
-    expect(usage.any_limit_reached?).to be(true).or be(false)
+    expect(usage.any_character_limit_reached?).to be(true).or be(false)
   end
 end

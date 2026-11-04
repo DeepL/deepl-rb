@@ -25,8 +25,7 @@ module DeepL
         end
       end
 
-      DETAIL_TYPES = %i[document team_document api_key_character speech_to_text_minutes
-                        speech_to_speech_minutes].freeze
+      DETAIL_TYPES = %i[api_key_character speech_to_text_minutes speech_to_speech_minutes].freeze
       KEYWORD_FIELDS = (DETAIL_TYPES + %i[products start_time end_time]).freeze
 
       attr_reader :character, *KEYWORD_FIELDS
@@ -34,8 +33,6 @@ module DeepL
       ##
       # Each keyword argument is nil when the response does not contain the field.
       #
-      # @param [Detail, nil] document Document usage, for accounts with a document limit.
-      # @param [Detail, nil] team_document Document usage of the whole team.
       # @param [Detail, nil] api_key_character Character usage of this API key (API Pro).
       # @param [Detail, nil] speech_to_text_minutes Speech-to-text usage in minutes (API Pro).
       # @param [Detail, nil] speech_to_speech_minutes Speech-to-speech usage in minutes (API Pro).
@@ -61,10 +58,10 @@ module DeepL
       end
 
       ##
-      # True if the character, document, team document or API key character limit has been
-      # reached. The speech minutes are not considered; call limit_reached? on them directly.
-      def any_limit_reached?
-        [character, document, team_document, api_key_character].compact.any?(&:limit_reached?)
+      # True if the account's character limit or this API key's character limit is reached; the
+      # speech minutes have their own details. A missing detail counts as not reached.
+      def any_character_limit_reached?
+        [character, api_key_character].compact.any?(&:limit_reached?)
       end
     end
 
