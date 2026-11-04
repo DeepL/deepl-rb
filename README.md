@@ -452,7 +452,10 @@ Multilingual glossaries (v3) group several language-pair dictionaries under one
 glossary and are managed through `DeepL::Client`. Every method that takes a
 glossary accepts its ID or a `DeepL::Resources::MultilingualGlossary` object; the
 ID is URL-encoded in the request path. A dictionary's `entries` is a hash of
-source term to target term.
+source term to target term. An empty glossary ID (or a glossary object without
+one), an empty name, an empty language of a dictionary to delete, no dictionaries
+on create, or a dictionary without entries (not given as CSV) raises
+`ArgumentError` before anything is sent.
 
 To create a multilingual glossary, pass a name and one
 `DeepL::Resources::MultilingualGlossaryDictionaryEntries` (or a hash with

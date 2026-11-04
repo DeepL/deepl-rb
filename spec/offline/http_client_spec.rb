@@ -83,7 +83,10 @@ describe 'DeepL HTTP client' do
       let(:create_calls) do
         input, = create_text_document(temp_dir)
         { '/v2/glossaries' => -> { _1.create_glossary('g', 'EN', 'DE', { 'a' => 'b' }) },
-          '/v3/glossaries' => -> { _1.create_multilingual_glossary('g', []) },
+          '/v3/glossaries' => lambda { |client|
+            client.create_multilingual_glossary('g', [{ source_lang: 'EN', target_lang: 'DE',
+                                                        entries: { 'a' => 'b' } }])
+          },
           '/v3/spoken-terms' => -> { _1.create_spoken_terms('t', []) },
           '/v3/style_profiles' => -> { _1.create_style_profile('p') },
           '/v3/style_rules' => -> { _1.create_style_rule('r', 'en') },

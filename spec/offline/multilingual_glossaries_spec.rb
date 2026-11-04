@@ -116,7 +116,7 @@ describe 'multilingual glossaries' do
       it 'parses the creation time as a UTC Time' do
         stub_request(:post, url('/v3/glossaries')).to_return(reply(glossary_json, 201))
 
-        created = client.create_multilingual_glossary('terms', [])
+        created = client.create_multilingual_glossary('terms', [apple])
 
         expect(created.creation_time)
           .to eq(Time.utc(2026, 10, 23, 17, 15, Rational(53_434_769, 1_000_000)))
@@ -352,6 +352,49 @@ describe 'multilingual glossaries' do
         client.get_multilingual_glossary_dictionary_entries(id, 'EN', 'DE')
         client.replace_multilingual_glossary_dictionary(id, apple)
         client.delete_multilingual_glossary_dictionary(id, 'EN', 'DE')
+      end
+    end
+
+    describe 'argument checks' do
+      let(:no_id) { DeepL::Resources::MultilingualGlossary.new({ 'name' => 'g' }, nil, nil) }
+
+      ['', nil, :no_id].each do |id|
+        it "raise ArgumentError for the glossary ID #{id.inspect} without sending a request" do
+          glossary = id == :no_id ? no_id : id
+
+          expect { client.get_multilingual_glossary(glossary) }.to raise_error(ArgumentError, /ID/)
+          expect { client.delete_multilingual_glossary(glossary) }
+            .to raise_error(ArgumentError, /ID/)
+          expect { client.update_multilingual_glossary_dictionary(glossary, apple) }
+            .to raise_error(ArgumentError, /ID/)
+        end
+      end
+
+      it 'raise ArgumentError for an empty name or language without sending a request' do
+        expect { client.create_multilingual_glossary('', [apple]) }
+          .to raise_error(ArgumentError, /name/)
+        expect { client.create_multilingual_glossary_from_csv('', 'EN', 'DE', "a,b\n") }
+          .to raise_error(ArgumentError, /name/)
+        expect { client.update_multilingual_glossary_name('g-1', '') }
+          .to raise_error(ArgumentError, /name/)
+        expect { client.delete_multilingual_glossary_dictionary('g-1', '', 'DE') }
+          .to raise_error(ArgumentError, /source_lang/)
+      end
+
+      [[], {}, '', " \n"].each do |entries|
+        it "raise ArgumentError for the entries #{entries.inspect} without sending a request" do
+          dictionary = { source_lang: 'EN', target_lang: 'DE', entries: entries }
+
+          expect { client.create_multilingual_glossary('g', [dictionary]) }
+            .to raise_error(ArgumentError, /entries/)
+          expect { client.replace_multilingual_glossary_dictionary('g-1', dictionary) }
+            .to raise_error(ArgumentError, /entries/)
+        end
+      end
+
+      it 'raises ArgumentError for no dictionaries without sending a request' do
+        expect { client.create_multilingual_glossary('g', []) }
+          .to raise_error(ArgumentError, /dictionary/)
       end
     end
   end

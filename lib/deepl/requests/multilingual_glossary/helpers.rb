@@ -11,9 +11,10 @@ module DeepL
         private
 
         def glossary_id(glossary)
-          return glossary.id if glossary.is_a?(DeepL::Resources::MultilingualGlossary)
+          id = glossary.is_a?(DeepL::Resources::MultilingualGlossary) ? glossary.id : glossary
+          raise ArgumentError, 'Glossary ID must not be empty' if id.to_s.empty?
 
-          glossary.to_s
+          id.to_s
         end
 
         # The path of a glossary, with its ID URL-encoded.
@@ -27,7 +28,7 @@ module DeepL
         def dictionary_payload(dictionary)
           if dictionary.is_a?(DeepL::Resources::MultilingualGlossaryDictionaryEntries)
             return { source_lang: dictionary.source_lang, target_lang: dictionary.target_lang,
-                     entries: entries_to_string(dictionary.entries), entries_format: 'tsv' }
+                     entries: non_empty_tsv(dictionary.entries), entries_format: 'tsv' }
           end
 
           value = ->(key) { dictionary[key] || dictionary[key.to_s] }
@@ -35,12 +36,15 @@ module DeepL
           # CSV content is sent as given; TSV content is parsed so its terms are checked too.
           csv = value.call(:entries_format) == 'csv' && entries.is_a?(String)
           { source_lang: value.call(:source_lang), target_lang: value.call(:target_lang),
-            entries: csv ? entries : entries_to_string(entries),
+            entries: csv ? entries : non_empty_tsv(entries),
             entries_format: csv ? 'csv' : 'tsv' }
         end
 
-        def entries_to_string(entries)
-          Utils::GlossaryEntries.to_tsv(entries)
+        def non_empty_tsv(entries)
+          tsv = Utils::GlossaryEntries.to_tsv(entries || [])
+          raise ArgumentError, 'Glossary dictionary entries must not be empty' if tsv.empty?
+
+          tsv
         end
 
         def build_glossary(request, response)

@@ -13,6 +13,9 @@ module DeepL
 
         def initialize(api, name, dictionaries, options = {})
           super(api, options)
+          raise ArgumentError, 'Glossary name must not be empty' if name.to_s.empty?
+          raise ArgumentError, 'Glossary needs at least one dictionary' if dictionaries.to_a.empty?
+
           @name = name
           @dictionaries = dictionaries.map { |dictionary| dictionary_payload(dictionary) }
         end

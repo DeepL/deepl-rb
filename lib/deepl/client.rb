@@ -410,6 +410,8 @@ module DeepL
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping surrounding whitespace or contains a control character, or a TSV line is not
     #   exactly two terms.
+    # @raise [ArgumentError] If +name+ or +dictionaries+ is empty, or a dictionary has no entries,
+    #   before any request.
     def create_multilingual_glossary(name, dictionaries, **options)
       Requests::MultilingualGlossary::Create.new(api, name, dictionaries, options).request
     end
@@ -427,6 +429,7 @@ module DeepL
     # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
+    # @raise [ArgumentError] If +name+ is empty, before any request.
     def create_multilingual_glossary_from_csv(name, source_lang, target_lang, csv, **options)
       dictionary = csv_dictionary(source_lang, target_lang, csv)
       Requests::MultilingualGlossary::Create.new(api, name, [dictionary], options).request
@@ -446,6 +449,8 @@ module DeepL
     # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
     # @return [DeepL::Resources::MultilingualGlossary]
     # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist.
+    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
+    #   request.
     def get_multilingual_glossary(glossary)
       Requests::MultilingualGlossary::Find.new(api, glossary).request
     end
@@ -463,6 +468,8 @@ module DeepL
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
+    # @raise [ArgumentError] If the glossary ID or the entries of a dictionary are empty, or the
+    #   glossary has no ID, before any request.
     def update_multilingual_glossary(glossary, name: nil, dictionaries: nil, **options)
       Requests::MultilingualGlossary::Update.new(api, glossary, name, dictionaries,
                                                  options).request
@@ -475,7 +482,11 @@ module DeepL
     # @param [String] name New name.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
+    # @raise [ArgumentError] If +name+ or the glossary ID is empty, or the glossary has no ID,
+    #   before any request.
     def update_multilingual_glossary_name(glossary, name, **options)
+      raise ArgumentError, 'Glossary name must not be empty' if name.to_s.empty?
+
       Requests::MultilingualGlossary::Update.new(api, glossary, name, nil, options).request
     end
 
@@ -490,6 +501,8 @@ module DeepL
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
+    # @raise [ArgumentError] If the glossary ID or the entries are empty, or the glossary has no ID,
+    #   before any request.
     def update_multilingual_glossary_dictionary(glossary, dictionary, **options)
       Requests::MultilingualGlossary::Update.new(api, glossary, nil, [dictionary],
                                                  options).request
@@ -505,6 +518,8 @@ module DeepL
     # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
+    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
+    #   request.
     def update_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
                                                          **options)
       dictionary = csv_dictionary(source_lang, target_lang, csv)
@@ -523,6 +538,8 @@ module DeepL
     # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
+    # @raise [ArgumentError] If the glossary ID or the entries are empty, or the glossary has no ID,
+    #   before any request.
     def replace_multilingual_glossary_dictionary(glossary, dictionary, **options)
       Requests::MultilingualGlossary::ReplaceDictionary.new(api, glossary, dictionary,
                                                             options).request
@@ -537,6 +554,8 @@ module DeepL
     # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
+    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
+    #   request.
     def replace_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
                                                           **options)
       dictionary = csv_dictionary(source_lang, target_lang, csv)
@@ -554,6 +573,8 @@ module DeepL
     #   of source term to target term.
     # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist or has no dictionary
     #   for the language pair.
+    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
+    #   request.
     def get_multilingual_glossary_dictionary_entries(glossary, source_lang, target_lang)
       Requests::MultilingualGlossary::Entries.new(api, glossary, source_lang, target_lang).request
     end
@@ -565,6 +586,8 @@ module DeepL
     # @param [String] source_lang Source language of the dictionary.
     # @param [String] target_lang Target language of the dictionary.
     # @return [nil]
+    # @raise [ArgumentError] If the glossary ID, +source_lang+ or +target_lang+ is empty, or the
+    #   glossary has no ID, before any request.
     def delete_multilingual_glossary_dictionary(glossary, source_lang, target_lang)
       Requests::MultilingualGlossary::DestroyDictionary.new(api, glossary, source_lang,
                                                             target_lang).request
@@ -575,6 +598,8 @@ module DeepL
     #
     # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
     # @return [nil]
+    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
+    #   request.
     def delete_multilingual_glossary(glossary)
       Requests::MultilingualGlossary::Destroy.new(api, glossary).request
     end

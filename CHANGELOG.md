@@ -68,6 +68,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for an empty translation memory ID or job ID (or a `TranslationMemory` or
   `TranslationMemoryJob` without one), an empty upload or download URL, and an export job without
   a download URL. Migration: rescue `ArgumentError` for these.
+- The multilingual glossary methods raise `ArgumentError` before any request for an empty
+  glossary ID or a `MultilingualGlossary` without one (previously sent to `/v3/glossaries/`), an
+  empty name (`create_multilingual_glossary`, `create_multilingual_glossary_from_csv`,
+  `update_multilingual_glossary_name`), an empty `source_lang` or `target_lang` of
+  `delete_multilingual_glossary_dictionary`, an empty `dictionaries` array of
+  `create_multilingual_glossary`, and a dictionary whose entries (not given as CSV) are empty.
+  Migration: pass a non-empty value; these calls previously failed at the API or sent an empty
+  value.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job
