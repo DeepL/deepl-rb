@@ -26,9 +26,17 @@ describe 'unknown options' do
     expect_rejected('glossary_id') do |c|
       c.translate_document_upload(input, 'EN', 'DE', glossary_id: 'g-1')
     end
-    expect_rejected('formalty') do |c|
-      c.translate_document(input, File.join(temp_dir, 'out.txt'), 'EN', 'DE', formalty: 'more')
-    end
+  end
+
+  it 'wraps an unknown translate_document option in DocumentTranslationError before uploading' do
+    input, = create_text_document(temp_dir)
+
+    expect do
+      api_client.translate_document(input, File.join(temp_dir, 'out.txt'), nil, 'DE', foo: 1)
+    end.to raise_error(DeepL::Exceptions::DocumentTranslationError, /Unknown option `foo`/) { |e|
+      expect([e.document_handle, e.cause]).to match([nil, be_a(ArgumentError)])
+    }
+    expect(a_request(:any, //)).not_to have_been_made
   end
 
   it 'raises for an unknown rephrase or correct option' do

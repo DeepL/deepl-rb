@@ -186,15 +186,37 @@ describe 'DeepL::Client translation memories' do
         .to raise_error(DeepL::Exceptions::Error, /does not exist/)
     end
 
-    it 'raises Error with the cause when the file cannot be written' do
-      stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
+    it 'raises SystemCallError for an existing file or a missing directory before the download' do
+      File.write(output, 'keep me')
 
+      expect { client.download_translation_memory_export(download_url, output) }
+        .to raise_error(Errno::EEXIST)
       expect do
         client.download_translation_memory_export(download_url,
                                                   File.join(temp_dir, 'missing', 'x.tmx'))
-      end.to raise_error(DeepL::Exceptions::Error, /Could not write/) { |error|
-        expect(error.cause).to be_a(Errno::ENOENT)
-      }
+      end
+        .to raise_error(Errno::ENOENT)
+      expect(File.read(output)).to eq('keep me')
+    end
+
+    it 'raises Error for an existing output file before creating the export job' do
+      File.write(output, 'keep me')
+
+      expect { client.export_translation_memory_to_filepath('tm-1', output) }
+        .to raise_error(DeepL::Exceptions::Error, /already exists/)
+    end
+
+    it 'raises Error with the cause when the export cannot be written after the job' do
+      stub_request(:post, url('/v3/translation_memories/tm-1/export'))
+        .to_return(reply({ job_id: 'j-1' }, 200))
+      stub_job(reply(job_json('completed', download_url: download_url)))
+      stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
+      allow(File).to receive(:binwrite).and_raise(Errno::ENOSPC)
+
+      expect { client.export_translation_memory_to_filepath('tm-1', output) }
+        .to raise_error(DeepL::Exceptions::Error, /Could not write/) { |error|
+          expect(error.cause).to be_a(Errno::ENOSPC)
+        }
     end
   end
 
@@ -246,7 +268,9 @@ describe 'DeepL::Client translation memories' do
       end
       stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
 
-      client.download_translation_memory_export(download_url, File::NULL)
+      Dir.mktmpdir do |dir|
+        client.download_translation_memory_export(download_url, File.join(dir, 'x.tmx'))
+      end
 
       expect(connections.last)
         .to have_attributes(address: 'storage.example.test', read_timeout: 33,

@@ -79,7 +79,9 @@ module DeepL
       end
 
       def download_export(job, output_path)
-        DeepL::Requests::TranslationMemory::DownloadExport.new(@api, extract_download_url(job),
+        download_url = extract_download_url(job)
+        Utils::OutputPath.check!(output_path)
+        DeepL::Requests::TranslationMemory::DownloadExport.new(@api, download_url,
                                                                output_path).request
       end
 
@@ -95,10 +97,14 @@ module DeepL
       end
 
       def export_to_filepath(translation_memory, output_path, timeout_s: nil)
-        check_output_directory(output_path)
+        check_output_path(output_path)
         created = create_export(translation_memory)
         job = wait_until_job_done(created.job_id, timeout_s: timeout_s)
-        download_export(job, output_path)
+        begin
+          download_export(job, output_path)
+        rescue SystemCallError, IOError => e
+          raise Exceptions::Error, "Could not write the export to #{output_path}: #{e.message}"
+        end
         job
       end
 
@@ -158,11 +164,15 @@ module DeepL
         raise Exceptions::Error, "Could not read #{input_file_path}: #{e.message}"
       end
 
-      def check_output_directory(output_path)
+      def check_output_path(output_path)
         directory = File.dirname(output_path)
-        return if File.directory?(directory)
-
-        raise Exceptions::Error, "Output directory #{directory} does not exist"
+        unless File.directory?(directory)
+          raise Exceptions::Error, "Output directory #{directory} does not exist"
+        end
+        unless File.writable?(directory)
+          raise Exceptions::Error, "Output directory #{directory} is not writable"
+        end
+        raise Exceptions::Error, "File already exists at #{output_path}" if File.exist?(output_path)
       end
 
       def log_job_polling(interval)

@@ -238,6 +238,17 @@ describe 'document translation' do
   end
 
   describe 'DeepL::Client#translate_document_download' do
+    it 'raises SystemCallError for an existing file or a missing directory before the request' do
+      existing = File.join(temp_dir, 'result.docx')
+      File.write(existing, 'keep me')
+
+      expect { api_client.translate_document_download(handle, existing) }
+        .to raise_error(Errno::EEXIST)
+      expect { api_client.translate_document_download(handle, File.join(temp_dir, 'no', 'x')) }
+        .to raise_error(Errno::ENOENT)
+      expect(File.read(existing)).to eq('keep me')
+    end
+
     it 'writes the response body to the output file byte for byte' do
       output = File.join(temp_dir, 'result.docx')
       stub_request(:post, url('/v2/document/doc-1/result'))
@@ -323,12 +334,12 @@ describe 'document translation' do
     end
 
     it 'raises DocumentTranslationError for a failed upload without other libraries loaded' do
-      input, = create_text_document(temp_dir)
+      input, output_path = create_text_document(temp_dir)
       # Port 9 refuses the connection, so the failure is wrapped after cleaning up the output.
       script = <<~RUBY
         client = DeepL::Client.new('k', server_url: 'http://127.0.0.1:9', max_retries: 0)
         begin
-          client.translate_document(#{input.inspect}, '/nonexistent/out.txt', 'EN', 'DE')
+          client.translate_document(#{input.inspect}, #{output_path.inspect}, 'EN', 'DE')
         rescue StandardError => e
           puts e.class
         end
@@ -396,6 +407,18 @@ describe 'document translation' do
         expect(form_fields(forms.first)).to eq('source_lang' => 'EN', 'target_lang' => 'DE',
                                                'filename' => 'name.docx', 'formality' => 'more')
         expect([result.document_id, result.document_key]).to eq(%w[doc-1 key-1])
+      end
+
+      it 'raises DocumentTranslationError for a missing output directory before any request' do
+        input, = create_text_document(temp_dir)
+
+        expect do
+          client.translate_document(input, File.join(temp_dir, 'missing', 'out.txt'), nil, 'DE')
+        end
+          .to raise_error(DeepL::Exceptions::DocumentTranslationError, /Cannot write/) { |e|
+            expect([e.document_handle, e.cause]).to match([nil, be_a(Errno::ENOENT)])
+          }
+        expect(a_request(:any, /.*/)).not_to have_been_made
       end
 
       it 'raises ArgumentError for a missing input file before any request' do

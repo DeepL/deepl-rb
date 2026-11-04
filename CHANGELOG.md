@@ -93,6 +93,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Integer from 0 to 100. Document translation with the `glossary` option now requires
   `source_lang` like `glossary_ids`. Migration: pass valid values; these calls previously sent
   the value and failed at the API, or ignored the threshold.
+- `translate_document` raises `DeepL::Exceptions::DocumentTranslationError` (with
+  `document_handle` `nil` and the `ArgumentError` as `cause`) for an invalid argument of the
+  upload, such as an unknown option; previously an unknown option raised a bare `ArgumentError`.
+  It also checks before the upload that the directory of `output_path` exists and is writable;
+  previously the document was uploaded and translated and the download failed. A missing input
+  file still raises `ArgumentError`. Migration: rescue `DeepL::Exceptions::DocumentTranslationError`.
+- `translate_document_download` no longer overwrites an existing file. Before the request it
+  raises `Errno::EEXIST` if `output_path` exists and `Errno::ENOENT` or `Errno::EACCES` if its
+  directory is missing or not writable. Migration: delete the file first or pass a new path.
+- `download_translation_memory_export` no longer overwrites an existing file: before the request
+  it raises `Errno::EEXIST` if `output_path` exists and `Errno::ENOENT` or `Errno::EACCES` if its
+  directory is missing or not writable. A failure writing the file now raises the `Errno` error
+  instead of `DeepL::Exceptions::Error`. Migration: delete the file first or pass a new path, and
+  rescue `SystemCallError`.
+- `export_translation_memory_to_filepath` no longer overwrites an existing file: it raises
+  `DeepL::Exceptions::Error` before creating the export job if `output_path` exists or its
+  directory is not writable, as it already did for a missing directory. Migration: delete the
+  file first or pass a new path.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

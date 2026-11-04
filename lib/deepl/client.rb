@@ -114,22 +114,19 @@ module DeepL
     #   the upload, +nil+ to wait until it is done.
     # @param [Hash] options The options of #translate_document_upload, including +:filename+.
     # @return [DeepL::Resources::DocumentTranslationStatus] The final status, +done+.
-    # @raise [ArgumentError] If +input_path+ does not exist or an option is unknown; nothing is
-    #   uploaded.
-    # @raise [DeepL::Exceptions::DocumentTranslationError] For any other failure, also an
-    #   existing +output_path+ (nothing is uploaded and the file is kept), a failed translation
-    #   or an expired +timeout_s+. Its +document_handle+ is set once the upload succeeded, so the
+    # @raise [ArgumentError] If +input_path+ does not exist; nothing is uploaded.
+    # @raise [DeepL::Exceptions::DocumentTranslationError] For any other failure: an existing
+    #   +output_path+ (the file is kept) or one whose directory is missing or not writable, both
+    #   checked before the upload; an argument error of #translate_document_upload, such as an
+    #   unknown option, raised before anything is sent; a failed translation or an expired
+    #   +timeout_s+. Its +document_handle+ is set once the upload succeeded, so the
     #   document can still be queried and downloaded. +http_status_code+ and +should_retry?+ are
     #   those of the DeepL error that caused it, if any.
     def translate_document(input_path, output_path, source_lang, target_lang, timeout_s: nil, # rubocop:disable Metrics/MethodLength
                            **options)
       raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
 
-      Requests::Document::Upload.validate_options!(options.except(:filename))
-      if File.exist?(output_path)
-        raise Exceptions::DocumentTranslationError.new('File already exists at output path', nil)
-      end
-
+      check_document_output_path(output_path)
       handle = nil
       begin
         handle = translate_document_upload(input_path, source_lang, target_lang, **options)
@@ -205,13 +202,17 @@ module DeepL
     end
 
     ##
-    # Downloads the translated document to +output_path+, overwriting an existing file.
+    # Downloads the translated document to +output_path+.
     #
     # @param [DeepL::Resources::DocumentHandle] handle Handle returned by the upload.
-    # @param [String] output_path Path to write the translated document to.
+    # @param [String] output_path Path to write the translated document to. Must not exist.
     # @return [nil]
+    # @raise [SystemCallError] Before the request: +Errno::EEXIST+ if +output_path+ exists,
+    #   +Errno::ENOENT+ if its directory does not exist, +Errno::EACCES+ if the directory is not
+    #   writable.
     # @raise [DeepL::Exceptions::DocumentNotReadyError] If the translation is not done yet.
     def translate_document_download(handle, output_path)
+      Utils::OutputPath.check!(output_path)
       Requests::Document::Download.new(api, handle.document_id, handle.document_key,
                                        output_path).request
       nil
@@ -1097,17 +1098,20 @@ module DeepL
     end
 
     ##
-    # Downloads the TMX file of a completed export job to +output_path+, overwriting an existing
-    # file. The download URL is a pre-signed storage URL: no +Authorization+ header and no
-    # configured +headers+ are sent to it.
+    # Downloads the TMX file of a completed export job to +output_path+. The download URL is a
+    # pre-signed storage URL: no +Authorization+ header and no configured +headers+ are sent to
+    # it.
     #
     # @param [DeepL::Resources::TranslationMemoryJob, String] job The completed export job, or
     #   its download URL.
-    # @param [String] output_path Path to write the file to.
+    # @param [String] output_path Path to write the file to. Must not exist.
     # @return [nil]
     # @raise [ArgumentError] If the download URL is empty or the job has none, for example because
     #   it is not completed yet, before any request.
-    # @raise [DeepL::Exceptions::Error] If the download fails or the file cannot be written.
+    # @raise [SystemCallError] +Errno::EEXIST+ if +output_path+ exists, +Errno::ENOENT+ or
+    #   +Errno::EACCES+ if its directory is missing or not writable (checked before the request),
+    #   or the error of writing the file.
+    # @raise [DeepL::Exceptions::Error] If the download fails.
     def download_translation_memory_export(job, output_path)
       translation_memories.download_export(job, output_path)
       nil
@@ -1115,7 +1119,7 @@ module DeepL
 
     ##
     # Exports a translation memory to a TMX file: creates the export job, waits until it is
-    # completed and writes the file to +output_path+, overwriting an existing file.
+    # completed and writes the file to +output_path+.
     #
     # Starting the export is retried only after failures that show the request was not processed
     # (HTTP 429, DNS resolution errors, refused connections and connection timeouts), so that a
@@ -1123,13 +1127,14 @@ module DeepL
     #
     # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
     #   memory.
-    # @param [String] output_path Path to write the file to.
+    # @param [String] output_path Path to write the file to. Must not exist.
     # @param [Numeric, nil] timeout_s Maximum time in seconds to wait for the job, +nil+ to wait
     #   until it is completed.
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job.
-    # @raise [DeepL::Exceptions::Error] If the directory of +output_path+ does not exist (checked
-    #   before the job is created), the job fails or expires (with the API's error message),
-    #   +timeout_s+ expires, the download fails or the file cannot be written.
+    # @raise [DeepL::Exceptions::Error] If +output_path+ exists or its directory does not exist
+    #   or is not writable (checked before the job is created), the job fails or expires (with
+    #   the API's error message), +timeout_s+ expires, the download fails or the file cannot be
+    #   written.
     # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def export_translation_memory_to_filepath(translation_memory, output_path, timeout_s: nil)
       translation_memories.export_to_filepath(translation_memory, output_path,
@@ -1175,6 +1180,15 @@ module DeepL
 
     def configuration
       api.configuration
+    end
+
+    def check_document_output_path(output_path)
+      Utils::OutputPath.check!(output_path)
+    rescue Errno::EEXIST
+      raise Exceptions::DocumentTranslationError.new('File already exists at output path', nil)
+    rescue SystemCallError => e
+      raise Exceptions::DocumentTranslationError.new("Cannot write to output path: #{e.message}",
+                                                     nil, e)
     end
 
     def csv_dictionary(source_lang, target_lang, csv)

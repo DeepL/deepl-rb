@@ -1070,10 +1070,10 @@ finish on its own, and a status the library does not know keeps it polling too, 
 
 `export_translation_memory_to_filepath` writes a translation memory to a TMX
 file. It creates the export job, waits until it is completed and downloads the
-result, overwriting the output file if it already exists. It accepts
-`timeout_s` and raises a `DeepL::Exceptions::Error` if the job fails or expires,
-if the output directory does not exist (checked before the job is created), and
-if the file cannot be written.
+result. It accepts `timeout_s` and raises a `DeepL::Exceptions::Error` if the
+output file already exists or its directory does not exist or is not writable
+(checked before the job is created), if the job fails or expires, and if the file
+cannot be written.
 
 ```rb
 job = client.export_translation_memory_to_filepath('YOUR_TM_ID', 'export.tmx')
@@ -1088,6 +1088,10 @@ The steps can be performed separately as well, with
 translation memory reuses the previously completed job instead of starting a new
 one, which `reused_existing?` reports. Just like the upload URL, the download URL
 is a pre-signed storage URL and is requested without an authorization header.
+`download_translation_memory_export` raises a `SystemCallError` before the
+download if the output file exists (`Errno::EEXIST`) or its directory is missing
+or not writable (`Errno::ENOENT`, `Errno::EACCES`), and the `Errno` error of
+writing the file.
 
 ```rb
 created = client.create_translation_memory_export('YOUR_TM_ID')
@@ -1231,9 +1235,11 @@ puts status.billed_characters
 # => 2045
 ```
 
-A missing input file or an unknown option raises `ArgumentError` before anything is sent.
-Every other failure (also an existing output file, which is kept, and a failed translation) raises
-`DeepL::Exceptions::DocumentTranslationError`. Once the upload succeeded, its `document_handle`
+A missing input file raises `ArgumentError` before anything is sent. Every other failure raises
+`DeepL::Exceptions::DocumentTranslationError`: an existing output file (which is kept) or one
+whose directory is missing or not writable, and an invalid argument of the upload such as an
+unknown option, all detected before anything is sent (`document_handle` is `nil`), as well as a
+failed upload or translation. Once the upload succeeded, its `document_handle`
 is set, so you can still query the status and download the document. If a DeepL error caused
 it, its `http_status_code` and `should_retry?` are copied from that error. `timeout_s:` limits the wait after the upload in seconds; by default
 `translate_document` waits until the translation is done or failed:
@@ -1255,7 +1261,9 @@ until the translation is done and returns that status; it raises `DeepL::Excepti
 with the API's error message if the translation fails, and when `timeout_s` expires. A status
 the library does not know keeps it polling, so pass `timeout_s` to bound the wait.
 `translate_document_get_status` queries the status once, and `translate_document_download`
-writes the translated document, overwriting an existing file; it raises
+writes the translated document to a path that must not exist yet. Before the request it raises
+a `SystemCallError` if the output file exists (`Errno::EEXIST`) or its directory is missing or
+not writable (`Errno::ENOENT`, `Errno::EACCES`); it raises
 `DeepL::Exceptions::DocumentNotReadyError` if the translation is not done yet.
 
 ```rb
@@ -1405,7 +1413,9 @@ You can capture and process exceptions that may be raised during API calls. Thes
 All of them are subclasses of `DeepL::Exceptions::Error`, which is also raised for a response
 that cannot be parsed. An invalid argument raises `ArgumentError` before any request is sent;
 for an invalid glossary or spoken terms term it is the subclass
-`DeepL::Exceptions::ValidationError`. Errors of an HTTP response carry the status as an `Integer` in
+`DeepL::Exceptions::ValidationError`. A method that writes a file raises a `SystemCallError`
+(`Errno::*`) for an output path it cannot use, where its documentation says so. Errors of an
+HTTP response carry the status as an `Integer` in
 `exception.http_status_code` (`nil` otherwise).
 
 An exampling of handling a generic exception:
