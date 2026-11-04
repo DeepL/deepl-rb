@@ -1417,7 +1417,9 @@ for an invalid glossary or spoken terms term it is the subclass
 `DeepL::Exceptions::ValidationError`. A method that writes a file raises a `SystemCallError`
 (`Errno::*`) for an output path it cannot use, where its documentation says so. Errors of an
 HTTP response carry the status as an `Integer` in
-`exception.http_status_code` (`nil` otherwise).
+`exception.http_status_code` (`nil` otherwise), and their message ends with the API's error
+message when the response has one, for example `Quota exceeded. The character limit has been
+reached: <API message>`.
 
 An exampling of handling a generic exception:
 

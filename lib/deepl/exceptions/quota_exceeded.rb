@@ -7,7 +7,7 @@ module DeepL
   module Exceptions
     class QuotaExceeded < RequestError
       def to_s
-        'Quota exceeded. The character limit has been reached.'
+        with_body_message('Quota exceeded. The character limit has been reached.')
       end
     end
   end

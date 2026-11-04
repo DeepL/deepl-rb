@@ -23,6 +23,13 @@ module DeepL
 
       private
 
+      # +text+ followed by the API's message, if the body has one; +text+'s final period is
+      # dropped before it.
+      def with_body_message(text)
+        message = body_message
+        message ? "#{text.chomp('.')}: #{message}" : text
+      end
+
       # The +message+ of a JSON object body, else the raw body; +nil+ for an empty body.
       def body_message
         body = response&.body

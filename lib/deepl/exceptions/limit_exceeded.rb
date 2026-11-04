@@ -7,7 +7,7 @@ module DeepL
   module Exceptions
     class LimitExceeded < RequestError
       def to_s
-        'Limit exceeded. Please wait and send your request once again.'
+        with_body_message('Limit exceeded. Please wait and send your request once again.')
       end
 
       def should_retry?

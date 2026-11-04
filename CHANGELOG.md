@@ -115,6 +115,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `file_name` or a `content_length` that is not a positive Integer, and
   `import_translation_memory_from_filepath` for an empty input file; previously the import job
   was created. Migration: pass a non-empty file.
+- The messages of `AuthorizationFailed`, `RequestEntityTooLarge`, `LimitExceeded`,
+  `QuotaExceeded` and `ServerError` now end with the API's error message from the response
+  body (`<fixed text>: <API message>`), as the other HTTP errors already did; without one the
+  fixed text stays. The `RequestEntityTooLarge` message no longer claims a limit of 50 text
+  parts. Migration: code that compares these messages exactly should match their start or
+  check the error class.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

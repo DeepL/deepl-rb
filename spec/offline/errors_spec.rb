@@ -7,11 +7,11 @@ require_relative 'offline_helper'
 
 describe 'DeepL error mapping' do
   {
-    401 => [DeepL::Exceptions::AuthorizationFailed, /Authorization failed/],
-    403 => [DeepL::Exceptions::AuthorizationFailed, /Authorization failed/],
-    456 => [DeepL::Exceptions::QuotaExceeded, /Quota exceeded/],
+    401 => [DeepL::Exceptions::AuthorizationFailed, /Authorization failed.*: m\z/],
+    403 => [DeepL::Exceptions::AuthorizationFailed, /Authorization failed.*: m\z/],
+    456 => [DeepL::Exceptions::QuotaExceeded, /Quota exceeded.*: m\z/],
     413 => [DeepL::Exceptions::RequestEntityTooLarge,
-            /request size has reached the supported limit/],
+            'The request size has reached the supported limit: m'],
     418 => [DeepL::Exceptions::RequestError, 'Request failed with HTTP status 418: m']
   }.each do |status, (error_class, message)|
     it "raises #{error_class.name.split('::').last} for status #{status} without retrying" do
@@ -42,12 +42,21 @@ describe 'DeepL error mapping' do
     end
   end
 
-  it 'retries a 503 reply and raises ServerError with its status' do
-    stub = stub_request(:get, url('/v2/usage')).to_return(status: 503, body: '')
+  it 'retries a 503 reply and raises ServerError with its status and the API message' do
+    stub = stub_request(:get, url('/v2/usage')).to_return(status: 503, body: '{"message":"m"}')
 
     expect { api_client.get_usage }
-      .to raise_error(DeepL::Exceptions::ServerError) { |e| expect(e.http_status_code).to eq(503) }
+      .to raise_error(DeepL::Exceptions::ServerError, /: m\z/) { |e|
+        expect(e.http_status_code).to eq(503)
+      }
     expect(stub).to have_been_requested.times(3)
+  end
+
+  it 'keeps the fixed message of a ServerError without a body' do
+    stub_request(:get, url('/v2/usage')).to_return(status: 503, body: '')
+
+    expect { api_client.get_usage }
+      .to raise_error(DeepL::Exceptions::ServerError, /short period\.\z/)
   end
 
   it 'keeps the status code and the failed request on the raised error' do

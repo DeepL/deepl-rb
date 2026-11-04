@@ -13,7 +13,8 @@ module DeepL
       end
 
       def to_s
-        'An internal server error occured. Try again after waiting a short period.'
+        with_body_message('An internal server error occured. ' \
+                          'Try again after waiting a short period.')
       end
 
       def should_retry?
