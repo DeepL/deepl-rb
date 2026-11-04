@@ -108,20 +108,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   directory is missing or not writable. A failure writing the file now raises the `Errno` error
   instead of `DeepL::Exceptions::Error`. Migration: delete the file first or pass a new path, and
   rescue `SystemCallError`.
-- `export_translation_memory_to_filepath` no longer overwrites an existing file: it raises
-  `DeepL::Exceptions::Error` before creating the export job if `output_path` exists or its
-  directory is not writable, as it already did for a missing directory. Migration: delete the
+- `export_translation_memory_to_filepath` no longer overwrites an existing file: it raises an
+  error (`DeepL::Exceptions::TranslationMemoryJobError`, see below) before creating the export
+  job if `output_path` exists or its directory is not writable, as it already did for a missing
+  directory. Migration: delete the
   file first or pass a new path.
 - `create_translation_memory_import` raises `ArgumentError` before any request for an empty
   `file_name` or a `content_length` that is not a positive Integer, and
-  `import_translation_memory_from_filepath` for an empty input file; previously the import job
-  was created. Migration: pass a non-empty file.
+  `import_translation_memory_from_filepath` rejects an empty input file before any request
+  (`DeepL::Exceptions::TranslationMemoryJobError`, see below); previously the import job was
+  created. Migration: pass a non-empty file.
 - The messages of `AuthorizationFailed`, `RequestEntityTooLarge`, `LimitExceeded`,
   `QuotaExceeded` and `ServerError` now end with the API's error message from the response
   body (`<fixed text>: <API message>`), as the other HTTP errors already did; without one the
   fixed text stays. The `RequestEntityTooLarge` message no longer claims a limit of 50 text
   parts. Migration: code that compares these messages exactly should match their start or
   check the error class.
+- `import_translation_memory_from_filepath` and `export_translation_memory_to_filepath` wrap
+  every failure except a missing input file in the new
+  `DeepL::Exceptions::TranslationMemoryJobError` (a `DeepL::Exceptions::Error`), with the
+  original error as `cause`. Its `job` is the `TranslationMemoryJob` once it was created, with
+  the last status received, and `http_status_code` and `should_retry?` are copied from a DeepL
+  error cause. Previously the underlying error was raised: `DeepL::Exceptions::Error` or one of
+  its subclasses, and for an empty input file `ArgumentError`. Migration: rescue
+  `DeepL::Exceptions::TranslationMemoryJobError` (or `DeepL::Exceptions::Error`) and inspect
+  `cause` and `job`.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

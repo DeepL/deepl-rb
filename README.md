@@ -1014,9 +1014,12 @@ of the newly created translation memory. The optional keywords are
 `content_type` (the MIME type of the file, declared in the job and sent with the
 upload, defaults to `application/xml`), `timeout_s` and `extra_body_parameters`
 (fields added to the body of the import job request). It raises an
-`ArgumentError` before any request if the file does not exist or is empty, and a
-`DeepL::Exceptions::Error` if the file cannot be read, with the API's error
-message if the job fails or expires, and when `timeout_s` expires.
+`ArgumentError` before any request if the file does not exist. Every other
+failure raises a `DeepL::Exceptions::TranslationMemoryJobError` with the original
+error as `cause`: an empty or unreadable file (before any request), a failed job
+creation or upload, a job that fails or expires (with the API's error message),
+and an expired `timeout_s`. Its `job` is the job once it was created, with the
+last status received, so you can still query it.
 
 ```rb
 job = client.import_translation_memory_from_filepath('legal.tmx',
@@ -1072,10 +1075,12 @@ finish on its own, and a status the library does not know keeps it polling too, 
 
 `export_translation_memory_to_filepath` writes a translation memory to a TMX
 file. It creates the export job, waits until it is completed and downloads the
-result. It accepts `timeout_s` and raises a `DeepL::Exceptions::Error` if the
-output file already exists or its directory does not exist or is not writable
-(checked before the job is created), if the job fails or expires, and if the file
-cannot be written.
+result. It accepts `timeout_s` and wraps every failure in a
+`DeepL::Exceptions::TranslationMemoryJobError` with the original error as
+`cause`: an output file that already exists or a directory that does not exist or
+is not writable (checked before the job is created, `job` is `nil`), a job that
+fails or expires, an expired `timeout_s`, and a failed download or write. Its
+`job` is the job once it was created.
 
 ```rb
 job = client.export_translation_memory_to_filepath('YOUR_TM_ID', 'export.tmx')
@@ -1406,6 +1411,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | `DeepL::Exceptions::ConnectionError` | No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). Requests that create a resource retry fewer failures, see [Retries and timeouts](#retries-and-timeouts). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed; `http_status_code` and `should_retry?` are those of the DeepL error that caused it, if any. |
+| `DeepL::Exceptions::TranslationMemoryJobError` | Any failure of `import_translation_memory_from_filepath` or `export_translation_memory_to_filepath` except a missing input file. `exception.job` is the `TranslationMemoryJob` with the last status received once the job was created, `nil` before; `exception.cause` is the original error, and `http_status_code` and `should_retry?` are those of a DeepL error cause. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
 | `DeepL::Exceptions::QuotaExceeded` | You've reached the API's character limit. |
 | `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |

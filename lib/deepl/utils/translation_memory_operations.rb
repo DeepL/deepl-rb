@@ -64,14 +64,15 @@ module DeepL
         DeepL::Requests::TranslationMemory::FindJob.new(@api, extract_job_id(job), options).request
       end
 
-      def wait_until_job_done(job, timeout_s: nil)
+      # Yields each status it receives, if a block is given.
+      def wait_until_job_done(job, timeout_s: nil, &on_status)
         deadline = timeout_s.nil? ? nil : monotonic_time + timeout_s
-        job_status = find_job(job)
+        job_status = find_job(job).tap { |status| on_status&.call(status) }
         until job_status.finished?
           interval = polling_interval_until(deadline, timeout_s)
           log_job_polling(interval)
           sleep(interval)
-          job_status = find_job(job)
+          job_status = find_job(job).tap { |status| on_status&.call(status) }
         end
         raise_job_error(job_status) if job_status.error?
 
@@ -88,26 +89,26 @@ module DeepL
       def import_from_filepath(input_file_path, display_name: nil, timeout_s: nil,
                                content_type: nil, extra_body_parameters: nil)
         check_input_file(input_file_path)
-        file_content = read_input_file(input_file_path)
-        raise ArgumentError, "File #{input_file_path} is empty" if file_content.empty?
+        with_job_error('import') do |progress|
+          file_content = read_input_file(input_file_path)
+          raise ArgumentError, "File #{input_file_path} is empty" if file_content.empty?
 
-        created = create_import(File.basename(input_file_path), file_content.bytesize,
-                                content_type: content_type, display_name: display_name,
-                                extra_body_parameters: extra_body_parameters)
-        upload_file(created, file_content, content_type: content_type)
-        wait_until_job_done(created.job_id, timeout_s: timeout_s)
+          created = create_import(File.basename(input_file_path), file_content.bytesize,
+                                  content_type: content_type, display_name: display_name,
+                                  extra_body_parameters: extra_body_parameters)
+          upload_and_wait(created, file_content, content_type, timeout_s, progress)
+        end
       end
 
       def export_to_filepath(translation_memory, output_path, timeout_s: nil)
-        check_output_path(output_path)
-        created = create_export(translation_memory)
-        job = wait_until_job_done(created.job_id, timeout_s: timeout_s)
-        begin
+        with_job_error('export') do |progress|
+          check_output_path(output_path)
+          created = create_export(translation_memory)
+          progress[:job] = created_job(created.job_id, Resources::TranslationMemoryJob::OPERATION_EXPORT)
+          job = wait_until_job_done(created.job_id, timeout_s: timeout_s) { progress[:job] = _1 }
           download_export(job, output_path)
-        rescue SystemCallError, IOError => e
-          raise Exceptions::Error, "Could not write the export to #{output_path}: #{e.message}"
+          job
         end
-        job
       end
 
       private
@@ -152,6 +153,32 @@ module DeepL
 
       def blank?(value)
         value.nil? || value.empty?
+      end
+
+      # The job of a creation response, before its first status query.
+      def created_job(job_id, operation)
+        Resources::TranslationMemoryJob.new(
+          { 'job_id' => job_id, 'product' => 'translation_memory', 'operation' => operation },
+          nil, nil
+        )
+      end
+
+      def upload_and_wait(created, file_content, content_type, timeout_s, progress)
+        progress[:job] = created_job(created.job_id, Resources::TranslationMemoryJob::OPERATION_IMPORT)
+        upload_file(created, file_content, content_type: content_type)
+        wait_until_job_done(created.job_id, timeout_s: timeout_s) { progress[:job] = _1 }
+      end
+
+      # Wraps every failure of the block in a TranslationMemoryJobError carrying +progress[:job]+,
+      # the job once the block created it.
+      def with_job_error(operation)
+        progress = {}
+        yield progress
+      rescue StandardError => e
+        prefix = "Error occurred during the translation memory #{operation}"
+        # A failed job's error from the wait already starts with the prefix.
+        message = e.message.start_with?(prefix) ? e.message : "#{prefix}: #{e.message}"
+        raise Exceptions::TranslationMemoryJobError.new(message, progress[:job], e)
       end
 
       def check_input_file(input_file_path)

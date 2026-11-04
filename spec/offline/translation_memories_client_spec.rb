@@ -140,12 +140,41 @@ describe 'DeepL::Client translation memories' do
         .to raise_error(ArgumentError, /No file found/)
     end
 
-    it 'raises ArgumentError for an empty import file without sending a request' do
+    it 'raises TranslationMemoryJobError for an empty import file without sending a request' do
       path = File.join(temp_dir, 'empty.tmx')
       File.write(path, '')
 
       expect { client.import_translation_memory_from_filepath(path) }
-        .to raise_error(ArgumentError, /is empty/)
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError, /is empty/) { |e|
+          expect([e.job, e.cause]).to match([nil, be_a(ArgumentError)])
+        }
+    end
+
+    it 'raises TranslationMemoryJobError with the job when the import job fails' do
+      path = File.join(temp_dir, 'memory.tmx')
+      File.write(path, 'tmx')
+      stub_request(:post, url('/v3/translation_memories/import'))
+        .to_return(reply({ job_id: 'j-1', upload_url: upload_url }, 201))
+      stub_request(:put, upload_url).to_return(status: 200)
+      stub_job(reply(job_json('failed', error: { message: 'bad file' })))
+
+      expect { client.import_translation_memory_from_filepath(path) }
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError, /import: .*bad file/) { |e|
+          expect(e.job).to have_attributes(job_id: 'j-1', status: 'failed')
+        }
+    end
+
+    it 'raises TranslationMemoryJobError with the created job when the upload fails' do
+      path = File.join(temp_dir, 'memory.tmx')
+      File.write(path, 'tmx')
+      stub_request(:post, url('/v3/translation_memories/import'))
+        .to_return(reply({ job_id: 'j-1', upload_url: upload_url }, 201))
+      stub_request(:put, upload_url).to_return(status: 403)
+
+      expect { client.import_translation_memory_from_filepath(path) }
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError) { |e|
+          expect([e.job.job_id, e.http_status_code, e.should_retry?]).to eq(['j-1', 403, false])
+        }
     end
 
     it 'raises ArgumentError for an empty file name or a length below 1 without a request' do
@@ -157,10 +186,10 @@ describe 'DeepL::Client translation memories' do
       end
     end
 
-    it 'raises Error with the cause for an unreadable import file without sending a request' do
+    it 'raises TranslationMemoryJobError for an unreadable import file without a request' do
       expect { client.import_translation_memory_from_filepath(temp_dir) }
-        .to raise_error(DeepL::Exceptions::Error, /Could not read/) { |error|
-          expect(error.cause).to be_a(Errno::EISDIR)
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError, /Could not read/) { |error|
+          expect([error.job, error.cause.cause]).to match([nil, be_a(Errno::EISDIR)])
         }
     end
   end
@@ -196,11 +225,11 @@ describe 'DeepL::Client translation memories' do
       expect([job.status, File.read(output)]).to eq(%w[completed tmx])
     end
 
-    it 'raises Error for a missing output directory before creating the export job' do
+    it 'raises TranslationMemoryJobError for a missing output directory before the export job' do
       missing = File.join(temp_dir, 'missing', 'x.tmx')
 
       expect { client.export_translation_memory_to_filepath('tm-1', missing) }
-        .to raise_error(DeepL::Exceptions::Error, /does not exist/)
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError, /does not exist/) { |e| expect(e.job).to be_nil }
     end
 
     it 'raises SystemCallError for an existing file or a missing directory before the download' do
@@ -216,14 +245,25 @@ describe 'DeepL::Client translation memories' do
       expect(File.read(output)).to eq('keep me')
     end
 
-    it 'raises Error for an existing output file before creating the export job' do
+    it 'raises TranslationMemoryJobError for an existing output file before the export job' do
       File.write(output, 'keep me')
 
       expect { client.export_translation_memory_to_filepath('tm-1', output) }
-        .to raise_error(DeepL::Exceptions::Error, /already exists/)
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError, /already exists/) { |e| expect(e.job).to be_nil }
     end
 
-    it 'raises Error with the cause when the export cannot be written after the job' do
+    it 'raises TranslationMemoryJobError with the job when the export job fails' do
+      stub_request(:post, url('/v3/translation_memories/tm-1/export'))
+        .to_return(reply({ job_id: 'j-1' }, 200))
+      stub_job(reply(job_json('failed', error: { message: 'export broke' })))
+
+      expect { client.export_translation_memory_to_filepath('tm-1', output) }
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError, /export: .*broke/) { |e|
+          expect([e.job.job_id, e.job.status]).to eq(%w[j-1 failed])
+        }
+    end
+
+    it 'raises TranslationMemoryJobError with the cause when the export cannot be written' do
       stub_request(:post, url('/v3/translation_memories/tm-1/export'))
         .to_return(reply({ job_id: 'j-1' }, 200))
       stub_job(reply(job_json('completed', download_url: download_url)))
@@ -231,8 +271,8 @@ describe 'DeepL::Client translation memories' do
       allow(File).to receive(:binwrite).and_raise(Errno::ENOSPC)
 
       expect { client.export_translation_memory_to_filepath('tm-1', output) }
-        .to raise_error(DeepL::Exceptions::Error, /Could not write/) { |error|
-          expect(error.cause).to be_a(Errno::ENOSPC)
+        .to raise_error(DeepL::Exceptions::TranslationMemoryJobError, /export: No space/) { |error|
+          expect([error.job.status, error.cause]).to match(['completed', be_a(Errno::ENOSPC)])
         }
     end
   end
