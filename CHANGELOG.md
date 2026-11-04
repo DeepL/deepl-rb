@@ -76,6 +76,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `create_multilingual_glossary`, and a dictionary whose entries (not given as CSV) are empty.
   Migration: pass a non-empty value; these calls previously failed at the API or sent an empty
   value.
+- The spoken terms and style rule methods raise `ArgumentError` before any request for an empty
+  ID or a `SpokenTerms`, `StyleRule` or `CustomInstruction` without one. Previously the request
+  was sent to `/v3/spoken-terms/` or `/v3/style_rules/`, and a `nil` instruction ID of
+  `get_style_rule_custom_instruction`, `update_style_rule_custom_instruction` and
+  `delete_style_rule_custom_instruction` dropped the path segment. Migration: pass a non-empty ID.
+- `create_style_rule`, `update_style_rule_name`, `create_style_rule_custom_instruction` and
+  `update_style_rule_custom_instruction` raise `ArgumentError` before any request for an empty
+  name, language, label or prompt. Migration: pass a non-empty value.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

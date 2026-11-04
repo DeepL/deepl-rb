@@ -14,6 +14,7 @@ module DeepL
           super(api, options)
           @style_id = style_rule_id(style_id)
           @instruction_id = custom_instruction_id(instruction_id)
+          check_non_empty!(label: label, prompt: prompt)
           @label = label
           @prompt = prompt
           @source_language = source_language

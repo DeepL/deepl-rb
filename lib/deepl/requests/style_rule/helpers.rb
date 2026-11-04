@@ -12,15 +12,24 @@ module DeepL
         private
 
         def style_rule_id(style_rule)
-          return style_rule.style_id if style_rule.is_a?(DeepL::Resources::StyleRule)
+          id = style_rule.is_a?(DeepL::Resources::StyleRule) ? style_rule.style_id : style_rule
+          raise ArgumentError, 'Style rule ID must not be empty' if id.to_s.empty?
 
-          style_rule
+          id
         end
 
         def custom_instruction_id(instruction)
-          return instruction.id if instruction.is_a?(DeepL::Resources::CustomInstruction)
+          id = instruction.is_a?(DeepL::Resources::CustomInstruction) ? instruction.id : instruction
+          raise ArgumentError, 'Custom instruction ID must not be empty' if id.to_s.empty?
 
-          instruction
+          id
+        end
+
+        # Raises ArgumentError for each of +values+ (name => value) that is nil or empty.
+        def check_non_empty!(values)
+          values.each do |name, value|
+            raise ArgumentError, "`#{name}` must not be empty" if value.to_s.empty?
+          end
         end
 
         # The path of a style rule list, with its ID and the custom instruction ID URL-encoded.

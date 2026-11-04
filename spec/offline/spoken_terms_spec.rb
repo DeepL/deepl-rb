@@ -212,4 +212,18 @@ describe 'DeepL::Client spoken terms' do
       client.delete_spoken_terms_list(id, 'en')
     end
   end
+
+  describe 'empty collection IDs' do
+    let(:no_id) { DeepL::Resources::SpokenTerms.new({ 'name' => 'terms' }, nil, nil) }
+
+    ['', nil, :no_id].each do |id|
+      it "raise ArgumentError for #{id.inspect} without sending a request" do
+        spoken_terms = id == :no_id ? no_id : id
+
+        expect { client.get_spoken_terms(spoken_terms) }.to raise_error(ArgumentError, /ID/)
+        expect { client.delete_spoken_terms_list(spoken_terms, 'en') }
+          .to raise_error(ArgumentError, /ID/)
+      end
+    end
+  end
 end

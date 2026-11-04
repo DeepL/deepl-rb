@@ -552,8 +552,9 @@ client.delete_multilingual_glossary(glossary)
 Spoken terms collections improve the transcription of terms such as product
 names. A collection holds one list of terms per language and is managed through
 `DeepL::Client`. Every method that takes a collection accepts its ID or a
-`DeepL::Resources::SpokenTerms` object. Terms are passed and returned as arrays
-of strings.
+`DeepL::Resources::SpokenTerms` object; an empty ID, or an object without one,
+raises `ArgumentError` before anything is sent. Terms are passed and returned as
+arrays of strings.
 
 To create a collection, pass a name and one `DeepL::Resources::SpokenTermsEntries`
 (or a hash with `:lang` and `:entries`) per language. Terms are checked like
@@ -640,7 +641,10 @@ with your account, each with a user-specified name and a uniquely-assigned ID
 `create_style_rule`, `get_style_rule`, `update_style_rule_name`,
 `update_style_rule_configured_rules` and `delete_style_rule`. Every method that
 takes a style rule list accepts its ID string or a `DeepL::Resources::StyleRule`
-object.
+object, and every method that takes a custom instruction its ID or a
+`DeepL::Resources::CustomInstruction`. An empty ID (or an object without one), and
+an empty name, language, label or prompt, raise `ArgumentError` before anything is
+sent.
 
 #### Creating a style rule
 

@@ -12,9 +12,14 @@ module DeepL
         private
 
         def spoken_terms_id(spoken_terms)
-          return spoken_terms.spoken_terms_id if spoken_terms.is_a?(DeepL::Resources::SpokenTerms)
+          id = if spoken_terms.is_a?(DeepL::Resources::SpokenTerms)
+                 spoken_terms.spoken_terms_id
+               else
+                 spoken_terms
+               end
+          raise ArgumentError, 'Spoken terms ID must not be empty' if id.to_s.empty?
 
-          spoken_terms.to_s
+          id.to_s
         end
 
         # The path of a collection, with its ID URL-encoded.

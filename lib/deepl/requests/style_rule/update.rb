@@ -12,6 +12,7 @@ module DeepL
         def initialize(api, style_id, name, options = {})
           super(api, options)
           @style_id = style_rule_id(style_id)
+          check_non_empty!(name: name)
           @name = name
         end
 

@@ -7,10 +7,13 @@ module DeepL
   module Requests
     module StyleRule
       class Create < Base
+        include Helpers
+
         accepts_options :configured_rules, :custom_instructions
 
         def initialize(api, name, language, options = {})
           super(api, options)
+          check_non_empty!(name: name, language: language)
           @name = name
           @language = language
           @configured_rules = delete_option(:configured_rules)

@@ -12,6 +12,7 @@ module DeepL
         def initialize(api, style_id, label, prompt, source_language = nil, options = {})
           super(api, options)
           @style_id = style_rule_id(style_id)
+          check_non_empty!(label: label, prompt: prompt)
           @label = label
           @prompt = prompt
           @source_language = source_language

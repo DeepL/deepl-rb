@@ -321,5 +321,36 @@ describe 'style rules' do
         expect(client.delete_style_rule_custom_instruction(rule, instruction)).to be_nil
       end
     end
+
+    describe 'argument checks' do
+      let(:no_id) { DeepL::Resources::StyleRule.new({ 'name' => 'x' }, nil, nil) }
+
+      ['', nil, :no_id].each do |id|
+        it "raise ArgumentError for the style rule #{id.inspect} without sending a request" do
+          rule = id == :no_id ? no_id : id
+
+          expect { api_client.get_style_rule(rule) }.to raise_error(ArgumentError, /ID/)
+          expect { api_client.delete_style_rule(rule) }.to raise_error(ArgumentError, /ID/)
+        end
+      end
+
+      it 'raises ArgumentError for an empty instruction ID without sending a request' do
+        expect { api_client.get_style_rule_custom_instruction('r-1', nil) }
+          .to raise_error(ArgumentError, /ID/)
+        expect { api_client.delete_style_rule_custom_instruction('r-1', '') }
+          .to raise_error(ArgumentError, /ID/)
+      end
+
+      it 'raises ArgumentError for an empty name, language, label or prompt' do
+        expect { api_client.create_style_rule('', 'en') }.to raise_error(ArgumentError, /name/)
+        expect { api_client.create_style_rule('r', '') }.to raise_error(ArgumentError, /language/)
+        expect { api_client.update_style_rule_name('r-1', '') }
+          .to raise_error(ArgumentError, /name/)
+        expect { api_client.create_style_rule_custom_instruction('r-1', '', 'p') }
+          .to raise_error(ArgumentError, /label/)
+        expect { api_client.update_style_rule_custom_instruction('r-1', 'i-1', 'l', '') }
+          .to raise_error(ArgumentError, /prompt/)
+      end
+    end
   end
 end

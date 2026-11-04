@@ -636,6 +636,7 @@ module DeepL
     # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
     # @return [DeepL::Resources::SpokenTerms]
     # @raise [DeepL::Exceptions::NotFound] If the collection does not exist.
+    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
     def get_spoken_terms(spoken_terms)
       Requests::SpokenTerms::Find.new(api, spoken_terms).request
     end
@@ -652,6 +653,7 @@ module DeepL
     # @return [DeepL::Resources::SpokenTerms] The updated collection.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
+    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
     def update_spoken_terms(spoken_terms, name: nil, term_lists: nil, **options)
       Requests::SpokenTerms::Update.new(api, spoken_terms, name, term_lists, options).request
     end
@@ -661,6 +663,7 @@ module DeepL
     #
     # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
     # @return [nil]
+    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
     def delete_spoken_terms(spoken_terms)
       Requests::SpokenTerms::Destroy.new(api, spoken_terms).request
     end
@@ -671,6 +674,7 @@ module DeepL
     # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
     # @param [String] lang Language code, for example +'en'+.
     # @return [DeepL::Resources::SpokenTermsEntries]
+    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
     def get_spoken_terms_entries(spoken_terms, lang)
       Requests::SpokenTerms::Entries.new(api, spoken_terms, lang).request
     end
@@ -685,6 +689,7 @@ module DeepL
     # @return [DeepL::Resources::SpokenTermsList]
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
+    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
     def replace_spoken_terms_list(spoken_terms, entries, **options)
       Requests::SpokenTerms::ReplaceTermList.new(api, spoken_terms, entries, options).request
     end
@@ -695,6 +700,7 @@ module DeepL
     # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
     # @param [String] lang Language code, for example +'en'+.
     # @return [nil]
+    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
     def delete_spoken_terms_list(spoken_terms, lang)
       Requests::SpokenTerms::DestroyTermList.new(api, spoken_terms, lang).request
     end
@@ -726,6 +732,7 @@ module DeepL
     #   (+label+, +prompt+ and optionally +source_language+), sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::StyleRule] The created style rule list.
+    # @raise [ArgumentError] If +name+ or +language+ is empty, before any request.
     def create_style_rule(name, language, configured_rules: nil, custom_instructions: nil,
                           **options)
       options = options.merge(configured_rules: configured_rules,
@@ -739,6 +746,8 @@ module DeepL
     # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
     # @return [DeepL::Resources::StyleRule]
     # @raise [DeepL::Exceptions::NotFound] If the style rule list does not exist.
+    # @raise [ArgumentError] If the style rule ID is empty or the list has no ID, before any
+    #   request.
     def get_style_rule(style_rule)
       Requests::StyleRule::Find.new(api, style_rule).request
     end
@@ -750,6 +759,8 @@ module DeepL
     # @param [String] name New name.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::StyleRule] The updated style rule list.
+    # @raise [ArgumentError] If the style rule ID or +name+ is empty, or the list has no ID, before
+    #   any request.
     def update_style_rule_name(style_rule, name, **options)
       Requests::StyleRule::Update.new(api, style_rule, name, options).request
     end
@@ -761,6 +772,8 @@ module DeepL
     # @param [Hash] configured_rules Category -> rule -> value, sent as the request body.
     # @param [Hash] options +:extra_body_parameters+, added to the body as further keys.
     # @return [DeepL::Resources::StyleRule] The updated style rule list.
+    # @raise [ArgumentError] If the style rule ID is empty or the list has no ID, before any
+    #   request.
     def update_style_rule_configured_rules(style_rule, configured_rules, **options)
       Requests::StyleRule::UpdateConfiguredRules.new(api, style_rule, configured_rules,
                                                      options).request
@@ -771,6 +784,8 @@ module DeepL
     #
     # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
     # @return [nil]
+    # @raise [ArgumentError] If the style rule ID is empty or the list has no ID, before any
+    #   request.
     def delete_style_rule(style_rule)
       Requests::StyleRule::Destroy.new(api, style_rule).request
       nil
@@ -789,6 +804,8 @@ module DeepL
     # @param [String, nil] source_language Source language the instruction applies to.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::CustomInstruction] The created instruction.
+    # @raise [ArgumentError] If the style rule ID, +label+ or +prompt+ is empty, or the list has no
+    #   ID, before any request.
     def create_style_rule_custom_instruction(style_rule, label, prompt, source_language: nil,
                                              **options)
       Requests::StyleRule::CreateCustomInstruction.new(api, style_rule, label, prompt,
@@ -802,6 +819,8 @@ module DeepL
     # @param [String, DeepL::Resources::CustomInstruction] instruction_id ID or instruction.
     # @return [DeepL::Resources::CustomInstruction]
     # @raise [DeepL::Exceptions::NotFound] If the instruction does not exist.
+    # @raise [ArgumentError] If the style rule or instruction ID is empty or the object has no ID,
+    #   before any request.
     def get_style_rule_custom_instruction(style_rule, instruction_id)
       Requests::StyleRule::FindCustomInstruction.new(api, style_rule, instruction_id).request
     end
@@ -817,6 +836,8 @@ module DeepL
     # @param [String, nil] source_language Source language the instruction applies to.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::CustomInstruction] The updated instruction.
+    # @raise [ArgumentError] If an ID, +label+ or +prompt+ is empty, or an object has no ID, before
+    #   any request.
     def update_style_rule_custom_instruction(style_rule, instruction_id, label, prompt,
                                              source_language: nil, **options)
       Requests::StyleRule::UpdateCustomInstruction.new(api, style_rule, instruction_id, label,
@@ -830,6 +851,8 @@ module DeepL
     # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
     # @param [String, DeepL::Resources::CustomInstruction] instruction_id ID or instruction.
     # @return [nil]
+    # @raise [ArgumentError] If the style rule or instruction ID is empty or the object has no ID,
+    #   before any request.
     def delete_style_rule_custom_instruction(style_rule, instruction_id)
       Requests::StyleRule::DestroyCustomInstruction.new(api, style_rule, instruction_id).request
       nil
