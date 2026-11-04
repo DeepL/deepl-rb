@@ -45,6 +45,9 @@ module DeepL
         @text = text
         @source_lang = source_lang
         @target_lang = target_lang
+        validate_text!(text)
+        validate_languages!(source_lang, target_lang)
+        validate_translation_memory_threshold!
 
         tweak_parameters!
       end

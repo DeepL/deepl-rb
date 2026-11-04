@@ -359,6 +359,38 @@ module DeepL
               'The `glossary_ids` option cannot be used together with the `glossary` option'
       end
 
+      # @raise [ArgumentError] Unless +text+ is a non-empty string or a non-empty array of
+      #   non-empty strings.
+      def validate_text!(text)
+        texts = text.is_a?(Array) ? text : [text]
+        return unless texts.empty? || texts.any? { |t| t.to_s.empty? }
+
+        raise ArgumentError,
+              '`text` must be a non-empty string or a non-empty array of non-empty strings'
+      end
+
+      # @raise [ArgumentError] If +target_lang+ is empty or +source_lang+ is given but empty.
+      def validate_languages!(source_lang, target_lang)
+        raise ArgumentError, '`target_lang` must not be empty' if target_lang.to_s.empty?
+        return unless !source_lang.nil? && source_lang.to_s.empty?
+
+        raise ArgumentError, '`source_lang` must not be empty; pass nil to detect it'
+      end
+
+      # @raise [ArgumentError] If the +translation_memory_threshold+ option is set without the
+      #   +translation_memory+ option or is not an Integer from 0 to 100.
+      def validate_translation_memory_threshold!
+        threshold = option(:translation_memory_threshold)
+        return if threshold.nil?
+
+        unless option?(:translation_memory)
+          raise ArgumentError, '`translation_memory_threshold` requires `translation_memory`'
+        end
+        return if threshold.is_a?(Integer) && threshold.between?(0, 100)
+
+        raise ArgumentError, '`translation_memory_threshold` must be an Integer from 0 to 100'
+      end
+
       def path
         raise NotImplementedError
       end

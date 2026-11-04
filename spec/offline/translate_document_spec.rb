@@ -168,6 +168,25 @@ describe 'document translation' do
         .to raise_error(ArgumentError, /maximum of 5/)
     end
 
+    it 'raises ArgumentError for glossary without source_lang without sending a request' do
+      input, = create_text_document(temp_dir)
+
+      expect { api_client.translate_document_upload(input, nil, 'DE', glossary: 'g-1') }
+        .to raise_error(ArgumentError, /requires `source_lang`/)
+    end
+
+    it 'raises ArgumentError for invalid languages or threshold without sending a request' do
+      input, = create_text_document(temp_dir)
+
+      expect { api_client.translate_document_upload(input, nil, '') }
+        .to raise_error(ArgumentError, /target_lang/)
+      expect { api_client.translate_document_upload(input, '', 'DE') }
+        .to raise_error(ArgumentError, /source_lang/)
+      expect do
+        api_client.translate_document_upload(input, 'EN', 'DE', translation_memory_threshold: 80)
+      end.to raise_error(ArgumentError, /requires `translation_memory`/)
+    end
+
     it 'retries after a 429 reply' do
       input, = create_text_document(temp_dir)
       stub = stub_upload.to_return(reply({}, 429), upload_reply)

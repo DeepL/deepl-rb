@@ -86,11 +86,14 @@ module DeepL
     #     the same name.
     #   * +:formality+, +:context+, +:tag_handling+, +:tag_handling_version+, +:model_type+,
     #     +:preserve_formatting+, +:outline_detection+, +:splitting_tags+, +:non_splitting_tags+,
-    #     +:ignore_tags+, +:translation_memory_threshold+ - Sent unchanged.
+    #     +:ignore_tags+ - Sent unchanged.
+    #   * +:translation_memory_threshold+ - Integer 0-100. Requires +:translation_memory+.
     # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
     #   an array for an array (also for a one-element array).
-    # @raise [ArgumentError] If an option is unknown, the glossary options are combined or more
-    #   than 5 are given.
+    # @raise [ArgumentError] If +text+ is empty or contains an empty string, +target_lang+ or a
+    #   given +source_lang+ is empty, an option is unknown, the glossary options are combined or
+    #   more than 5 are given, or +:translation_memory_threshold+ is set without
+    #   +:translation_memory+ or is not an Integer from 0 to 100; nothing is sent.
     def translate_text(text, source_lang, target_lang, **options)
       Requests::Translate.new(api, text, source_lang, target_lang, options).request
     end
@@ -158,16 +161,19 @@ module DeepL
     #   * +:formality+, +:output_format+ - Sent unchanged.
     #   * +:enable_watermark+ - +true+ or +false+.
     #   * +:glossary+ - A glossary ID, `DeepL::Resources::Glossary` or
-    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+.
+    #     `DeepL::Resources::MultilingualGlossary`, sent as +glossary_id+. Requires +source_lang+.
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Requires +source_lang+ and
     #     cannot be combined with +:glossary+.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
-    #   * +:translation_memory_threshold+ - Integer 0-100.
+    #   * +:translation_memory_threshold+ - Integer 0-100. Requires +:translation_memory+.
     #   * +:extra_body_parameters+ - A hash added to the form last; replaces fields of the same
     #     name.
     # @return [DeepL::Resources::DocumentHandle] Handle of the uploaded document.
-    # @raise [ArgumentError] If +input_path+ does not exist (nothing is uploaded), an option is
-    #   unknown, or the glossary options are combined or more than 5 are given.
+    # @raise [ArgumentError] If +input_path+ does not exist, +target_lang+ or a given
+    #   +source_lang+ is empty, an option is unknown, +:glossary+ or +:glossary_ids+ is set
+    #   without +source_lang+, the glossary options are combined or more than 5 are given, or
+    #   +:translation_memory_threshold+ is set without +:translation_memory+ or is not an Integer
+    #   from 0 to 100; nothing is uploaded.
     def translate_document_upload(input_path, source_lang, target_lang, **options)
       raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
 
@@ -224,6 +230,8 @@ module DeepL
     #   replaces fields of the same name. Any other option raises ArgumentError.
     # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
     #   an array for an array (also for a one-element array).
+    # @raise [ArgumentError] If +text+ is empty or contains an empty string, or an option is
+    #   unknown; nothing is sent.
     # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
     def rephrase_text(text, target_lang = nil, writing_style: nil, tone: nil, **options)
       Requests::Rephrase.new(api, text, target_lang, writing_style, tone, options).request

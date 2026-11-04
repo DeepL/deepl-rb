@@ -62,4 +62,10 @@ describe 'DeepL::Client#rephrase_text' do
         .to raise_error(an_instance_of(DeepL::Exceptions::Error), /expected \d improvements/)
     end
   end
+
+  [[''], [[]], [['a', '']]].each do |args|
+    it "raises ArgumentError for #{args.first.inspect} without sending a request" do
+      expect { api_client.rephrase_text(*args) }.to raise_error(ArgumentError, /non-empty/)
+    end
+  end
 end

@@ -20,6 +20,9 @@ module DeepL
           @source_lang = source_lang
           @target_lang = target_lang
           @filename = filename
+          validate_languages!(source_lang, target_lang)
+          validate_translation_memory_threshold!
+          validate_glossary_source_lang!
         end
 
         def request
@@ -43,6 +46,13 @@ module DeepL
         end
 
         private
+
+        # Text translation detects the source language for glossaries; documents do not.
+        def validate_glossary_source_lang!
+          return unless option?(:glossary) && source_lang.nil?
+
+          raise ArgumentError, 'The `glossary` option requires `source_lang` to be set'
+        end
 
         # A repeated creation request could create a second resource.
         def retry_only_unprocessed?

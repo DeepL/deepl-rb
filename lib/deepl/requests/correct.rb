@@ -14,7 +14,7 @@ module DeepL
         super(api, options, additional_headers)
         @text = text
         @target_lang = target_lang
-        validate_text!
+        validate_text!(text)
       end
 
       def request
@@ -35,13 +35,6 @@ module DeepL
 
       def text_arrayified
         text.is_a?(Array) ? text : [text]
-      end
-
-      def validate_text!
-        return unless text_arrayified.empty? || text_arrayified.any? { |t| t.to_s.empty? }
-
-        raise ArgumentError,
-              '`text` must be a non-empty string or a non-empty array of non-empty strings'
       end
 
       def build_texts(request, response)

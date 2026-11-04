@@ -267,4 +267,28 @@ describe 'DeepL::Client#translate_text' do
       api_client.translate_text('a', nil, 'DE', extra_body_parameters: { 'target_lang' => 'FR' })
     end
   end
+
+  describe 'argument checks' do
+    [[''], [[]], [['a', '']]].each do |args|
+      it "raise ArgumentError for the text #{args.first.inspect} without sending a request" do
+        expect { api_client.translate_text(args.first, nil, 'DE') }
+          .to raise_error(ArgumentError, /non-empty/)
+      end
+    end
+
+    it 'raise ArgumentError for an empty target_lang or source_lang without sending a request' do
+      expect { api_client.translate_text('a', nil, '') }.to raise_error(ArgumentError, /target/)
+      expect { api_client.translate_text('a', nil, nil) }.to raise_error(ArgumentError, /target/)
+      expect { api_client.translate_text('a', '', 'DE') }.to raise_error(ArgumentError, /source/)
+    end
+
+    [[{}, 80, /requires/], [{ translation_memory: 'tm-1' }, 101, /0 to 100/],
+     [{ translation_memory: 'tm-1' }, '80', /0 to 100/]].each do |tm, threshold, message|
+      it "raise ArgumentError for the threshold #{threshold.inspect} with #{tm.inspect}" do
+        expect do
+          api_client.translate_text('a', nil, 'DE', translation_memory_threshold: threshold, **tm)
+        end.to raise_error(ArgumentError, message)
+      end
+    end
+  end
 end

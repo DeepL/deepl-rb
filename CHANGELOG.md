@@ -84,6 +84,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `create_style_rule`, `update_style_rule_name`, `create_style_rule_custom_instruction` and
   `update_style_rule_custom_instruction` raise `ArgumentError` before any request for an empty
   name, language, label or prompt. Migration: pass a non-empty value.
+- `translate_text` and `rephrase_text` raise `ArgumentError` before any request for an empty
+  text: an empty string, an empty array or an array with an empty string, as `correct_text`
+  already did. Migration: drop empty texts before the call.
+- `translate_text`, `translate_document` and `translate_document_upload` raise `ArgumentError`
+  before any request for an empty or `nil` `target_lang`, an empty `source_lang` (pass `nil` to
+  detect it), and a `translation_memory_threshold` set without `translation_memory` or not an
+  Integer from 0 to 100. Document translation with the `glossary` option now requires
+  `source_lang` like `glossary_ids`. Migration: pass valid values; these calls previously sent
+  the value and failed at the API, or ignored the threshold.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

@@ -178,6 +178,10 @@ billed for the text; the library always asks the API for it), `model_type_used` 
 `tag_handling_version` (the tag handling version the API used, when tag handling was
 requested). A field the response does not contain is `nil`.
 
+An empty text (an empty string, an empty array or an array with an empty string), an empty
+`target_lang` and an empty `source_lang` (pass `nil` to detect the source language) raise
+`ArgumentError` before anything is sent.
+
 Enable auto-detect source language by skipping the source language with `nil`:
 
 ```rb
@@ -284,7 +288,7 @@ The following parameters will be automatically converted:
 | `style_rule`          | No conversion applied (can be a string ID or a StyleRule object)
 | `style_profile`       | No conversion applied (can be a string ID or a StyleProfile object, see [Style profiles](#style-profiles))
 | `translation_memory`  | No conversion applied (can be a string ID or a TranslationMemory object)
-| `translation_memory_threshold` | No conversion applied (integer 0-100, recommended minimum 75)
+| `translation_memory_threshold` | No conversion applied (integer 0-100, recommended minimum 75); requires `translation_memory`, otherwise `ArgumentError`
 | `context`             | No conversion applied
 | `custom_instructions` | An array of strings; a string is sent as a one-element array
 | `tag_handling`        | No conversion applied (`DeepL::Constants::TagHandling`)
@@ -318,7 +322,7 @@ puts rephrased_text.target_language
 
 As with `translate_text`, the text can be a string or an array of strings: a string returns a
 `DeepL::Resources::Text`, an array returns an array of them (also for an array with one
-element). The target language is optional.
+element). The target language is optional. Empty text raises `ArgumentError`.
 
 Use the `writing_style:` or `tone:` keyword to choose the writing style or tone of the
 rephrased text (`DeepL::Constants::WritingStyle` and `DeepL::Constants::Tone` list the values;
@@ -432,7 +436,7 @@ and raises `ArgumentError` if this rule is violated or more than 5 IDs are
 provided. For text translation, a glossary (`glossary` or `glossary_ids`) can be
 used without `source_lang`: the API detects the source language and uses the
 glossary's dictionary for the detected language pair. Document translation with
-`glossary_ids` requires `source_lang` and raises `ArgumentError` without it:
+`glossary` or `glossary_ids` requires `source_lang` and raises `ArgumentError` without it:
 
 ```rb
 # Text translation with multiple glossaries
@@ -1141,7 +1145,8 @@ Pass the `translation_memory` option to `translate_text` to use a translation
 memory. You can pass either a string containing the translation memory ID, or a
 `TranslationMemory` object. Use `translation_memory_threshold` to control the
 minimum matching percentage for fuzzy matches (0-100, recommended minimum of
-75%).
+75%). It requires `translation_memory`; without it, or with a value that is not an
+Integer from 0 to 100, it raises `ArgumentError` before anything is sent.
 
 ```rb
 # Using a translation memory ID
