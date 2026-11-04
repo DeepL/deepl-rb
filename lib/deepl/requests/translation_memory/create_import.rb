@@ -33,6 +33,11 @@ module DeepL
 
         private
 
+        # A repeated creation request could create a second resource.
+        def retry_only_unprocessed?
+          true
+        end
+
         def payload
           source_file = { file_name: file_name, content_length: content_length }
           source_file[:content_type] = @content_type if @content_type

@@ -76,6 +76,37 @@ describe 'DeepL HTTP client' do
       expect(stub).to have_been_requested.times(3)
     end
 
+    context 'with a document to upload' do
+      include_context 'with a temporary directory'
+
+      # Path of each create and a call of it.
+      let(:create_calls) do
+        input, = create_text_document(temp_dir)
+        { '/v2/glossaries' => -> { _1.create_glossary('g', 'EN', 'DE', { 'a' => 'b' }) },
+          '/v3/glossaries' => -> { _1.create_multilingual_glossary('g', []) },
+          '/v3/spoken-terms' => -> { _1.create_spoken_terms('t', []) },
+          '/v3/style_profiles' => -> { _1.create_style_profile('p') },
+          '/v3/style_rules' => -> { _1.create_style_rule('r', 'en') },
+          '/v3/style_rules/s-1/custom_instructions' =>
+            -> { _1.create_style_rule_custom_instruction('s-1', 'l', 'p') },
+          '/v2/document' => -> { _1.translate_document_upload(input, 'EN', 'DE') },
+          '/v3/translation_memories/import' =>
+            -> { _1.create_translation_memory_import('a.tmx', 1) },
+          '/v3/translation_memories/tm-1/export' =>
+            -> { _1.create_translation_memory_export('tm-1') } }
+      end
+
+      it 'does not retry a 500 reply on an operation that creates a resource' do
+        create_calls.each do |path, call|
+          stub = stub_request(:post, url(path)).to_return(reply({ message: 'Error' }, 500))
+
+          expect { call.call(api_client) }
+            .to raise_error(DeepL::Exceptions::ServerError) { expect(_1.should_retry?).to be(false) }
+          expect(stub).to have_been_requested.once
+        end
+      end
+    end
+
     it 'does not let Net::HTTP re-send a request or accept a short body' do # rubocop:disable RSpec/ExampleLength
       clients = []
       allow(Net::HTTP).to receive(:new).and_wrap_original do |new, *args|

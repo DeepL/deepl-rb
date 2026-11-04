@@ -42,6 +42,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `wait_until_translation_memory_job_done` keeps polling on it instead of returning the job.
   Migration: none for jobs the API returns; code that built a job with status `downloaded` itself
   should use `completed`.
+- Requests that create a resource are retried only when the request was not processed: after
+  HTTP 429, DNS resolution errors, refused connections and connection timeouts, as
+  `create_developer_key` already was. This covers `create_glossary`,
+  `create_glossary_from_csv`, `create_multilingual_glossary`,
+  `create_multilingual_glossary_from_csv`, `create_spoken_terms`, `create_style_rule`,
+  `create_style_rule_custom_instruction`, `create_style_profile`, the document upload of
+  `translate_document` and `translate_document_upload`, and the job creation of
+  `create_translation_memory_import`, `create_translation_memory_export`,
+  `import_translation_memory_from_filepath` and `export_translation_memory_to_filepath`.
+  Previously they were also retried after any 5xx reply and every other transient network
+  failure, so a retry could create a second resource. A 5xx reply now raises
+  `DeepL::Exceptions::ServerError` with `should_retry?` false at once. Migration: if you retry
+  these calls yourself, check first whether the resource was created.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

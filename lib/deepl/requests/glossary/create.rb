@@ -36,6 +36,11 @@ module DeepL
 
         private
 
+        # A repeated creation request could create a second resource.
+        def retry_only_unprocessed?
+          true
+        end
+
         def payload
           { name: name, source_lang: source_lang, target_lang: target_lang, entries: entries,
             entries_format: entries_format }

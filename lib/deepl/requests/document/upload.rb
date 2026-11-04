@@ -44,6 +44,11 @@ module DeepL
 
         private
 
+        # A repeated creation request could create a second resource.
+        def retry_only_unprocessed?
+          true
+        end
+
         def build_base_form_data(input_file)
           form_data = [['file', input_file]]
           form_data.push(['source_lang', source_lang]) unless source_lang.nil?

@@ -30,6 +30,11 @@ module DeepL
 
         private
 
+        # A repeated creation request could create a second resource.
+        def retry_only_unprocessed?
+          true
+        end
+
         def build_style_rule(request, response)
           data = JSON.parse(response.body)
           DeepL::Resources::StyleRule.new(data, request, response)

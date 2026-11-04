@@ -485,11 +485,11 @@ describe 'document translation' do
         client = DeepL::Client.new('client-key', server_url: 'https://client.example.test',
                                                  max_retries: 0)
         input, output = create_text_document(temp_dir)
-        stub_upload.to_return(reply({ message: 'unavailable' }, 503))
+        stub_upload.to_return(reply({ message: 'busy' }, 429))
 
         expect { client.translate_document(input, output, 'EN', 'DE') }
           .to raise_error(DeepL::Exceptions::DocumentTranslationError) { |e|
-            expect([e.http_status_code, e.should_retry?]).to eq([503, true])
+            expect([e.http_status_code, e.should_retry?]).to eq([429, true])
           }
       end
 

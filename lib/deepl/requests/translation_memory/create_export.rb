@@ -24,6 +24,11 @@ module DeepL
 
         private
 
+        # A repeated creation request could create a second resource.
+        def retry_only_unprocessed?
+          true
+        end
+
         def build_translation_memory_export(request, response)
           data = JSON.parse(response.body)
           # The API answers 200 when it reused a previously completed export, and 202 when it

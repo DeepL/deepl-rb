@@ -36,7 +36,11 @@ module DeepL
     #   library's, +Authorization+ and +User-Agent+ included, except the technical headers
     #   +Content-Type+, +Content-Length+, +Transfer-Encoding+ and +Host+.
     # @param [Integer] max_retries Number of retries after the first attempt, for HTTP 429, any
-    #   5xx and transient network failures (not TLS failures or malformed responses).
+    #   5xx and transient network failures (not TLS failures or malformed responses). Requests
+    #   that create a resource (glossaries, spoken terms, style rule lists and custom
+    #   instructions, style profiles, document uploads, translation memory import and export
+    #   jobs) are retried only after HTTP 429, DNS resolution errors, refused connections and
+    #   connection timeouts, when the request was not processed.
     # @param [Numeric] timeout Timeout of each attempt in seconds, applied to opening the
     #   connection, reading and writing. A longer backoff interval takes precedence.
     # @param [String, nil] proxy Proxy URL, e.g. +http://user:password@proxy.example:8080+.
@@ -95,6 +99,10 @@ module DeepL
     # Translates the document at +input_path+ and writes the result to +output_path+: uploads
     # it, waits until the translation is done and downloads it.
     #
+    # The upload is retried only after failures that show the request was not processed (HTTP 429,
+    # DNS resolution errors, refused connections and connection timeouts), so that a retry cannot
+    # create a second document.
+    #
     # @param [String] input_path Path of the document to translate.
     # @param [String] output_path Path to write the translated document to. Must not exist.
     # @param [String, nil] source_lang Source language, +nil+ to detect it.
@@ -135,6 +143,10 @@ module DeepL
 
     ##
     # Uploads the document at +input_path+ for translation. Options set to +nil+ are not sent.
+    #
+    # The upload is retried only after failures that show the request was not processed (HTTP 429,
+    # DNS resolution errors, refused connections and connection timeouts), so that a retry cannot
+    # create a second document.
     #
     # @param [String] input_path Path of the document to translate.
     # @param [String, nil] source_lang Source language, +nil+ to detect it.
@@ -288,6 +300,10 @@ module DeepL
     # Creates a v2 glossary for one language pair. Glossaries are not regional, so a regional
     # variant is sent as its base language (+EN-GB+ as +EN+).
     #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second glossary.
+    #
     # @param [String] name Name of the glossary.
     # @param [String] source_lang Source language.
     # @param [String] target_lang Target language.
@@ -310,6 +326,10 @@ module DeepL
     ##
     # Creates a v2 glossary from CSV content, for example a file downloaded from the DeepL
     # website.
+    #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second glossary.
     #
     # @param [String] name Name of the glossary.
     # @param [String] source_lang Source language.
@@ -376,6 +396,10 @@ module DeepL
     ##
     # Creates a multilingual glossary with one dictionary per language pair.
     #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second glossary.
+    #
     # @param [String] name Name of the glossary.
     # @param [Array<DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash>] dictionaries
     #   One entry per language pair. A hash needs the keys +:source_lang+, +:target_lang+ and
@@ -391,6 +415,10 @@ module DeepL
 
     ##
     # Creates a multilingual glossary with one dictionary from CSV content.
+    #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second glossary.
     #
     # @param [String] name Name of the glossary.
     # @param [String] source_lang Source language of the dictionary.
@@ -553,6 +581,10 @@ module DeepL
     ##
     # Creates a spoken terms collection, which improves the transcription of the given terms.
     #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second collection.
+    #
     # @param [String] name Name of the collection.
     # @param [Array<DeepL::Resources::SpokenTermsEntries, Hash>] term_lists One entry per
     #   language. A hash needs the keys +:lang+ and +:entries+ (an array of terms).
@@ -657,6 +689,10 @@ module DeepL
     ##
     # Creates a style rule list. Keywords left +nil+ are not sent.
     #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second style rule list.
+    #
     # @param [String] name Name of the style rule list.
     # @param [String] language Language the rules apply to, for example +'en'+.
     # @param [Hash, nil] configured_rules Category -> rule -> value, sent as given.
@@ -716,6 +752,10 @@ module DeepL
 
     ##
     # Adds a custom instruction to a style rule list. +source_language+ is not sent if +nil+.
+    #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second custom instruction.
     #
     # @param [String, DeepL::Resources::StyleRule] style_rule ID or style rule list.
     # @param [String] label Label of the instruction.
@@ -783,6 +823,10 @@ module DeepL
     # Creates a style profile, which links glossaries, style rule lists and translation
     # memories. Keywords left +nil+ are not sent. If a component cannot be used, the request
     # fails and no style profile is created.
+    #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second style profile.
     #
     # @param [String] name Name of the style profile.
     # @param [String, nil] description Free-text description.
@@ -907,6 +951,10 @@ module DeepL
     # upload URL with #upload_translation_memory_file, then wait for the job with
     # #wait_until_translation_memory_job_done. Keywords left +nil+ are not sent.
     #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second import job.
+    #
     # @param [String] file_name Name of the TMX file, for example +'legal.tmx'+.
     # @param [Integer] content_length Size of the file in bytes.
     # @param [String, nil] content_type MIME type of the file (API default: +application/xml+).
@@ -943,6 +991,10 @@ module DeepL
     # Imports a TMX file as a new translation memory: creates the import job, uploads the file
     # and waits until the job is completed.
     #
+    # Creating the import job is retried only after failures that show the request was not processed
+    # (HTTP 429, DNS resolution errors, refused connections and connection timeouts), so that a
+    # retry cannot create a second import job.
+    #
     # @param [String] input_path Path of the TMX file.
     # @param [String, nil] display_name Name of the translation memory (API default: the file
     #   name).
@@ -969,6 +1021,10 @@ module DeepL
     # Creates an export job for a translation memory. Wait for it with
     # #wait_until_translation_memory_job_done, then download the TMX file with
     # #download_translation_memory_export.
+    #
+    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
+    # resolution errors, refused connections and connection timeouts), so that a retry cannot create
+    # a second export job.
     #
     # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
     #   memory.
@@ -997,6 +1053,10 @@ module DeepL
     ##
     # Exports a translation memory to a TMX file: creates the export job, waits until it is
     # completed and writes the file to +output_path+, overwriting an existing file.
+    #
+    # Starting the export is retried only after failures that show the request was not processed
+    # (HTTP 429, DNS resolution errors, refused connections and connection timeouts), so that a
+    # retry cannot create a second export job.
     #
     # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
     #   memory.
