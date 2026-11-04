@@ -55,6 +55,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failure, so a retry could create a second resource. A 5xx reply now raises
   `DeepL::Exceptions::ServerError` with `should_retry?` false at once. Migration: if you retry
   these calls yourself, check first whether the resource was created.
+- A response body cut off before its `Content-Length` on a request that creates a resource,
+  `create_developer_key` included, is still not retried, but now raises
+  `DeepL::Exceptions::ConnectionError` with `should_retry?` true; previously `false`. Migration:
+  if you retry on `should_retry?`, check first whether the resource was created.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

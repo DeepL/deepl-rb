@@ -93,7 +93,8 @@ module DeepL
     #
     # Creation is retried only after failures that show the request was not processed (HTTP 429,
     # DNS resolution errors, refused connections and connection timeouts), so that a retry
-    # cannot create a second key. The raised error has +should_retry?+ true only for these.
+    # cannot create a second key. The raised error has +should_retry?+ true for these and for a
+    # response body cut off mid-read, which is not retried.
     #
     # @param [String, nil] label Label for the new key, not sent if +nil+.
     # @param [Hash, nil] extra_body_parameters Added to the request body last; replaces fields

@@ -443,7 +443,9 @@ describe DeepL::AdminClient do
       stub = stub_create.to_return(short)
 
       expect { client.create_developer_key }
-        .to raise_error(DeepL::Exceptions::ConnectionError) { |e| expect(e.should_retry?).to be(false) }
+        .to(raise_error(DeepL::Exceptions::ConnectionError) do |e|
+          expect([e.cause, e.should_retry?]).to match([be_a(EOFError), true])
+        end)
       expect(stub).to have_been_requested.once
     end
   end

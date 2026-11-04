@@ -10,11 +10,13 @@ module DeepL
     # HTTP response from the API (DNS, connection, TLS, proxy, timeout or a body cut off
     # mid-read), after the retries are used up. Transient failures (DNS, connection, timeout,
     # cut-off body) are retried and have +should_retry?+ true; TLS failures, proxy failures and
-    # malformed responses are raised at once and have +should_retry?+ false. The original
+    # malformed responses are raised at once and have +should_retry?+ false. Requests that
+    # create a resource retry only DNS failures, refused connections and connection timeouts;
+    # of their other failures, only a cut-off body has +should_retry?+ true. The original
     # exception is available as +cause+.
     class ConnectionError < Error
       # Raised from a +rescue+ block, so the original exception becomes +cause+.
-      # +should_retry: false+ marks a request that is unsafe to repeat once sent.
+      # +should_retry: false+ marks a failure after which the request may have been processed.
       def self.from_network_error(error, should_retry: true)
         new("Connection to the DeepL API failed: #{error.message}",
             should_retry: should_retry && transient?(error))

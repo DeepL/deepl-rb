@@ -170,10 +170,11 @@ module DeepL
         end
       end
 
+      # A create does not retry a body cut off mid-read, but the error has +should_retry?+ true.
       def raise_network_error(error)
-        raise Exceptions::ConnectionError.from_network_error(
-          error, should_retry: !retry_only_unprocessed? || unprocessed_error?(error)
-        )
+        should_retry = !retry_only_unprocessed? || unprocessed_error?(error) ||
+                       error.is_a?(EOFError)
+        raise Exceptions::ConnectionError.from_network_error(error, should_retry: should_retry)
       end
 
       # Before net-http 0.3, Net::HTTP cannot raise at EOF of a short body (+ignore_eof+), so the

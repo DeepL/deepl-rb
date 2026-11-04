@@ -1379,7 +1379,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | --------------- | ----------- |
 | `DeepL::Exceptions::AuthorizationFailed` | The authorization process has failed. Check your `auth_key` value. |
 | `DeepL::Exceptions::BadRequest` | Something is wrong in your request. Check `exception.message` for more information. |
-| `DeepL::Exceptions::ConnectionError` | No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). The original exception is `exception.cause`. |
+| `DeepL::Exceptions::ConnectionError` | No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). Requests that create a resource retry fewer failures, see [Retries and timeouts](#retries-and-timeouts). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed; `http_status_code` and `should_retry?` are those of the DeepL error that caused it, if any. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
@@ -1437,7 +1437,8 @@ resource: `create_glossary`, `create_glossary_from_csv`, `create_multilingual_gl
 `translate_document` and `translate_document_upload`, the translation memory import and export
 job creation, and `AdminClient#create_developer_key`. Their other failures are raised at once:
 a 5xx reply as `DeepL::Exceptions::ServerError` and a network failure as
-`DeepL::Exceptions::ConnectionError`, both with `should_retry?` false.
+`DeepL::Exceptions::ConnectionError`, both with `should_retry?` false, except a response body cut
+off before its `Content-Length`, which has `should_retry?` true.
 
 ### Proxy configuration
 
