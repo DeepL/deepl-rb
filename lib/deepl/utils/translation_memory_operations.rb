@@ -143,8 +143,8 @@ module DeepL
 
         download_url = job.result&.download_url
         if blank?(download_url)
-          raise ArgumentError, 'Translation memory export job has no download URL, ' \
-                               'it may not have completed yet'
+          raise Exceptions::Error, 'Translation memory export job has no download URL, ' \
+                                   'it may not have completed yet'
         end
 
         download_url

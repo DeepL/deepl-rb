@@ -380,9 +380,11 @@ describe 'DeepL::Client translation memory requests' do
       expect(File.read(output)).to eq('tmx')
     end
 
-    it 'raises ArgumentError for a job without a download URL or an empty URL' do
+    it 'raises Error for a job without a download URL and ArgumentError for an empty URL' do
       expect { memories.download_translation_memory_export(job_resource('processing'), output) }
-        .to raise_error(ArgumentError, /no download URL/)
+        .to raise_error(DeepL::Exceptions::Error, /no download URL/) { |e|
+          expect(e).not_to be_a(ArgumentError)
+        }
       expect { memories.download_translation_memory_export('', output) }
         .to raise_error(ArgumentError, /must not be empty/)
     end

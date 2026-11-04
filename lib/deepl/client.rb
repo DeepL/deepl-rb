@@ -1108,8 +1108,9 @@ module DeepL
     #   its download URL.
     # @param [String] output_path Path to write the file to. Must not exist.
     # @return [nil]
-    # @raise [ArgumentError] If the download URL is empty or the job has none, for example because
-    #   it is not completed yet, before any request.
+    # @raise [ArgumentError] If the download URL is empty, before any request.
+    # @raise [DeepL::Exceptions::Error] If the job has no download URL, for example because it is
+    #   not completed yet, before any request.
     # @raise [SystemCallError] +Errno::EEXIST+ if +output_path+ exists, +Errno::ENOENT+ or
     #   +Errno::EACCES+ if its directory is missing or not writable (checked before the request),
     #   or the error of writing the file.

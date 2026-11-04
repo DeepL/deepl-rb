@@ -66,8 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for these.
 - The translation memory methods raise `ArgumentError` instead of `DeepL::Exceptions::Error`
   for an empty translation memory ID or job ID (or a `TranslationMemory` or
-  `TranslationMemoryJob` without one), an empty upload or download URL, and an export job without
-  a download URL. Migration: rescue `ArgumentError` for these.
+  `TranslationMemoryJob` without one) and an empty upload or download URL. An export job without
+  a download URL still raises `DeepL::Exceptions::Error`. Migration: rescue `ArgumentError` for
+  these.
 - The multilingual glossary methods raise `ArgumentError` before any request for an empty
   glossary ID or a `MultilingualGlossary` without one (previously sent to `/v3/glossaries/`), an
   empty name (`create_multilingual_glossary`, `create_multilingual_glossary_from_csv`,

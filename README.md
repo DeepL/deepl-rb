@@ -919,7 +919,8 @@ described below. Every method that takes a translation memory accepts either a
 string containing the translation memory ID or a `TranslationMemory` object, and
 every method that takes a job accepts its ID or a `TranslationMemoryJob`. An empty
 ID, upload URL or download URL, or an object without one, raises `ArgumentError`
-before any request is sent.
+before any request is sent; an export job without a download URL raises
+`DeepL::Exceptions::Error`.
 
 #### Listing translation memories
 
