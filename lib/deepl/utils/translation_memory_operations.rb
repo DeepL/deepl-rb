@@ -110,14 +110,14 @@ module DeepL
              else
                translation_memory
              end
-        raise Exceptions::Error, 'Translation memory ID must not be empty' if blank?(id)
+        raise ArgumentError, 'Translation memory ID must not be empty' if blank?(id)
 
         id
       end
 
       def extract_job_id(job)
         id = job.is_a?(Resources::TranslationMemoryJob) ? job.job_id : job
-        raise Exceptions::Error, 'Job ID must not be empty' if blank?(id)
+        raise ArgumentError, 'Job ID must not be empty' if blank?(id)
 
         id
       end
@@ -135,8 +135,8 @@ module DeepL
 
         download_url = job.result&.download_url
         if blank?(download_url)
-          raise Exceptions::Error, 'Translation memory export job has no download URL, ' \
-                                   'it may not have completed yet'
+          raise ArgumentError, 'Translation memory export job has no download URL, ' \
+                               'it may not have completed yet'
         end
 
         download_url

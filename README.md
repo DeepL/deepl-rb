@@ -906,7 +906,9 @@ https://www.deepl.com/translation-memory.
 and `delete_translation_memory`, plus the single steps of an import or export
 described below. Every method that takes a translation memory accepts either a
 string containing the translation memory ID or a `TranslationMemory` object, and
-every method that takes a job accepts its ID or a `TranslationMemoryJob`.
+every method that takes a job accepts its ID or a `TranslationMemoryJob`. An empty
+ID, upload URL or download URL, or an object without one, raises `ArgumentError`
+before any request is sent.
 
 #### Listing translation memories
 

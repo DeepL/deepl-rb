@@ -64,6 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   invalid glossary or spoken terms term or a malformed glossary entry. Migration: rescue
   `ArgumentError` (or `DeepL::Exceptions::ValidationError`) instead of `DeepL::Exceptions::Error`
   for these.
+- The translation memory methods raise `ArgumentError` instead of `DeepL::Exceptions::Error`
+  for an empty translation memory ID or job ID (or a `TranslationMemory` or
+  `TranslationMemoryJob` without one), an empty upload or download URL, and an export job without
+  a download URL. Migration: rescue `ArgumentError` for these.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

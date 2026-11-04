@@ -77,12 +77,12 @@ describe 'DeepL::Client translation memory requests' do
     end
 
     ['', nil].each do |id|
-      it "raise Error for the ID #{id.inspect} without sending a request" do
+      it "raises ArgumentError for the ID #{id.inspect} without sending a request" do
         expect do
           memories.get_translation_memory(id)
-        end.to raise_error(DeepL::Exceptions::Error, /must not be empty/)
+        end.to raise_error(ArgumentError, /must not be empty/)
         expect { memories.delete_translation_memory(id) }
-          .to raise_error(DeepL::Exceptions::Error, /must not be empty/)
+          .to raise_error(ArgumentError, /must not be empty/)
       end
     end
   end
@@ -217,6 +217,11 @@ describe 'DeepL::Client translation memory requests' do
       memories.upload_translation_memory_file(upload_url, Fixtures::EXAMPLE_TMX)
     end
 
+    it 'raises ArgumentError for an empty upload URL without sending a request' do
+      expect { memories.upload_translation_memory_file('', Fixtures::EXAMPLE_TMX) }
+        .to raise_error(ArgumentError, /must not be empty/)
+    end
+
     it 'sends the User-Agent of the headers option to the storage URL' do
       stub_request(:put, upload_url).with(headers: { 'User-Agent' => 'mine/1' }, &no_authorization)
                                     .to_return(status: 200)
@@ -271,8 +276,7 @@ describe 'DeepL::Client translation memory requests' do
     it 'rejects an empty job ID without sending a request' do
       expect do
         memories.get_translation_memory_job('')
-      end.to raise_error(DeepL::Exceptions::Error,
-                         /must not be empty/)
+      end.to raise_error(ArgumentError, /must not be empty/)
     end
   end
 
@@ -376,9 +380,11 @@ describe 'DeepL::Client translation memory requests' do
       expect(File.read(output)).to eq('tmx')
     end
 
-    it 'raises Error for a job without a download URL' do
+    it 'raises ArgumentError for a job without a download URL or an empty URL' do
       expect { memories.download_translation_memory_export(job_resource('processing'), output) }
-        .to raise_error(DeepL::Exceptions::Error, /no download URL/)
+        .to raise_error(ArgumentError, /no download URL/)
+      expect { memories.download_translation_memory_export('', output) }
+        .to raise_error(ArgumentError, /must not be empty/)
     end
 
     it 'retries a storage reply of 503 and raises Error with the status' do

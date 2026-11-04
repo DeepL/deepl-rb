@@ -911,6 +911,7 @@ module DeepL
     #   memory.
     # @return [DeepL::Resources::TranslationMemory]
     # @raise [DeepL::Exceptions::NotFound] If the translation memory does not exist.
+    # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def get_translation_memory(translation_memory)
       translation_memories.find(translation_memory)
     end
@@ -921,6 +922,7 @@ module DeepL
     # @param [String, DeepL::Resources::TranslationMemory] translation_memory ID or translation
     #   memory.
     # @return [nil]
+    # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def delete_translation_memory(translation_memory)
       translation_memories.destroy(translation_memory)
       nil
@@ -940,6 +942,7 @@ module DeepL
     # @param [Boolean, nil] filter_case_sensitive Whether +filter_text+ is case-sensitive (API
     #   default: false).
     # @return [DeepL::Resources::TranslationMemorySegments]
+    # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def list_translation_memory_segments(translation_memory, page_size: nil, page_cursor: nil,
                                          filter_text: nil, filter_case_sensitive: nil)
       options = { page_size: page_size, page_cursor: page_cursor, filter_text: filter_text,
@@ -983,6 +986,7 @@ module DeepL
     # @return [nil]
     # @raise [DeepL::Exceptions::Error] If the storage URL replies with a non-2xx status; the error
     #   carries +http_status_code+, and +should_retry?+ is true for 429 and 5xx.
+    # @raise [ArgumentError] If the upload URL is empty, before any request.
     def upload_translation_memory_file(translation_memory_import, content, content_type: nil)
       translation_memories.upload_file(translation_memory_import, content,
                                        content_type: content_type)
@@ -1031,6 +1035,7 @@ module DeepL
     #   memory.
     # @return [DeepL::Resources::TranslationMemoryExport] The job ID, and whether the API reused
     #   a previously completed export.
+    # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def create_translation_memory_export(translation_memory)
       translation_memories.create_export(translation_memory)
     end
@@ -1044,8 +1049,9 @@ module DeepL
     #   its download URL.
     # @param [String] output_path Path to write the file to.
     # @return [nil]
-    # @raise [DeepL::Exceptions::Error] If the job has no download URL, for example because it
-    #   is not completed yet, the download fails or the file cannot be written.
+    # @raise [ArgumentError] If the download URL is empty or the job has none, for example because
+    #   it is not completed yet, before any request.
+    # @raise [DeepL::Exceptions::Error] If the download fails or the file cannot be written.
     def download_translation_memory_export(job, output_path)
       translation_memories.download_export(job, output_path)
       nil
@@ -1068,6 +1074,7 @@ module DeepL
     # @raise [DeepL::Exceptions::Error] If the directory of +output_path+ does not exist (checked
     #   before the job is created), the job fails or expires (with the API's error message),
     #   +timeout_s+ expires, the download fails or the file cannot be written.
+    # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def export_translation_memory_to_filepath(translation_memory, output_path, timeout_s: nil)
       translation_memories.export_to_filepath(translation_memory, output_path,
                                               timeout_s: timeout_s)
@@ -1078,6 +1085,7 @@ module DeepL
     #
     # @param [String, DeepL::Resources::TranslationMemoryJob] job ID or job.
     # @return [DeepL::Resources::TranslationMemoryJob]
+    # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def get_translation_memory_job(job)
       translation_memories.find_job(job)
     end
@@ -1092,6 +1100,7 @@ module DeepL
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job.
     # @raise [DeepL::Exceptions::Error] If the job fails or expires (with the API's error
     #   message), or +timeout_s+ expires.
+    # @raise [ArgumentError] If the ID is empty or the object has no ID, before any request.
     def wait_until_translation_memory_job_done(job, timeout_s: nil)
       translation_memories.wait_until_job_done(job, timeout_s: timeout_s)
     end

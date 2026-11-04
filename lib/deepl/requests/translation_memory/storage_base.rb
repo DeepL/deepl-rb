@@ -20,7 +20,7 @@ module DeepL
         def initialize(api, storage_url, options = {}, additional_headers = {})
           super(api, options, additional_headers)
           if storage_url.nil? || storage_url.empty?
-            raise Exceptions::Error, 'Storage URL must not be empty'
+            raise ArgumentError, 'Storage URL must not be empty'
           end
 
           @storage_url = storage_url
