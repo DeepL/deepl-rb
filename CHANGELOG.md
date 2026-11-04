@@ -111,6 +111,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DeepL::Exceptions::Error` before creating the export job if `output_path` exists or its
   directory is not writable, as it already did for a missing directory. Migration: delete the
   file first or pass a new path.
+- `create_translation_memory_import` raises `ArgumentError` before any request for an empty
+  `file_name` or a `content_length` that is not a positive Integer, and
+  `import_translation_memory_from_filepath` for an empty input file; previously the import job
+  was created. Migration: pass a non-empty file.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

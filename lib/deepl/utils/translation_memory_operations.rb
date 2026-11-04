@@ -89,6 +89,8 @@ module DeepL
                                content_type: nil, extra_body_parameters: nil)
         check_input_file(input_file_path)
         file_content = read_input_file(input_file_path)
+        raise ArgumentError, "File #{input_file_path} is empty" if file_content.empty?
+
         created = create_import(File.basename(input_file_path), file_content.bytesize,
                                 content_type: content_type, display_name: display_name,
                                 extra_body_parameters: extra_body_parameters)

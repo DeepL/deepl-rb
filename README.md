@@ -1013,7 +1013,7 @@ of the newly created translation memory. The optional keywords are
 `content_type` (the MIME type of the file, declared in the job and sent with the
 upload, defaults to `application/xml`), `timeout_s` and `extra_body_parameters`
 (fields added to the body of the import job request). It raises an
-`ArgumentError` before any request if the file does not exist, and a
+`ArgumentError` before any request if the file does not exist or is empty, and a
 `DeepL::Exceptions::Error` if the file cannot be read, with the API's error
 message if the job fails or expires, and when `timeout_s` expires.
 
@@ -1037,7 +1037,8 @@ The three steps can also be performed separately with
 `wait_until_translation_memory_job_done`, for example to upload a file that is
 not available on the local file system. `create_translation_memory_import`
 accepts `content_type`, `display_name` and `extra_body_parameters`; keywords left
-`nil` are not sent. The upload URL is a pre-signed storage URL outside of the
+`nil` are not sent. An empty file name or a `content_length` that is not a positive
+Integer raises `ArgumentError` before any request. The upload URL is a pre-signed storage URL outside of the
 DeepL API, so no authorization header and, of the configured `headers`, only a
 `User-Agent` is sent with the upload; the proxy, SSL and timeout settings of the client apply. A non-2xx
 reply of a storage URL (for example 403 for an expired URL) raises a plain

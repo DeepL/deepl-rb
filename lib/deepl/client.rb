@@ -1023,6 +1023,8 @@ module DeepL
     #   name).
     # @param [Hash, nil] extra_body_parameters A hash added to the request body last.
     # @return [DeepL::Resources::TranslationMemoryImport] The job ID and the upload URL.
+    # @raise [ArgumentError] If +file_name+ is empty or +content_length+ is not a positive Integer,
+    #   before any request.
     def create_translation_memory_import(file_name, content_length, content_type: nil,
                                          display_name: nil, extra_body_parameters: nil)
       translation_memories.create_import(file_name, content_length,
@@ -1068,7 +1070,7 @@ module DeepL
     #   last.
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job; its result carries the
     #   ID of the new translation memory.
-    # @raise [ArgumentError] If the file does not exist, before any request is sent.
+    # @raise [ArgumentError] If the file does not exist or is empty, before any request is sent.
     # @raise [DeepL::Exceptions::Error] If the file cannot be read, the upload fails, the job fails
     #   or expires (with the API's error message), or +timeout_s+ expires.
     def import_translation_memory_from_filepath(input_path, display_name: nil, content_type: nil,

@@ -140,6 +140,23 @@ describe 'DeepL::Client translation memories' do
         .to raise_error(ArgumentError, /No file found/)
     end
 
+    it 'raises ArgumentError for an empty import file without sending a request' do
+      path = File.join(temp_dir, 'empty.tmx')
+      File.write(path, '')
+
+      expect { client.import_translation_memory_from_filepath(path) }
+        .to raise_error(ArgumentError, /is empty/)
+    end
+
+    it 'raises ArgumentError for an empty file name or a length below 1 without a request' do
+      expect { client.create_translation_memory_import('', 10) }
+        .to raise_error(ArgumentError, /file_name/)
+      [0, -1, '10'].each do |length|
+        expect { client.create_translation_memory_import('tm.tmx', length) }
+          .to raise_error(ArgumentError, /content_length/)
+      end
+    end
+
     it 'raises Error with the cause for an unreadable import file without sending a request' do
       expect { client.import_translation_memory_from_filepath(temp_dir) }
         .to raise_error(DeepL::Exceptions::Error, /Could not read/) { |error|
