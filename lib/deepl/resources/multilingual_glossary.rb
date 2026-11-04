@@ -36,8 +36,8 @@ module DeepL
       # @param [Hash{String => String}, Array<Array(String, String)>, String] entries The target
       #   term of each source term, as a hash, source/target pairs or a TSV string; terms are
       #   stripped and checked when sent.
-      # @raise [DeepL::Exceptions::ValidationError] If a pair or TSV line is not exactly two
-      #   terms, or a source term appears twice.
+      # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a pair or TSV line is not
+      #   exactly two terms, or a source term appears twice.
       def initialize(source_lang, target_lang, entries, request = nil, response = nil)
         super(request, response)
 

@@ -34,6 +34,11 @@ describe 'DeepL::Client v2 glossaries' do
       expect { api_client.create_glossary('terms', 'EN', 'DE', {}) }
         .to raise_error(ArgumentError, /entries/)
     end
+
+    it 'raises an ArgumentError for an invalid term without sending a request' do
+      expect { api_client.create_glossary('g', 'EN', 'DE', { ' ' => 'x' }) }
+        .to raise_error(ArgumentError)
+    end
   end
 
   describe '#create_glossary_from_csv' do

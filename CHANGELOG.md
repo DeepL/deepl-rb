@@ -59,6 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `create_developer_key` included, is still not retried, but now raises
   `DeepL::Exceptions::ConnectionError` with `should_retry?` true; previously `false`. Migration:
   if you retry on `should_retry?`, check first whether the resource was created.
+- `DeepL::Exceptions::ValidationError` is now an `ArgumentError` instead of a
+  `DeepL::Exceptions::Error`, so `rescue ArgumentError` catches every invalid argument, also an
+  invalid glossary or spoken terms term or a malformed glossary entry. Migration: rescue
+  `ArgumentError` (or `DeepL::Exceptions::ValidationError`) instead of `DeepL::Exceptions::Error`
+  for these.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

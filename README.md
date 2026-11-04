@@ -366,8 +366,8 @@ with a name, the source and target languages and the entries, a hash of source t
 term (source/target pairs or a TSV string work too). Glossaries are not regional: `EN-GB` is
 sent as `EN`. The entries are sent as TSV; each term is stripped of surrounding whitespace, and
 an empty term, one with a control character or a source term that appears twice raises
-`DeepL::Exceptions::ValidationError` before anything is sent. An empty name or no entries raise
-`ArgumentError`:
+`DeepL::Exceptions::ValidationError`, an `ArgumentError`, before anything is sent. An empty name
+or no entries raise `ArgumentError`:
 
 ```rb
 glossary = client.create_glossary('My Glossary', 'EN', 'ES',
@@ -464,7 +464,7 @@ always sent as TSV, whatever `entries_format` says. Terms not given as CSV are c
 glossary terms: each term is stripped of surrounding whitespace, and an empty term,
 one with a control character, a pair or TSV line that is not exactly two terms, or a
 source term that appears twice raises
-`DeepL::Exceptions::ValidationError` before anything is sent. CSV content is sent as
+`DeepL::Exceptions::ValidationError` (an `ArgumentError`) before anything is sent. CSV content is sent as
 given. Further options, such as
 `extra_body_parameters`, are given as additional keywords:
 
@@ -556,7 +556,7 @@ To create a collection, pass a name and one `DeepL::Resources::SpokenTermsEntrie
 (or a hash with `:lang` and `:entries`) per language. Terms are checked like
 glossary terms: each term is stripped of surrounding whitespace and sent stripped,
 and `create_spoken_terms`, `update_spoken_terms` and `replace_spoken_terms_list`
-raise `DeepL::Exceptions::ValidationError` before sending anything if a term is then empty or contains
+raise `DeepL::Exceptions::ValidationError` (an `ArgumentError`) before sending anything if a term is then empty or contains
 a C0 or C1 control character (such as a tab or newline), U+2028 or U+2029.
 Further options, such as `extra_body_parameters`, are given as additional
 keywords:
@@ -1387,10 +1387,11 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |
 | `DeepL::Exceptions::RequestEntityTooLarge` | Your request is too large, reduce the amount of data you are sending. The API has a request size limit of 128 KiB. |
 | `DeepL::Exceptions::ServerError` | An error occured in the DeepL API (HTTP 5xx), raised after all retries. |
-| `DeepL::Exceptions::ValidationError` | An invalid argument detected before any request: an invalid glossary or spoken terms term. |
 
 All of them are subclasses of `DeepL::Exceptions::Error`, which is also raised for a response
-that cannot be parsed. Errors of an HTTP response carry the status as an `Integer` in
+that cannot be parsed. An invalid argument raises `ArgumentError` before any request is sent;
+for an invalid glossary or spoken terms term it is the subclass
+`DeepL::Exceptions::ValidationError`. Errors of an HTTP response carry the status as an `Integer` in
 `exception.http_status_code` (`nil` otherwise).
 
 An exampling of handling a generic exception:

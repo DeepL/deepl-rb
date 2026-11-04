@@ -312,9 +312,9 @@ module DeepL
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::Glossary] The created glossary.
     # @raise [ArgumentError] If +name+ or +entries+ is empty.
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping surrounding
-    #   whitespace or contains a control character, a TSV line is not exactly two terms, or a
-    #   source term appears twice.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping surrounding whitespace or contains a control character, a TSV line is not exactly
+    #   two terms, or a source term appears twice.
     def create_glossary(name, source_lang, target_lang, entries, **options)
       raise ArgumentError, 'Glossary entries must not be empty' if entries.nil? || entries.empty?
 
@@ -407,8 +407,9 @@ module DeepL
     #   CSV string, which is sent as given). Entries other than a string are always sent as TSV.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping surrounding
-    #   whitespace or contains a control character, or a TSV line is not exactly two terms.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping surrounding whitespace or contains a control character, or a TSV line is not
+    #   exactly two terms.
     def create_multilingual_glossary(name, dictionaries, **options)
       Requests::MultilingualGlossary::Create.new(api, name, dictionaries, options).request
     end
@@ -460,8 +461,8 @@ module DeepL
     #   pair adds a dictionary.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping or contains a
-    #   control character.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping or contains a control character.
     def update_multilingual_glossary(glossary, name: nil, dictionaries: nil, **options)
       Requests::MultilingualGlossary::Update.new(api, glossary, name, dictionaries,
                                                  options).request
@@ -487,8 +488,8 @@ module DeepL
     #   language pair and its entries, see #create_multilingual_glossary.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping or contains a
-    #   control character.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping or contains a control character.
     def update_multilingual_glossary_dictionary(glossary, dictionary, **options)
       Requests::MultilingualGlossary::Update.new(api, glossary, nil, [dictionary],
                                                  options).request
@@ -520,8 +521,8 @@ module DeepL
     #   language pair and its entries, see #create_multilingual_glossary.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping or contains a
-    #   control character.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping or contains a control character.
     def replace_multilingual_glossary_dictionary(glossary, dictionary, **options)
       Requests::MultilingualGlossary::ReplaceDictionary.new(api, glossary, dictionary,
                                                             options).request
@@ -590,8 +591,8 @@ module DeepL
     #   language. A hash needs the keys +:lang+ and +:entries+ (an array of terms).
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::SpokenTerms] The created collection.
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping surrounding
-    #   whitespace or contains a control character.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping surrounding whitespace or contains a control character.
     def create_spoken_terms(name, term_lists, **options)
       Requests::SpokenTerms::Create.new(api, name, term_lists, options).request
     end
@@ -624,8 +625,8 @@ module DeepL
     #   into the list of each language; a new language adds a list.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::SpokenTerms] The updated collection.
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping or contains a
-    #   control character.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping or contains a control character.
     def update_spoken_terms(spoken_terms, name: nil, term_lists: nil, **options)
       Requests::SpokenTerms::Update.new(api, spoken_terms, name, term_lists, options).request
     end
@@ -657,8 +658,8 @@ module DeepL
     #   hash needs the keys +:lang+ and +:entries+.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::SpokenTermsList]
-    # @raise [DeepL::Exceptions::ValidationError] If a term is empty after stripping or contains a
-    #   control character.
+    # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
+    #   stripping or contains a control character.
     def replace_spoken_terms_list(spoken_terms, entries, **options)
       Requests::SpokenTerms::ReplaceTermList.new(api, spoken_terms, entries, options).request
     end

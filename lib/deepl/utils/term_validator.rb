@@ -17,8 +17,8 @@ module DeepL
       #
       # @param [String] term The term to check.
       # @return [String] The stripped term, which is what the request sends.
-      # @raise [DeepL::Exceptions::ValidationError] If the stripped term is empty or contains a
-      #   control character.
+      # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If the stripped term is empty
+      #   or contains a control character.
       def validate!(term)
         term = term.to_s.strip
         raise Exceptions::ValidationError, 'Term must not be empty' if term.empty?
