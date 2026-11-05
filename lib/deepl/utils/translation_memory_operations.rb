@@ -104,7 +104,7 @@ module DeepL
         with_job_error('export') do |progress|
           check_output_path(output_path)
           created = create_export(translation_memory)
-          progress[:job] = created_job(created.job_id, Resources::TranslationMemoryJob::OPERATION_EXPORT)
+          progress[:job_id] = created.job_id
           job = wait_until_job_done(created.job_id, timeout_s: timeout_s) { progress[:job] = _1 }
           download_export(job, output_path)
           job
@@ -155,22 +155,14 @@ module DeepL
         value.nil? || value.empty?
       end
 
-      # The job of a creation response, before its first status query.
-      def created_job(job_id, operation)
-        Resources::TranslationMemoryJob.new(
-          { 'job_id' => job_id, 'product' => 'translation_memory', 'operation' => operation },
-          nil, nil
-        )
-      end
-
       def upload_and_wait(created, file_content, content_type, timeout_s, progress)
-        progress[:job] = created_job(created.job_id, Resources::TranslationMemoryJob::OPERATION_IMPORT)
+        progress[:job_id] = created.job_id
         upload_file(created, file_content, content_type: content_type)
         wait_until_job_done(created.job_id, timeout_s: timeout_s) { progress[:job] = _1 }
       end
 
-      # Wraps every failure of the block in a TranslationMemoryJobError carrying +progress[:job]+,
-      # the job once the block created it.
+      # Wraps every failure of the block in a TranslationMemoryJobError carrying
+      # +progress[:job_id]+ (set once the job was created) and +progress[:job]+ (its last status).
       def with_job_error(operation)
         progress = {}
         yield progress
@@ -178,7 +170,8 @@ module DeepL
         prefix = "Error occurred during the translation memory #{operation}"
         # A failed job's error from the wait already starts with the prefix.
         message = e.message.start_with?(prefix) ? e.message : "#{prefix}: #{e.message}"
-        raise Exceptions::TranslationMemoryJobError.new(message, progress[:job], e)
+        raise Exceptions::TranslationMemoryJobError.new(message, progress[:job_id],
+                                                        progress[:job], e)
       end
 
       def check_input_file(input_file_path)

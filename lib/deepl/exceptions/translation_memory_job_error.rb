@@ -10,17 +10,21 @@ module DeepL
     # #export_translation_memory_to_filepath except a missing input file. The failure being
     # wrapped is the +cause+.
     class TranslationMemoryJobError < Error
-      # @return [DeepL::Resources::TranslationMemoryJob, nil] The job once it was created, with
-      #   the last status the library received, +nil+ if the failure happened before. Use its
-      #   +job_id+ to query or resume the job.
+      # @return [String, nil] ID of the import or export job, set as soon as the job was created,
+      #   +nil+ if the failure happened before. Use it to query or resume the job.
+      attr_reader :job_id
+
+      # @return [DeepL::Resources::TranslationMemoryJob, nil] The last job status the helper
+      #   fetched, +nil+ before the first status check.
       attr_reader :job
 
       # +error+ is the failure being wrapped; the HTTP status and retryability of a DeepL error
       # are copied from it.
-      def initialize(message, job, error = nil)
+      def initialize(message, job_id, job, error = nil)
         deepl_error = error.is_a?(Error) ? error : nil
         super(message, http_status_code: deepl_error&.http_status_code,
                        should_retry: deepl_error&.should_retry? || false)
+        @job_id = job_id
         @job = job
       end
     end

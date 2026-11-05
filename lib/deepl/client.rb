@@ -1072,10 +1072,11 @@ module DeepL
     #   ID of the new translation memory.
     # @raise [ArgumentError] If the file does not exist, before any request is sent.
     # @raise [DeepL::Exceptions::TranslationMemoryJobError] For any other failure, the original
-    #   error as +cause+: an empty or unreadable file (before any request, +job+ +nil+), an
-    #   invalid argument or failure of the job creation, a failed upload, a job that fails or
-    #   expires (with the API's error message), or an expired +timeout_s+. +job+ is set once the
-    #   job was created; +http_status_code+ and +should_retry?+ are those of a DeepL error cause.
+    #   error as +cause+: an empty or unreadable file (before any request), an invalid argument or
+    #   failure of the job creation, a failed upload, a job that fails or expires (with the API's
+    #   error message), or an expired +timeout_s+. +job_id+ is set once the job was created, +job+
+    #   is the last status fetched (+nil+ before the first status check); +http_status_code+ and
+    #   +should_retry?+ are those of a DeepL error cause.
     def import_translation_memory_from_filepath(input_path, display_name: nil, content_type: nil,
                                                 timeout_s: nil, extra_body_parameters: nil)
       translation_memories.import_from_filepath(
@@ -1139,10 +1140,11 @@ module DeepL
     # @return [DeepL::Resources::TranslationMemoryJob] The completed job.
     # @raise [DeepL::Exceptions::TranslationMemoryJobError] For every failure, the original error
     #   as +cause+: +output_path+ exists or its directory does not exist or is not writable
-    #   (checked before the job is created, +job+ +nil+), an empty ID or an object without one,
-    #   a failed job creation, a job that fails or expires (with the API's error message), an
-    #   expired +timeout_s+, a failed download or a failure writing the file. +job+ is set once the
-    #   job was created; +http_status_code+ and +should_retry?+ are those of a DeepL error cause.
+    #   (checked before the job is created), an empty ID or an object without one, a failed job
+    #   creation, a job that fails or expires (with the API's error message), an expired
+    #   +timeout_s+, a failed download or a failure writing the file. +job_id+ is set once the job
+    #   was created, +job+ is the last status fetched (+nil+ before the first status check);
+    #   +http_status_code+ and +should_retry?+ are those of a DeepL error cause.
     def export_translation_memory_to_filepath(translation_memory, output_path, timeout_s: nil)
       translation_memories.export_to_filepath(translation_memory, output_path,
                                               timeout_s: timeout_s)

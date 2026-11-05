@@ -127,12 +127,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `import_translation_memory_from_filepath` and `export_translation_memory_to_filepath` wrap
   every failure except a missing input file in the new
   `DeepL::Exceptions::TranslationMemoryJobError` (a `DeepL::Exceptions::Error`), with the
-  original error as `cause`. Its `job` is the `TranslationMemoryJob` once it was created, with
-  the last status received, and `http_status_code` and `should_retry?` are copied from a DeepL
-  error cause. Previously the underlying error was raised: `DeepL::Exceptions::Error` or one of
+  original error as `cause`. Its `job_id` is the ID of the job, set as soon as the job was
+  created; its `job` is the last `TranslationMemoryJob` status fetched, `nil` before the first
+  status check. `http_status_code` and `should_retry?` are copied from a DeepL error cause. Previously the underlying error was raised: `DeepL::Exceptions::Error` or one of
   its subclasses, and for an empty input file `ArgumentError`. Migration: rescue
   `DeepL::Exceptions::TranslationMemoryJobError` (or `DeepL::Exceptions::Error`) and inspect
-  `cause` and `job`.
+  `cause`, `job_id` and `job`.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

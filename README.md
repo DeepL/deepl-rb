@@ -1018,8 +1018,9 @@ upload, defaults to `application/xml`), `timeout_s` and `extra_body_parameters`
 failure raises a `DeepL::Exceptions::TranslationMemoryJobError` with the original
 error as `cause`: an empty or unreadable file (before any request), a failed job
 creation or upload, a job that fails or expires (with the API's error message),
-and an expired `timeout_s`. Its `job` is the job once it was created, with the
-last status received, so you can still query it.
+and an expired `timeout_s`. Its `job_id` is set as soon as the job was created,
+so you can still query it, and its `job` is the last job status fetched (`nil`
+before the first status check).
 
 ```rb
 job = client.import_translation_memory_from_filepath('legal.tmx',
@@ -1078,9 +1079,10 @@ file. It creates the export job, waits until it is completed and downloads the
 result. It accepts `timeout_s` and wraps every failure in a
 `DeepL::Exceptions::TranslationMemoryJobError` with the original error as
 `cause`: an output file that already exists or a directory that does not exist or
-is not writable (checked before the job is created, `job` is `nil`), a job that
-fails or expires, an expired `timeout_s`, and a failed download or write. Its
-`job` is the job once it was created.
+is not writable (checked before the job is created, `job_id` and `job` are `nil`),
+a job that fails or expires, an expired `timeout_s`, and a failed download or
+write. Its `job_id` is set once the job was created, and `job` is the last job
+status fetched.
 
 ```rb
 job = client.export_translation_memory_to_filepath('YOUR_TM_ID', 'export.tmx')
@@ -1411,7 +1413,7 @@ You can capture and process exceptions that may be raised during API calls. Thes
 | `DeepL::Exceptions::ConnectionError` | No complete HTTP response from the API: a DNS, connection or timeout failure, or a response body cut off before its `Content-Length`, after all retries (`should_retry?` is true), or a TLS failure, a proxy failure (the proxy refuses `CONNECT`) or a malformed response, raised without retrying (`should_retry?` is false). Requests that create a resource retry fewer failures, see [Retries and timeouts](#retries-and-timeouts). The original exception is `exception.cause`. |
 | `DeepL::Exceptions::DocumentNotReadyError` | A subclass of `ServerError`: HTTP 503 on a document download, the translated document is not ready yet. |
 | `DeepL::Exceptions::DocumentTranslationError` | An error occured during document translation. Check `exception.message` for more information; `exception.document_handle` is the handle of the uploaded document, `nil` if the upload failed; `http_status_code` and `should_retry?` are those of the DeepL error that caused it, if any. |
-| `DeepL::Exceptions::TranslationMemoryJobError` | Any failure of `import_translation_memory_from_filepath` or `export_translation_memory_to_filepath` except a missing input file. `exception.job` is the `TranslationMemoryJob` with the last status received once the job was created, `nil` before; `exception.cause` is the original error, and `http_status_code` and `should_retry?` are those of a DeepL error cause. |
+| `DeepL::Exceptions::TranslationMemoryJobError` | Any failure of `import_translation_memory_from_filepath` or `export_translation_memory_to_filepath` except a missing input file. `exception.job_id` is the ID of the job once it was created, `nil` before; `exception.job` is the last `TranslationMemoryJob` status fetched, `nil` before the first status check; `exception.cause` is the original error, and `http_status_code` and `should_retry?` are those of a DeepL error cause. |
 | `DeepL::Exceptions::LimitExceeded` | You've reached the API's call limit. |
 | `DeepL::Exceptions::QuotaExceeded` | You've reached the API's character limit. |
 | `DeepL::Exceptions::RequestError` | Any other HTTP error status. Its message contains the status and the API's message; check `exception.response` and `exception.request` for more information. |
