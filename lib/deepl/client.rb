@@ -528,14 +528,15 @@ module DeepL
     # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
     # @param [String] source_lang Source language of the dictionary.
     # @param [String] target_lang Target language of the dictionary.
-    # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
+    # @param [String, IO] csv CSV content, or an IO to read it from. Must not be empty or
+    #   whitespace only; otherwise sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
-    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
-    #   request.
+    # @raise [ArgumentError] If the CSV content is empty or whitespace only, the glossary ID is
+    #   empty or the glossary has no ID, before any request.
     def update_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
                                                          **options)
-      dictionary = csv_dictionary(source_lang, target_lang, csv)
+      dictionary = non_empty_csv_dictionary(source_lang, target_lang, csv)
       Requests::MultilingualGlossary::Update.new(api, glossary, nil, [dictionary],
                                                  options).request
     end
@@ -564,14 +565,15 @@ module DeepL
     # @param [String, DeepL::Resources::MultilingualGlossary] glossary ID or glossary.
     # @param [String] source_lang Source language of the dictionary.
     # @param [String] target_lang Target language of the dictionary.
-    # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
+    # @param [String, IO] csv CSV content, or an IO to read it from. Must not be empty or
+    #   whitespace only; otherwise sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
-    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
-    #   request.
+    # @raise [ArgumentError] If the CSV content is empty or whitespace only, the glossary ID is
+    #   empty or the glossary has no ID, before any request.
     def replace_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
                                                           **options)
-      dictionary = csv_dictionary(source_lang, target_lang, csv)
+      dictionary = non_empty_csv_dictionary(source_lang, target_lang, csv)
       Requests::MultilingualGlossary::ReplaceDictionary.new(api, glossary, dictionary,
                                                             options).request
     end
@@ -1211,6 +1213,14 @@ module DeepL
     def csv_dictionary(source_lang, target_lang, csv)
       csv = csv.read if csv.respond_to?(:read)
       { source_lang: source_lang, target_lang: target_lang, entries: csv, entries_format: 'csv' }
+    end
+
+    # Like #csv_dictionary, but raises ArgumentError for empty or whitespace-only CSV content.
+    def non_empty_csv_dictionary(source_lang, target_lang, csv)
+      dictionary = csv_dictionary(source_lang, target_lang, csv)
+      raise ArgumentError, 'CSV content must not be empty' if dictionary[:entries].to_s.strip.empty?
+
+      dictionary
     end
   end
 end

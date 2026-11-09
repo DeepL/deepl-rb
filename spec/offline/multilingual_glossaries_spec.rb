@@ -392,6 +392,14 @@ describe 'multilingual glossaries' do
         end
       end
 
+      it 'raises ArgumentError for empty CSV content without sending a request' do
+        expect { client.update_multilingual_glossary_dictionary_from_csv('g-1', 'EN', 'DE', '') }
+          .to raise_error(ArgumentError, /CSV/)
+        expect do
+          client.replace_multilingual_glossary_dictionary_from_csv('g-1', 'EN', 'DE', " \n")
+        end.to raise_error(ArgumentError, /CSV/)
+      end
+
       it 'raises ArgumentError for no dictionaries without sending a request' do
         expect { client.create_multilingual_glossary('g', []) }
           .to raise_error(ArgumentError, /dictionary/)

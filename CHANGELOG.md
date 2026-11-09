@@ -214,6 +214,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Client#rephrase_text` and `#correct_text` raise `ArgumentError` before a request when
   `target_lang` is an empty string. Previously `''` was sent. `nil` still keeps the language of
   the text.
+- `DeepL::Client#update_multilingual_glossary_dictionary_from_csv` and
+  `#replace_multilingual_glossary_dictionary_from_csv` raise `ArgumentError` before a request
+  when the CSV content (after reading an IO) is empty or whitespace only. Previously it was sent.
 
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.
