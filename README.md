@@ -47,7 +47,7 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 | `headers:` | `{}` | HTTP headers sent with every DeepL API request. A header of the same name, in any casing, replaces the library's, `Authorization` and `User-Agent` included, except `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host`. Pre-signed storage URLs get only the `User-Agent`. |
 | `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and transient network failures. Requests that create a resource (glossaries, spoken terms, style rule lists and custom instructions, style profiles, document uploads, translation memory import and export jobs) are retried only after HTTP 429, DNS resolution errors, refused connections and connection timeouts, when the API cannot have processed them, so that a retry cannot create a second resource. |
 | `timeout:` | `10` | Timeout of each attempt in seconds. A longer backoff interval takes precedence. |
-| `proxy:` | none | Proxy URL as a String or `URI`, e.g. `http://user:password@proxy.example:8080`, or a hash with `proxy_addr` and `proxy_port`. Any other value raises `ArgumentError`. |
+| `proxy:` | none | Proxy URL (`http://` or `https://`) as a String or `URI`, e.g. `http://user:password@proxy.example:8080`, or a hash with `proxy_addr` and `proxy_port`. Any other value raises `ArgumentError`. |
 | `send_platform_info:` | `true` | Adds the OS and Ruby versions to the `User-Agent`. |
 | `app_info:` | none | A `DeepL::AppInfo` or a hash with `app_name` and `app_version`, added to the `User-Agent`. |
 | `http_client_options:` | none | A `DeepL::HTTPClientOptions` with proxy, certificate, SSL verification and per-phase timeouts. Its timeouts take precedence over `timeout:`. |
@@ -1489,8 +1489,14 @@ client = DeepL::Client.new(auth_key, proxy: URI('http://localhost:3128'))
 client = DeepL::Client.new(auth_key, proxy: { proxy_addr: 'localhost', proxy_port: 3128 })
 ```
 
-Any other value, such as a hash with only one of the two keys or a URL without a host, raises
-`ArgumentError`. `DeepL::HTTPClientOptions` takes the proxy in the same forms, together with
+The URL scheme must be `http` or `https`; any other scheme raises `ArgumentError`. With an
+`https` proxy URL the connection to the proxy uses TLS. This needs net-http 0.5.0 or later
+(bundled from Ruby 3.4; on older Rubies add `gem 'net-http', '>= 0.5'`) and an `https` server
+URL; otherwise `ArgumentError` is raised. Net::HTTP does not verify the proxy's certificate. The
+hash form is always a plain HTTP proxy.
+
+Any other value, such as a hash with only one of the two keys, a URL without a host or a URL with
+another scheme, raises `ArgumentError`. `DeepL::HTTPClientOptions` takes the proxy in the same forms, together with
 certificate, SSL verification and timeout options, given as `http_client_options:`:
 
 ```rb

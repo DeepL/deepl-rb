@@ -8,6 +8,8 @@ module DeepL
     module HTTPClientBuilder
       extend self
 
+      PROXY_SCHEMES = %w[http https].freeze
+
       ##
       # Builds an unstarted Net::HTTP client for +host+ configured with +options+. Net::HTTP does
       # not retry on its own (+max_retries+ 0): only the library's retries apply.
@@ -17,7 +19,7 @@ module DeepL
       # @return [Net::HTTP]
       def build(host, options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         uri = URI(host)
-        http = Net::HTTP.new(uri.host, uri.port, *proxy_arguments(options.proxy))
+        http = Net::HTTP.new(uri.host, uri.port, *proxy_arguments(options.proxy, uri))
         http.use_ssl = uri.scheme == 'https'
         disable_lenient_defaults(http)
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE unless options.enable_ssl_verification
@@ -40,22 +42,46 @@ module DeepL
 
       private
 
-      # The proxy is a URL string or +URI+, e.g. +http://user:pass@proxy.example:8080+, or a hash
-      # with +proxy_addr+ and +proxy_port+ (string or symbol keys). +nil+, +''+ and an empty hash
-      # mean no proxy; any other value raises ArgumentError. Returns the proxy arguments of
-      # +Net::HTTP.new+.
-      def proxy_arguments(proxy)
+      # The proxy is a URL string or +URI+ with the +http+ or +https+ scheme, e.g.
+      # +http://user:pass@proxy.example:8080+, or a hash with +proxy_addr+ and +proxy_port+ (string
+      # or symbol keys), which is a plain HTTP proxy. +nil+, +''+ and an empty hash mean no proxy;
+      # any other value raises ArgumentError. Returns the proxy arguments of +Net::HTTP.new+ for the
+      # server +uri+.
+      def proxy_arguments(proxy, uri)
         return [nil, nil] if proxy.nil? || proxy == '' || proxy == {}
 
         proxy = proxy.to_s if proxy.is_a?(URI::Generic)
-        return proxy_url_arguments(proxy) if proxy.is_a?(String)
+        return proxy_url_arguments(proxy, uri) if proxy.is_a?(String)
 
         hash_proxy_arguments(proxy)
       end
 
-      def proxy_url_arguments(proxy)
+      def proxy_url_arguments(proxy, uri)
         proxy_uri = parse_proxy_url(proxy)
-        [proxy_uri.host, proxy_uri.port, decode(proxy_uri.user), decode(proxy_uri.password)]
+        unless PROXY_SCHEMES.include?(proxy_uri.scheme)
+          raise ArgumentError, 'Invalid proxy URL scheme: expected http or https, got ' \
+                               "#{HTTPClientOptions.redact_proxy(proxy)}", cause: nil
+        end
+
+        arguments = [proxy_uri.host, proxy_uri.port, decode(proxy_uri.user),
+                     decode(proxy_uri.password)]
+        proxy_uri.scheme == 'https' ? https_proxy_arguments(arguments, proxy, uri) : arguments
+      end
+
+      # Net::HTTP connects to the proxy over TLS (+p_use_ssl+) from net-http 0.5.0, and only for an
+      # https server; it does not verify the proxy's certificate.
+      def https_proxy_arguments(arguments, proxy, uri)
+        unless Net::HTTP.method_defined?(:proxy_use_ssl=)
+          raise ArgumentError, 'An https proxy needs net-http 0.5.0 or later (installed: ' \
+                               "#{Net::HTTP::VERSION}): #{HTTPClientOptions.redact_proxy(proxy)}",
+                cause: nil
+        end
+        unless uri.scheme == 'https'
+          raise ArgumentError, 'An https proxy can only be used for an https server URL: ' \
+                               "#{HTTPClientOptions.redact_proxy(proxy)}", cause: nil
+        end
+
+        arguments + [nil, true]
       end
 
       def hash_proxy_arguments(proxy)

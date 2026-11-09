@@ -44,9 +44,11 @@ module DeepL
     #   connection timeouts, when the request was not processed.
     # @param [Numeric] timeout Timeout of each attempt in seconds, applied to opening the
     #   connection, reading and writing. A longer backoff interval takes precedence.
-    # @param [String, URI, Hash, nil] proxy Proxy URL as a String or +URI+, e.g.
-    #   +http://user:password@proxy.example:8080+, or a hash with +proxy_addr+ and +proxy_port+
-    #   (string or symbol keys, both required).
+    # @param [String, URI, Hash, nil] proxy Proxy URL (+http+ or +https+ scheme) as a String or
+    #   +URI+, e.g. +http://user:password@proxy.example:8080+, or a hash with +proxy_addr+ and
+    #   +proxy_port+ (string or symbol keys, both required), which is a plain HTTP proxy. An
+    #   +https+ proxy is connected to over TLS and needs net-http 0.5.0 or later (bundled from
+    #   Ruby 3.4) and an +https+ server URL.
     # @param [Boolean] send_platform_info Whether to add the OS and Ruby versions to the
     #   +User-Agent+.
     # @param [DeepL::AppInfo, Hash, nil] app_info Your application's +app_name+ and
@@ -55,7 +57,9 @@ module DeepL
     #   verification and per-phase timeouts. Its timeouts take precedence over +timeout+.
     # @param [Logger, nil] logger Logger for requests and retries.
     # @raise [ArgumentError] If +auth_key+ is empty, +server_url+ is not an absolute +http+ or
-    #   +https+ URL with a host, or +proxy+ is not a valid proxy URL, +URI+ or proxy hash.
+    #   +https+ URL with a host, or +proxy+ is not a valid proxy URL, +URI+ or proxy hash, has a
+    #   proxy URL scheme other than +http+ or +https+, or is an +https+ proxy that cannot be used
+    #   (see +proxy+).
     def initialize(auth_key, server_url: nil, headers: {}, max_retries: 5, timeout: 10, # rubocop:disable Metrics/ParameterLists
                    proxy: nil, send_platform_info: true, app_info: nil, http_client_options: nil,
                    logger: nil)

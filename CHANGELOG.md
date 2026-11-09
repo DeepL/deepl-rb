@@ -143,6 +143,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a download URL string included, before a request is sent. A job without a download URL still
   raises `DeepL::Exceptions::Error`. Migration: pass the job returned by
   `wait_until_translation_memory_job_done` instead of `job.result.download_url`.
+- **Breaking:** `DeepL::Client.new`, `DeepL::AdminClient.new` and the proxy of
+  `DeepL::HTTPClientOptions` accept a proxy URL only with the `http` or `https` scheme and raise
+  `ArgumentError` for any other scheme, a missing one included (e.g. `socks5://`, `//host:port`).
+  An `https` proxy URL is now connected to over TLS. It needs net-http 0.5.0 or later (bundled
+  from Ruby 3.4) and an `https` server URL, and raises `ArgumentError` otherwise. Previously any
+  scheme was accepted and the proxy, an `https` one included, was used as a plain HTTP proxy, so
+  its credentials were sent unencrypted. Net::HTTP does not verify the certificate of an `https`
+  proxy. Migration: use `http://` for a plain HTTP proxy; for an `https` proxy on Ruby 3.0-3.3,
+  add `gem 'net-http', '>= 0.5'`.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job
