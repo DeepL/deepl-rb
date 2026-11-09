@@ -458,7 +458,7 @@ glossary accepts its ID or a `DeepL::Resources::MultilingualGlossary` object; th
 ID is URL-encoded in the request path. A dictionary's `entries` is a hash of
 source term to target term. An empty glossary ID (or a glossary object without
 one), an empty name, an empty language of a dictionary to delete, no dictionaries
-on create, or a dictionary without entries (not given as CSV) raises
+on create, or a dictionary without entries raises
 `ArgumentError` before anything is sent.
 
 To create a multilingual glossary, pass a name and one
@@ -471,8 +471,9 @@ always sent as TSV, whatever `entries_format` says. Terms not given as CSV are c
 glossary terms: each term is stripped of surrounding whitespace, and an empty term,
 one with a control character, a pair or TSV line that is not exactly two terms, or a
 source term that appears twice raises
-`DeepL::Exceptions::ValidationError` (an `ArgumentError`) before anything is sent. CSV content is sent as
-given. Further options, such as
+`DeepL::Exceptions::ValidationError` (an `ArgumentError`) before anything is sent. Empty or
+whitespace-only CSV content raises `ArgumentError` before anything is sent; other CSV content is
+sent as given. Further options, such as
 `extra_body_parameters`, are given as additional keywords:
 
 ```rb

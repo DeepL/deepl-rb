@@ -201,6 +201,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Exceptions::NotSupported`, deprecated in 3.10.0. Nothing raises it any more.
 
 ### Fixed
+- `DeepL::Client#create_multilingual_glossary`, `#update_multilingual_glossary`,
+  `#update_multilingual_glossary_dictionary` and `#replace_multilingual_glossary_dictionary` raise
+  `ArgumentError` before any request when a dictionary hash gives its entries as an empty or
+  whitespace-only CSV string (`entries_format: 'csv'`). Previously the request was sent and the
+  API rejected it. `#create_multilingual_glossary_from_csv` is unchanged.
 - `DeepL::Client.new` and `DeepL::AdminClient.new` accept the `proxy` as a `URI` and as a hash
   with symbol keys (`proxy_addr:`, `proxy_port:`), and raise `ArgumentError` for any other proxy
   value, such as a hash without both keys. Previously such a proxy was ignored without an error

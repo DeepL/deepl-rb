@@ -400,6 +400,22 @@ describe 'multilingual glossaries' do
         end.to raise_error(ArgumentError, /CSV/)
       end
 
+      ['', " \n"].each do |csv|
+        it "raises ArgumentError for the CSV entries #{csv.inspect} of a dictionary hash " \
+           'without sending a request' do
+          dictionary = { source_lang: 'EN', target_lang: 'DE', entries: csv, entries_format: 'csv' }
+
+          expect { client.create_multilingual_glossary('g', [dictionary]) }
+            .to raise_error(ArgumentError, /CSV/)
+          expect { client.update_multilingual_glossary('g-1', dictionaries: [dictionary]) }
+            .to raise_error(ArgumentError, /CSV/)
+          expect { client.update_multilingual_glossary_dictionary('g-1', dictionary) }
+            .to raise_error(ArgumentError, /CSV/)
+          expect { client.replace_multilingual_glossary_dictionary('g-1', dictionary) }
+            .to raise_error(ArgumentError, /CSV/)
+        end
+      end
+
       it 'raises ArgumentError for no dictionaries without sending a request' do
         expect { client.create_multilingual_glossary('g', []) }
           .to raise_error(ArgumentError, /dictionary/)

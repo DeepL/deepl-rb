@@ -417,15 +417,17 @@ module DeepL
     # @param [Array<DeepL::Resources::MultilingualGlossaryDictionaryEntries, Hash>] dictionaries
     #   One entry per language pair. A hash needs the keys +:source_lang+, +:target_lang+ and
     #   +:entries+ (a hash, source/target pairs or a TSV string; +:entries_format+ +'csv'+ for a
-    #   CSV string, which is sent as given). Entries other than a string are always sent as TSV.
+    #   CSV string, which must not be empty or whitespace only and is otherwise sent as given).
+    #   Entries other than a string are always sent as TSV.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping surrounding whitespace or contains a control character, or a TSV line is not
     #   exactly two terms.
-    # @raise [ArgumentError] If +name+ or +dictionaries+ is empty, or a dictionary has no entries,
-    #   before any request.
+    # @raise [ArgumentError] If +name+ or +dictionaries+ is empty, or a dictionary has no entries
+    #   (including empty or whitespace-only CSV entries), before any request.
     def create_multilingual_glossary(name, dictionaries, **options)
+      check_csv_entries!(dictionaries)
       Requests::MultilingualGlossary::Create.new(api, name, dictionaries, options).request
     end
 
@@ -481,9 +483,10 @@ module DeepL
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the glossary ID or the entries of a dictionary are empty, or the
-    #   glossary has no ID, before any request.
+    # @raise [ArgumentError] If the glossary ID or the entries of a dictionary are empty (CSV
+    #   entries also if whitespace only), or the glossary has no ID, before any request.
     def update_multilingual_glossary(glossary, name: nil, dictionaries: nil, **options)
+      check_csv_entries!(dictionaries) unless dictionaries.nil?
       Requests::MultilingualGlossary::Update.new(api, glossary, name, dictionaries,
                                                  options).request
     end
@@ -514,9 +517,10 @@ module DeepL
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the glossary ID or the entries are empty, or the glossary has no ID,
-    #   before any request.
+    # @raise [ArgumentError] If the glossary ID or the entries are empty (CSV entries also if
+    #   whitespace only), or the glossary has no ID, before any request.
     def update_multilingual_glossary_dictionary(glossary, dictionary, **options)
+      check_csv_entries!([dictionary])
       Requests::MultilingualGlossary::Update.new(api, glossary, nil, [dictionary],
                                                  options).request
     end
@@ -552,9 +556,10 @@ module DeepL
     # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the glossary ID or the entries are empty, or the glossary has no ID,
-    #   before any request.
+    # @raise [ArgumentError] If the glossary ID or the entries are empty (CSV entries also if
+    #   whitespace only), or the glossary has no ID, before any request.
     def replace_multilingual_glossary_dictionary(glossary, dictionary, **options)
+      check_csv_entries!([dictionary])
       Requests::MultilingualGlossary::ReplaceDictionary.new(api, glossary, dictionary,
                                                             options).request
     end
@@ -1219,9 +1224,25 @@ module DeepL
     # Like #csv_dictionary, but raises ArgumentError for empty or whitespace-only CSV content.
     def non_empty_csv_dictionary(source_lang, target_lang, csv)
       dictionary = csv_dictionary(source_lang, target_lang, csv)
-      raise ArgumentError, 'CSV content must not be empty' if dictionary[:entries].to_s.strip.empty?
-
+      check_csv_entries!([dictionary])
       dictionary
+    end
+
+    # Raises ArgumentError if a dictionary hash gives its entries as a CSV string that is empty or
+    # whitespace only. Other dictionaries are checked when the request body is built.
+    def check_csv_entries!(dictionaries)
+      return unless (dictionaries || []).any? { |dictionary| empty_csv_entries?(dictionary) }
+
+      raise ArgumentError, 'CSV content must not be empty'
+    end
+
+    # Reads +:entries+ and +:entries_format+ like the request body does (symbol or string key).
+    def empty_csv_entries?(dictionary)
+      return false unless dictionary.is_a?(Hash)
+
+      value = ->(key) { dictionary[key] || dictionary[key.to_s] }
+      entries = value.call(:entries)
+      value.call(:entries_format) == 'csv' && entries.is_a?(String) && entries.strip.empty?
     end
   end
 end
