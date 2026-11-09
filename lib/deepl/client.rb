@@ -29,8 +29,9 @@ module DeepL
     ##
     # @param [String] auth_key Authentication key, surrounding whitespace is removed.
     # @param [String, nil] server_url Base URL of the DeepL API, an absolute +http+ or +https+
-    #   URL with a host; a port and a path prefix are kept. Defaults to
-    #   +https://api-free.deepl.com+ for Free keys (ending in +:fx+), else +https://api.deepl.com+.
+    #   URL with a host; a port and a path prefix are kept, trailing slashes are removed.
+    #   Defaults to +https://api-free.deepl.com+ for Free keys (ending in +:fx+), else
+    #   +https://api.deepl.com+.
     # @param [Hash] headers HTTP headers sent with every DeepL API request (pre-signed storage
     #   URLs get only a +User-Agent+). A header of the same name in any casing replaces the
     #   library's, +Authorization+ and +User-Agent+ included, except the technical headers

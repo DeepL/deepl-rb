@@ -16,11 +16,10 @@ module DeepL
         key = key.to_s.strip
         raise ArgumentError, "#{key_name} must not be empty" if key.empty?
 
-        validate_server_url!(server_url)
-
+        host = host(server_url, default_server_url)
         headers = (headers || {}).to_h
         configuration = Configuration.new(
-          auth_key: key, host: server_url || default_server_url, max_network_retries: max_retries,
+          auth_key: key, host: host, max_network_retries: max_retries,
           timeout: timeout, logger: logger,
           headers: headers.reject { |name, _| user_agent_header?(name) },
           user_agent: headers.find { |name, _| user_agent_header?(name) }&.last,
@@ -30,6 +29,15 @@ module DeepL
       end
 
       private
+
+      # Validates the server URL and removes its trailing slashes: requests append /v2/... or
+      # /v3/... to the host, so a trailing slash would give //v2/...
+      def host(server_url, default_server_url)
+        return default_server_url if server_url.nil?
+
+        validate_server_url!(server_url)
+        server_url.to_s.sub(%r{/+\z}, '')
+      end
 
       # The server URL must be an absolute http or https URL with a host; a port and a path
       # prefix are allowed. +nil+ selects the default server.

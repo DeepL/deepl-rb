@@ -20,7 +20,7 @@ module DeepL
     ##
     # @param [String] admin_key Admin API key, surrounding whitespace is removed.
     # @param [String, nil] server_url Base URL of the DeepL API, an absolute +http+ or +https+
-    #   URL with a host. Defaults to
+    #   URL with a host; trailing slashes are removed. Defaults to
     #   +https://api.deepl.com+ (also for keys ending in +:fx+).
     # @param [Hash] headers HTTP headers sent with every request. A header of the same name in
     #   any casing replaces the library's, +Authorization+ and +User-Agent+ included, except the

@@ -43,7 +43,7 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 
 | Option | Default | Description |
 | ------ | ------- | ----------- |
-| `server_url:` | `https://api-free.deepl.com` for Free keys (ending in `:fx`), else `https://api.deepl.com` | Base URL of the DeepL API: an absolute `http` or `https` URL with a host. A port and a path prefix are kept. Any other value raises `ArgumentError`. |
+| `server_url:` | `https://api-free.deepl.com` for Free keys (ending in `:fx`), else `https://api.deepl.com` | Base URL of the DeepL API: an absolute `http` or `https` URL with a host. A port and a path prefix are kept, trailing slashes are removed. Any other value raises `ArgumentError`. |
 | `headers:` | `{}` | HTTP headers sent with every DeepL API request. A header of the same name, in any casing, replaces the library's, `Authorization` and `User-Agent` included, except `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host`. Pre-signed storage URLs get only the `User-Agent`. |
 | `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and transient network failures. Requests that create a resource (glossaries, spoken terms, style rule lists and custom instructions, style profiles, document uploads, translation memory import and export jobs) are retried only after HTTP 429, DNS resolution errors, refused connections and connection timeouts, when the API cannot have processed them, so that a retry cannot create a second resource. |
 | `timeout:` | `10` | Timeout of each attempt in seconds. A longer backoff interval takes precedence. |

@@ -38,6 +38,14 @@ describe DeepL::Client do
       usage(described_class.new('abc', server_url: 'http://localhost:3000/proxy'))
     end
 
+    it 'drops a trailing slash of the server URL' do
+      stub_usage('http://localhost:3000')
+      stub_usage('http://localhost:3000/proxy')
+
+      usage(described_class.new('abc', server_url: 'http://localhost:3000/'))
+      usage(described_class.new('abc', server_url: 'http://localhost:3000/proxy/'))
+    end
+
     it 'rejects a server URL that is not an absolute http or https URL with a host' do
       ['localhost:3000', 'http://', 'ftp://x.test', 'http://exa mple.test', ''].each do |url|
         expect { described_class.new('abc', server_url: url) }

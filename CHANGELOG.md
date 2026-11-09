@@ -206,6 +206,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ArgumentError` before any request when a dictionary hash gives its entries as an empty or
   whitespace-only CSV string (`entries_format: 'csv'`). Previously the request was sent and the
   API rejected it. `#create_multilingual_glossary_from_csv` is unchanged.
+- `DeepL::Client.new` and `DeepL::AdminClient.new` remove trailing slashes from `server_url`, so a
+  URL ending in `/` no longer makes every request go to a `//v2/...` or `//v3/...` path, which the
+  API does not serve (HTTP 301 or 404), and `inspect` shows the URL without the slash.
 - `DeepL::Client.new` and `DeepL::AdminClient.new` accept the `proxy` as a `URI` and as a hash
   with symbol keys (`proxy_addr:`, `proxy_port:`), and raise `ArgumentError` for any other proxy
   value, such as a hash without both keys. Previously such a proxy was ignored without an error
