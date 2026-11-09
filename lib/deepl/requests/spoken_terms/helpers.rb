@@ -47,6 +47,10 @@ module DeepL
                             [term_list[:lang] || term_list['lang'],
                              term_list[:entries] || term_list['entries']]
                           end
+          unless entries.is_a?(Array)
+            raise ArgumentError, 'Spoken terms entries must be an array of terms'
+          end
+
           { lang: lang, entries: entries_to_string(entries) }
         end
 

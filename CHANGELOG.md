@@ -208,6 +208,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Client#translate_document_upload` (and `#translate_document`): a `nil` value in
   `extra_body_parameters` removes the form field of that name, the library's own field included.
   Previously it was sent as an empty field. JSON request bodies still send `nil` as `null`.
+- `DeepL::Client#create_spoken_terms`, `#update_spoken_terms` and `#replace_spoken_terms_list`
+  raise `ArgumentError` before a request when the entries of a term list are missing or not an
+  array. Previously they raised `NoMethodError`.
 
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.

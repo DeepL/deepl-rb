@@ -630,6 +630,8 @@ module DeepL
     # @return [DeepL::Resources::SpokenTerms] The created collection.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping surrounding whitespace or contains a control character.
+    # @raise [ArgumentError] If the entries of a term list are missing or not an array, before
+    #   any request.
     def create_spoken_terms(name, term_lists, **options)
       Requests::SpokenTerms::Create.new(api, name, term_lists, options).request
     end
@@ -665,7 +667,8 @@ module DeepL
     # @return [DeepL::Resources::SpokenTerms] The updated collection.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or the entries of a
+    #   term list are missing or not an array, before any request.
     def update_spoken_terms(spoken_terms, name: nil, term_lists: nil, **options)
       Requests::SpokenTerms::Update.new(api, spoken_terms, name, term_lists, options).request
     end
@@ -701,7 +704,8 @@ module DeepL
     # @return [DeepL::Resources::SpokenTermsList]
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or the entries are
+    #   missing or not an array, before any request.
     def replace_spoken_terms_list(spoken_terms, entries, **options)
       Requests::SpokenTerms::ReplaceTermList.new(api, spoken_terms, entries, options).request
     end
