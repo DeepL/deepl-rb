@@ -43,8 +43,9 @@ module DeepL
         end
         return if uri.is_a?(URI::HTTP) && !uri.host.to_s.empty?
 
-        raise ArgumentError, 'server_url must be an absolute http or https URL with a host, ' \
-                             "got #{server_url.inspect}", cause: nil
+        # The URL is left out of the message: it can contain credentials.
+        raise ArgumentError, 'server_url must be an absolute http or https URL with a host',
+              cause: nil
       end
 
       def user_agent_header?(name)

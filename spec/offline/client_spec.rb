@@ -43,6 +43,8 @@ describe DeepL::Client do
         expect { described_class.new('abc', server_url: url) }
           .to raise_error(ArgumentError, /server_url/)
       end
+      expect { described_class.new('abc', server_url: 'ftp://user:secret@host') }
+        .to raise_error(ArgumentError) { |e| expect(e.message).not_to include('secret') }
     end
 
     it 'reads no environment variables' do
