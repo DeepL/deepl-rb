@@ -131,7 +131,7 @@ module DeepL
       end
 
       # Apply extra body parameters to multipart form data array
-      # Extra parameters will override existing keys
+      # Extra parameters will override existing keys; a nil value removes the key.
       def apply_extra_body_parameters_to_form(form_data)
         return unless option?(:extra_body_parameters)
 
@@ -141,7 +141,7 @@ module DeepL
           # Remove existing key if present to allow override.
           # Required for form data as it would be duplicated otherwise
           form_data.reject! { |field| field[0].to_s == key_str }
-          form_data.push([key_str, value.to_s])
+          form_data.push([key_str, value.to_s]) unless value.nil?
         end
       end
 

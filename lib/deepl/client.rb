@@ -167,7 +167,7 @@ module DeepL
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
     #   * +:translation_memory_threshold+ - Integer 0-100. Requires +:translation_memory+.
     #   * +:extra_body_parameters+ - A hash added to the form last; replaces fields of the same
-    #     name.
+    #     name. A +nil+ value removes the field, the library's own field of that name included.
     # @return [DeepL::Resources::DocumentHandle] Handle of the uploaded document.
     # @raise [ArgumentError] If +input_path+ does not exist, +target_lang+ or a given
     #   +source_lang+ is empty, an option is unknown, +:glossary+ or +:glossary_ids+ is set

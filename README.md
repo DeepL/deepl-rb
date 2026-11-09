@@ -1319,7 +1319,7 @@ client.translate_document('/path/to/document.docx', '/path/to/translated.pdf', '
                           output_format: 'pdf', enable_watermark: true)
 ```
 
-The `extra_body_parameters` option allows you to pass arbitrary parameters in the request body. This can be used to access beta features by adding new parameters, or to override built-in parameters (such as `target_lang`, `source_lang`, etc.) for testing purposes.
+The `extra_body_parameters` option allows you to pass arbitrary parameters in the request body. This can be used to access beta features by adding new parameters, or to override built-in parameters (such as `target_lang`, `source_lang`, etc.) for testing purposes. In a document upload, a `nil` value removes the field from the form, the library's own field of that name included.
 
 ### Admin API
 

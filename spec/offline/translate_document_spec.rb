@@ -157,6 +157,12 @@ describe 'document translation' do
       expect(form_fields(form)).to include('formality' => 'less', 'beta' => 'true')
     end
 
+    it 'lets a nil extra_body_parameters value remove the field' do
+      form = sent_form(formality: 'more', extra_body_parameters: { formality: nil, beta: nil })
+
+      expect(form_fields(form).keys).not_to include('formality', 'beta')
+    end
+
     it 'raises ArgumentError for invalid glossary_ids without sending a request' do
       input, = create_text_document(temp_dir)
 

@@ -200,6 +200,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when it is not an absolute `http` or `https` URL with a host (e.g. `localhost:3000`,
   `ftp://x.test` or `''`). Previously the client was built and failed on the first request, or
   `URI::InvalidURIError` was raised.
+- `DeepL::Client#translate_document_upload` (and `#translate_document`): a `nil` value in
+  `extra_body_parameters` removes the form field of that name, the library's own field included.
+  Previously it was sent as an empty field. JSON request bodies still send `nil` as `null`.
 
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.
