@@ -30,6 +30,11 @@ describe 'DeepL::Client translation memories' do
       results: [{ status: status }.merge(result)] }
   end
 
+  def completed_export_job
+    json = JSON.parse(job_json('completed', download_url: download_url).to_json)
+    DeepL::Resources::TranslationMemoryJob.new(json, nil, nil)
+  end
+
   def stub_job(*replies)
     stub_request(:get, url('/v3/translation_memories/jobs/j-1')).with(headers: json_headers)
                                                                 .to_return(*replies)
@@ -235,10 +240,10 @@ describe 'DeepL::Client translation memories' do
     it 'raises SystemCallError for an existing file or a missing directory before the download' do
       File.write(output, 'keep me')
 
-      expect { client.download_translation_memory_export(download_url, output) }
+      expect { client.download_translation_memory_export(completed_export_job, output) }
         .to raise_error(Errno::EEXIST)
       expect do
-        client.download_translation_memory_export(download_url,
+        client.download_translation_memory_export(completed_export_job,
                                                   File.join(temp_dir, 'missing', 'x.tmx'))
       end
         .to raise_error(Errno::ENOENT)
@@ -326,7 +331,7 @@ describe 'DeepL::Client translation memories' do
       stub_request(:get, download_url).to_return(status: 200, body: 'tmx')
 
       Dir.mktmpdir do |dir|
-        client.download_translation_memory_export(download_url, File.join(dir, 'x.tmx'))
+        client.download_translation_memory_export(completed_export_job, File.join(dir, 'x.tmx'))
       end
 
       expect(connections.last)

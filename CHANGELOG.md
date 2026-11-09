@@ -138,6 +138,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `speech_to_speech_milliseconds:` (also `key_id:`), before a request is sent. Previously any
   keyword was sent as a body field, so a misspelled limit such as `character: 0` changed
   nothing. Migration: fix misspelled limits; send other fields with `extra_body_parameters:`.
+- **Breaking:** `DeepL::Client#download_translation_memory_export` accepts only a
+  `DeepL::Resources::TranslationMemoryJob` and raises `ArgumentError` for any other argument,
+  a download URL string included, before a request is sent. A job without a download URL still
+  raises `DeepL::Exceptions::Error`. Migration: pass the job returned by
+  `wait_until_translation_memory_job_done` instead of `job.result.download_url`.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

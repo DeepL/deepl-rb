@@ -1118,11 +1118,12 @@ module DeepL
     # pre-signed storage URL: no +Authorization+ header and no configured +headers+ are sent to
     # it.
     #
-    # @param [DeepL::Resources::TranslationMemoryJob, String] job The completed export job, or
-    #   its download URL.
+    # @param [DeepL::Resources::TranslationMemoryJob] job The completed export job, as returned
+    #   by #wait_until_translation_memory_job_done.
     # @param [String] output_path Path to write the file to. Must not exist.
     # @return [nil]
-    # @raise [ArgumentError] If the download URL is empty, before any request.
+    # @raise [ArgumentError] If +job+ is not a +DeepL::Resources::TranslationMemoryJob+, before
+    #   any request.
     # @raise [DeepL::Exceptions::Error] If the job has no download URL, for example because it is
     #   not completed yet, before any request.
     # @raise [SystemCallError] +Errno::EEXIST+ if +output_path+ exists, +Errno::ENOENT+ or

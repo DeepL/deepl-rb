@@ -365,7 +365,9 @@ describe 'DeepL::Client translation memory requests' do
       stub_request(:get, download_url).with(&no_authorization)
                                       .to_return(status: 200, body: Fixtures::BINARY_CONTENT)
 
-      memories.download_translation_memory_export(download_url, output)
+      memories.download_translation_memory_export(
+        job_resource('completed', download_url: download_url), output
+      )
 
       expect(File.binread(output)).to eq(Fixtures::BINARY_CONTENT)
     end
@@ -380,19 +382,21 @@ describe 'DeepL::Client translation memory requests' do
       expect(File.read(output)).to eq('tmx')
     end
 
-    it 'raises Error for a job without a download URL and ArgumentError for an empty URL' do
+    it 'raises Error for a job without a download URL and ArgumentError for a URL string' do
       expect { memories.download_translation_memory_export(job_resource('processing'), output) }
         .to raise_error(DeepL::Exceptions::Error, /no download URL/) { |e|
           expect(e).not_to be_a(ArgumentError)
         }
-      expect { memories.download_translation_memory_export('', output) }
-        .to raise_error(ArgumentError, /must not be empty/)
+      expect { memories.download_translation_memory_export(download_url, output) }
+        .to raise_error(ArgumentError, /TranslationMemoryJob/)
     end
 
     it 'retries a storage reply of 503 and raises Error with the status' do
       stub = stub_request(:get, download_url).to_return(status: 503)
 
-      expect { memories.download_translation_memory_export(download_url, output) }
+      job = job_resource('completed', download_url: download_url)
+
+      expect { memories.download_translation_memory_export(job, output) }
         .to raise_error(DeepL::Exceptions::Error) { expect(_1.http_status_code).to eq(503) }
       expect(stub).to have_been_requested.times(3)
     end

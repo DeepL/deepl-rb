@@ -140,7 +140,9 @@ module DeepL
       end
 
       def extract_download_url(job)
-        return job unless job.is_a?(Resources::TranslationMemoryJob)
+        unless job.is_a?(Resources::TranslationMemoryJob)
+          raise ArgumentError, 'job must be a DeepL::Resources::TranslationMemoryJob'
+        end
 
         download_url = job.result&.download_url
         if blank?(download_url)
