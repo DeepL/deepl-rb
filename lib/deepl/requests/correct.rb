@@ -15,6 +15,7 @@ module DeepL
         @text = text
         @target_lang = target_lang
         validate_text!(text)
+        validate_optional_target_lang!(target_lang)
       end
 
       def request

@@ -41,6 +41,10 @@ describe 'DeepL::Client#correct_text' do
     end
   end
 
+  it 'raises ArgumentError for an empty target_lang without sending a request' do
+    expect { client.correct_text('a', '') }.to raise_error(ArgumentError, /target_lang/)
+  end
+
   [[''], [[]], [['a', '']]].each do |args|
     it "raises ArgumentError for #{args.first.inspect} without sending a request" do
       expect { client.correct_text(*args) }.to raise_error(ArgumentError, /non-empty/)

@@ -234,8 +234,8 @@ module DeepL
     #   replaces fields of the same name. Any other option raises ArgumentError.
     # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
     #   an array for an array (also for a one-element array).
-    # @raise [ArgumentError] If +text+ is empty or contains an empty string, or an option is
-    #   unknown; nothing is sent.
+    # @raise [ArgumentError] If +text+ is empty or contains an empty string, +target_lang+ is an
+    #   empty string, or an option is unknown; nothing is sent.
     # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
     def rephrase_text(text, target_lang = nil, writing_style: nil, tone: nil, **options)
       Requests::Rephrase.new(api, text, target_lang, writing_style, tone, options).request
@@ -251,7 +251,8 @@ module DeepL
     #   replaces fields of the same name. Any other option raises ArgumentError.
     # @return [DeepL::Resources::Text, Array<DeepL::Resources::Text>] One result for a string,
     #   an array for an array (also for a one-element array).
-    # @raise [ArgumentError] If +text+ is empty or contains an empty string.
+    # @raise [ArgumentError] If +text+ is empty or contains an empty string, or +target_lang+ is
+    #   an empty string; nothing is sent.
     # @raise [DeepL::Exceptions::Error] If the response has fewer improvements than texts.
     def correct_text(text, target_lang = nil, **options)
       Requests::Correct.new(api, text, target_lang, options).request

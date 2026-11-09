@@ -10,6 +10,13 @@ module DeepL
     module WriteImprovements
       private
 
+      # +nil+ keeps the language of the text; an empty target language is rejected.
+      def validate_optional_target_lang!(target_lang)
+        return if target_lang.nil? || !target_lang.to_s.empty?
+
+        raise ArgumentError, '`target_lang` must not be empty; pass nil to keep the language'
+      end
+
       # Returns one DeepL::Resources::Text per improvement. Raises DeepL::Exceptions::Error if
       # the response has fewer improvements than +input_count+ input texts.
       def build_improvements(input_count, request, response)

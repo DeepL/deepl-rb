@@ -211,6 +211,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Client#create_spoken_terms`, `#update_spoken_terms` and `#replace_spoken_terms_list`
   raise `ArgumentError` before a request when the entries of a term list are missing or not an
   array. Previously they raised `NoMethodError`.
+- `DeepL::Client#rephrase_text` and `#correct_text` raise `ArgumentError` before a request when
+  `target_lang` is an empty string. Previously `''` was sent. `nil` still keeps the language of
+  the text.
 
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.

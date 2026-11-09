@@ -18,6 +18,7 @@ module DeepL
         @writing_style = writing_style
         @tone = tone
         validate_text!(text)
+        validate_optional_target_lang!(target_lang)
       end
 
       def request # rubocop:disable Metrics/AbcSize
