@@ -190,6 +190,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-call additional HTTP headers. Use the `headers:` option of `DeepL::Client.new`.
 - `DeepL::Exceptions::NotSupported`, deprecated in 3.10.0. Nothing raises it any more.
 
+### Fixed
+- `DeepL::Client.new` and `DeepL::AdminClient.new` accept the `proxy` as a `URI` and as a hash
+  with symbol keys (`proxy_addr:`, `proxy_port:`), and raise `ArgumentError` for any other proxy
+  value, such as a hash without both keys. Previously such a proxy was ignored without an error
+  and the client connected directly. The same applies to the proxy of
+  `DeepL::HTTPClientOptions`.
+- `DeepL::Client.new` and `DeepL::AdminClient.new` raise `ArgumentError` naming `server_url`
+  when it is not an absolute `http` or `https` URL with a host (e.g. `localhost:3000`,
+  `ftp://x.test` or `''`). Previously the client was built and failed on the first request, or
+  `URI::InvalidURIError` was raised.
+
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.
 New APIs on `DeepL::Client`: multilingual glossaries, style profiles, spoken terms and text correction.

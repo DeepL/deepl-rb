@@ -38,6 +38,13 @@ describe DeepL::Client do
       usage(described_class.new('abc', server_url: 'http://localhost:3000/proxy'))
     end
 
+    it 'rejects a server URL that is not an absolute http or https URL with a host' do
+      ['localhost:3000', 'http://', 'ftp://x.test', 'http://exa mple.test', ''].each do |url|
+        expect { described_class.new('abc', server_url: url) }
+          .to raise_error(ArgumentError, /server_url/)
+      end
+    end
+
     it 'reads no environment variables' do
       env = ENV.to_h.slice('DEEPL_AUTH_KEY', 'DEEPL_SERVER_URL')
       ENV['DEEPL_SERVER_URL'] = 'http://environment.example.test'
@@ -148,6 +155,18 @@ describe DeepL::Client do
       expect(http_client(proxy: 'http://us%40r:p%3Ass@proxy.example.test:3128'))
         .to have_attributes(proxy_address: 'proxy.example.test', proxy_port: 3128,
                             proxy_user: 'us@r', proxy_pass: 'p:ss')
+    end
+
+    it 'accepts a URI and a symbol-keyed proxy hash' do
+      expect(http_client(proxy: URI('http://proxy.example.test:3128')))
+        .to have_attributes(proxy_address: 'proxy.example.test', proxy_port: 3128)
+      expect(http_client(proxy: { proxy_addr: 'proxy.example.test', proxy_port: 3128 }))
+        .to have_attributes(proxy_address: 'proxy.example.test', proxy_port: 3128)
+    end
+
+    it 'rejects a proxy hash without proxy_addr and proxy_port' do
+      expect { described_class.new('abc', proxy: { host: 'proxy.example.test' }) }
+        .to raise_error(ArgumentError, /proxy/)
     end
 
     it 'combines the proxy URL with the other HTTP client options' do

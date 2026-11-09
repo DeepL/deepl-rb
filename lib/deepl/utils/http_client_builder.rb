@@ -40,21 +40,34 @@ module DeepL
 
       private
 
-      # The proxy is either a URL string, e.g. +http://user:pass@proxy.example:8080+, or a hash
-      # with +proxy_addr+ and +proxy_port+. Returns the proxy arguments of +Net::HTTP.new+.
+      # The proxy is a URL string or +URI+, e.g. +http://user:pass@proxy.example:8080+, or a hash
+      # with +proxy_addr+ and +proxy_port+ (string or symbol keys). +nil+, +''+ and an empty hash
+      # mean no proxy; any other value raises ArgumentError. Returns the proxy arguments of
+      # +Net::HTTP.new+.
       def proxy_arguments(proxy)
-        if proxy.is_a?(String) && !proxy.empty?
-          proxy_uri = parse_proxy_url(proxy)
+        return [nil, nil] if proxy.nil? || proxy == '' || proxy == {}
 
-          return [proxy_uri.host, proxy_uri.port, decode(proxy_uri.user),
-                  decode(proxy_uri.password)]
-        end
-        unless proxy.is_a?(Hash) && proxy.key?('proxy_addr') && proxy.key?('proxy_port')
-          return [nil,
-                  nil]
+        proxy = proxy.to_s if proxy.is_a?(URI::Generic)
+        return proxy_url_arguments(proxy) if proxy.is_a?(String)
+
+        hash_proxy_arguments(proxy)
+      end
+
+      def proxy_url_arguments(proxy)
+        proxy_uri = parse_proxy_url(proxy)
+        [proxy_uri.host, proxy_uri.port, decode(proxy_uri.user), decode(proxy_uri.password)]
+      end
+
+      def hash_proxy_arguments(proxy)
+        if proxy.is_a?(Hash)
+          address = proxy.fetch('proxy_addr') { proxy[:proxy_addr] }
+          port = proxy.fetch('proxy_port') { proxy[:proxy_port] }
+          return [address, port] unless address.nil? || port.nil?
         end
 
-        [proxy['proxy_addr'], proxy['proxy_port']]
+        raise ArgumentError,
+              'Invalid proxy: expected a URL string, a URI or a hash with proxy_addr and ' \
+              "proxy_port, got #{HTTPClientOptions.redact_proxy(proxy).inspect}"
       end
 
       # Error messages show the URL without its user info; the URI error, which repeats the URL,

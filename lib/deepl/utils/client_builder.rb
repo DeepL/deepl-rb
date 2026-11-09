@@ -16,6 +16,8 @@ module DeepL
         key = key.to_s.strip
         raise ArgumentError, "#{key_name} must not be empty" if key.empty?
 
+        validate_server_url!(server_url)
+
         headers = (headers || {}).to_h
         configuration = Configuration.new(
           auth_key: key, host: server_url || default_server_url, max_network_retries: max_retries,
@@ -29,13 +31,33 @@ module DeepL
 
       private
 
+      # The server URL must be an absolute http or https URL with a host; a port and a path
+      # prefix are allowed. +nil+ selects the default server.
+      def validate_server_url!(server_url)
+        return if server_url.nil?
+
+        uri = begin
+          URI.parse(server_url.to_s)
+        rescue URI::InvalidURIError
+          nil
+        end
+        return if uri.is_a?(URI::HTTP) && !uri.host.to_s.empty?
+
+        raise ArgumentError, 'server_url must be an absolute http or https URL with a host, ' \
+                             "got #{server_url.inspect}", cause: nil
+      end
+
       def user_agent_header?(name)
         name.to_s.casecmp?('user-agent')
       end
 
+      def no_proxy?(proxy)
+        proxy.nil? || (proxy.respond_to?(:empty?) && proxy.empty?)
+      end
+
       def merge_proxy(options, proxy) # rubocop:disable Metrics/MethodLength
         return options if proxy.nil?
-        if options && !(options.proxy.nil? || options.proxy.empty?)
+        if options && !no_proxy?(options.proxy)
           raise ArgumentError,
                 'Set the proxy either with proxy: or in http_client_options:, not both'
         end

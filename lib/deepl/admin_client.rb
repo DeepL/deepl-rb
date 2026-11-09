@@ -16,20 +16,24 @@ module DeepL
 
     ##
     # @param [String] admin_key Admin API key, surrounding whitespace is removed.
-    # @param [String, nil] server_url Base URL of the DeepL API, defaults to
+    # @param [String, nil] server_url Base URL of the DeepL API, an absolute +http+ or +https+
+    #   URL with a host. Defaults to
     #   +https://api.deepl.com+ (also for keys ending in +:fx+).
     # @param [Hash] headers HTTP headers sent with every request. A header of the same name in
     #   any casing replaces the library's, +Authorization+ and +User-Agent+ included, except the
     #   technical headers +Content-Type+, +Content-Length+, +Transfer-Encoding+ and +Host+.
     # @param [Integer] max_retries Number of retries after the first attempt.
     # @param [Numeric] timeout Timeout of each attempt in seconds.
-    # @param [String, nil] proxy Proxy URL, e.g. +http://user:password@proxy.example:8080+.
+    # @param [String, URI, Hash, nil] proxy Proxy URL as a String or +URI+, e.g.
+    #   +http://user:password@proxy.example:8080+, or a hash with +proxy_addr+ and +proxy_port+
+    #   (string or symbol keys, both required).
     # @param [Boolean] send_platform_info Whether to send basic platform information.
     # @param [DeepL::AppInfo, Hash, nil] app_info Your application's +app_name+ and
     #   +app_version+, added to the +User-Agent+.
     # @param [DeepL::HTTPClientOptions, nil] http_client_options Proxy, SSL and timeout options.
     # @param [Logger, nil] logger Logger for requests and retries.
-    # @raise [ArgumentError] If +admin_key+ is empty.
+    # @raise [ArgumentError] If +admin_key+ is empty, +server_url+ is not an absolute +http+ or
+    #   +https+ URL with a host, or +proxy+ is not a valid proxy URL, +URI+ or proxy hash.
     def initialize(admin_key, server_url: nil, headers: {}, max_retries: 5, timeout: 10, # rubocop:disable Metrics/ParameterLists
                    proxy: nil, send_platform_info: true, app_info: nil, http_client_options: nil,
                    logger: nil)

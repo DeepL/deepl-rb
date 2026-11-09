@@ -28,9 +28,9 @@ module DeepL
 
     ##
     # @param [String] auth_key Authentication key, surrounding whitespace is removed.
-    # @param [String, nil] server_url Base URL of the DeepL API, a path prefix is kept. Defaults
-    #   to +https://api-free.deepl.com+ for Free keys (ending in +:fx+), else
-    #   +https://api.deepl.com+.
+    # @param [String, nil] server_url Base URL of the DeepL API, an absolute +http+ or +https+
+    #   URL with a host; a port and a path prefix are kept. Defaults to
+    #   +https://api-free.deepl.com+ for Free keys (ending in +:fx+), else +https://api.deepl.com+.
     # @param [Hash] headers HTTP headers sent with every DeepL API request (pre-signed storage
     #   URLs get only a +User-Agent+). A header of the same name in any casing replaces the
     #   library's, +Authorization+ and +User-Agent+ included, except the technical headers
@@ -43,7 +43,9 @@ module DeepL
     #   connection timeouts, when the request was not processed.
     # @param [Numeric] timeout Timeout of each attempt in seconds, applied to opening the
     #   connection, reading and writing. A longer backoff interval takes precedence.
-    # @param [String, nil] proxy Proxy URL, e.g. +http://user:password@proxy.example:8080+.
+    # @param [String, URI, Hash, nil] proxy Proxy URL as a String or +URI+, e.g.
+    #   +http://user:password@proxy.example:8080+, or a hash with +proxy_addr+ and +proxy_port+
+    #   (string or symbol keys, both required).
     # @param [Boolean] send_platform_info Whether to add the OS and Ruby versions to the
     #   +User-Agent+.
     # @param [DeepL::AppInfo, Hash, nil] app_info Your application's +app_name+ and
@@ -51,7 +53,8 @@ module DeepL
     # @param [DeepL::HTTPClientOptions, nil] http_client_options Proxy, certificate, SSL
     #   verification and per-phase timeouts. Its timeouts take precedence over +timeout+.
     # @param [Logger, nil] logger Logger for requests and retries.
-    # @raise [ArgumentError] If +auth_key+ is empty.
+    # @raise [ArgumentError] If +auth_key+ is empty, +server_url+ is not an absolute +http+ or
+    #   +https+ URL with a host, or +proxy+ is not a valid proxy URL, +URI+ or proxy hash.
     def initialize(auth_key, server_url: nil, headers: {}, max_retries: 5, timeout: 10, # rubocop:disable Metrics/ParameterLists
                    proxy: nil, send_platform_info: true, app_info: nil, http_client_options: nil,
                    logger: nil)

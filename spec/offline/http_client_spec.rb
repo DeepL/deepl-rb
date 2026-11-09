@@ -242,13 +242,13 @@ describe 'DeepL HTTP client' do
   end
 
   describe 'HTTPClientBuilder' do
-    it 'uses the proxy only when both address and port are given' do
+    it 'uses a proxy hash with address and port and rejects one with only the address' do
       partial = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test' })
       full = DeepL::HTTPClientOptions.new({ 'proxy_addr' => 'proxy.example.test',
                                             'proxy_port' => 8080 })
       build = ->(options) { DeepL::Utils::HTTPClientBuilder.build('https://api.deepl.com', options) }
 
-      expect(build.call(partial).proxy_address).to be_nil
+      expect { build.call(partial) }.to raise_error(ArgumentError, /proxy/)
       expect(build.call(full).proxy_address).to eq('proxy.example.test')
     end
   end
