@@ -448,6 +448,16 @@ describe DeepL::AdminClient do
         end)
       expect(stub).to have_been_requested.once
     end
+
+    it 'reports should_retry? false for a connection closed before the response' do
+      stub = stub_create.to_raise(EOFError)
+
+      expect { client.create_developer_key }
+        .to(raise_error(DeepL::Exceptions::ConnectionError) do |e|
+          expect([e.cause, e.should_retry?]).to match([be_a(EOFError), false])
+        end)
+      expect(stub).to have_been_requested.once
+    end
   end
 
   describe '#list_developer_keys' do

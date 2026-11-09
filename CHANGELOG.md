@@ -57,7 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   these calls yourself, check first whether the resource was created.
 - A response body cut off before its `Content-Length` on a request that creates a resource,
   `create_developer_key` included, is still not retried, but now raises
-  `DeepL::Exceptions::ConnectionError` with `should_retry?` true; previously `false`. Migration:
+  `DeepL::Exceptions::ConnectionError` with `should_retry?` true; previously `false`. A
+  connection closed before the response, which Net::HTTP also reports as `EOFError`, still has
+  `should_retry?` false. Migration:
   if you retry on `should_retry?`, check first whether the resource was created.
 - `DeepL::Exceptions::ValidationError` is now an `ArgumentError` instead of a
   `DeepL::Exceptions::Error`, so `rescue ArgumentError` catches every invalid argument, also an

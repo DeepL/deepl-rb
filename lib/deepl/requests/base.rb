@@ -159,9 +159,13 @@ module DeepL
         api.configuration.logger&.debug("Request details: #{details}")
         loop do
           resp = nil
+          response_started = false
           client = http_client
           apply_request_timeout(client)
-          resp = client.request(req) { |response| read_complete_body(response) }
+          resp = client.request(req) do |response|
+            response_started = true
+            read_complete_body(response)
+          end
           validate_response!(resp, req)
           @response_received = true
           return [req, resp]
@@ -171,17 +175,19 @@ module DeepL
           wait_before_retry(e, files_to_reset)
           next
         rescue *NETWORK_ERRORS => e
-          raise_network_error(e) unless retry_network_error?(e)
+          raise_network_error(e, response_started) unless retry_network_error?(e)
 
           wait_before_retry(e, files_to_reset)
           next
         end
       end
 
-      # A create does not retry a body cut off mid-read, but the error has +should_retry?+ true.
-      def raise_network_error(error)
+      # A create does not retry an EOFError; it has +should_retry?+ true only once the response
+      # headers arrived (a body cut off mid-read), false for a connection closed before the
+      # response.
+      def raise_network_error(error, response_started)
         should_retry = !retry_only_unprocessed? || unprocessed_error?(error) ||
-                       error.is_a?(EOFError)
+                       (response_started && error.is_a?(EOFError))
         raise Exceptions::ConnectionError.from_network_error(error, should_retry: should_retry)
       end
 
