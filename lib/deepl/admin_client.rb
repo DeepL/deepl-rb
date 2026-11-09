@@ -14,6 +14,9 @@ module DeepL
     DEEPL_SERVER_URL = 'https://api.deepl.com'
     private_constant :DEEPL_SERVER_URL
 
+    USAGE_LIMITS = %i[characters speech_to_text_milliseconds speech_to_speech_milliseconds].freeze
+    private_constant :USAGE_LIMITS
+
     ##
     # @param [String] admin_key Admin API key, surrounding whitespace is removed.
     # @param [String, nil] server_url Base URL of the DeepL API, an absolute +http+ or +https+
@@ -152,16 +155,28 @@ module DeepL
     # @param [Hash] limits Limits to change: +:characters+ (characters per usage period across
     #   text translation, document translation and text improvement),
     #   +:speech_to_text_milliseconds+ and +:speech_to_speech_milliseconds+, each an +Integer+ or
-    #   +nil+. They are sent as is and validated by the API.
+    #   +nil+. The values are sent as given and validated by the API.
     # @param [Hash, nil] extra_body_parameters Added to the request body last; replaces fields
     #   of the same name. Values are sent as given.
     # @return [DeepL::Resources::DeveloperKey]
-    # @raise [ArgumentError] If the key ID is empty.
+    # @raise [ArgumentError] If the key ID is empty, or +limits+ has a keyword other than
+    #   +:characters+, +:speech_to_text_milliseconds+ and +:speech_to_speech_milliseconds+.
     def set_developer_key_usage_limits(key, extra_body_parameters: nil, **limits)
-      update_developer_key('limits', limits.merge(key_id: key_id(key)), extra_body_parameters)
+      id = key_id(key)
+      validate_usage_limits!(limits)
+      update_developer_key('limits', limits.merge(key_id: id), extra_body_parameters)
     end
 
     private
+
+    def validate_usage_limits!(limits)
+      unknown = limits.keys - USAGE_LIMITS
+      return if unknown.empty?
+
+      names = unknown.map { |name| "`#{name}`" }.join(', ')
+      raise ArgumentError, "Unknown usage limit#{'s' if unknown.size > 1} #{names}; use " \
+                           '`extra_body_parameters` to send fields the SDK does not model'
+    end
 
     attr_reader :api
 

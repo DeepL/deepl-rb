@@ -133,6 +133,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its subclasses, and for an empty input file `ArgumentError`. Migration: rescue
   `DeepL::Exceptions::TranslationMemoryJobError` (or `DeepL::Exceptions::Error`) and inspect
   `cause`, `job_id` and `job`.
+- `DeepL::AdminClient#set_developer_key_usage_limits` raises `ArgumentError` naming the keyword
+  for any limit keyword other than `characters:`, `speech_to_text_milliseconds:` and
+  `speech_to_speech_milliseconds:` (also `key_id:`), before a request is sent. Previously any
+  keyword was sent as a body field, so a misspelled limit such as `character: 0` changed
+  nothing. Migration: fix misspelled limits; send other fields with `extra_body_parameters:`.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

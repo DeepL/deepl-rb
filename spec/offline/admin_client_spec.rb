@@ -528,12 +528,16 @@ describe DeepL::AdminClient do
                                                  extra_body_parameters: { extra: nil })
     end
 
-    it 'sends the given key even if the limits contain a key_id' do
-      stub_put('limits', key_id: key_id, characters: 0)
-
-      client.set_developer_key_usage_limits(key, characters: 0, key_id: 'other')
+    it 'rejects a key_id among the limits before sending a request' do
+      expect { client.set_developer_key_usage_limits(key, characters: 0, key_id: 'other') }
+        .to raise_error(ArgumentError, /key_id/)
       expect { client.set_developer_key_usage_limits('', key_id: 'other') }
         .to raise_error(ArgumentError, /key ID/)
+    end
+
+    it 'rejects an unknown usage limit keyword before sending a request' do
+      expect { client.set_developer_key_usage_limits(key, character: 0) }
+        .to raise_error(ArgumentError, /character/)
     end
 
     it 'rejects an empty key ID before sending a request' do
