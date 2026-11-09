@@ -27,6 +27,14 @@ module DeepL
       # Headers that describe the request the SDK builds; a caller's value is dropped.
       TECHNICAL_HEADERS = %w[content-type content-length transfer-encoding host].freeze
 
+      # A POST without a body. REQUEST_HAS_BODY false keeps Net::HTTP from sending '' with a
+      # default form Content-Type (net-http before 0.7).
+      class BodilessPost < Net::HTTPRequest
+        METHOD = 'POST'
+        REQUEST_HAS_BODY = false
+        RESPONSE_HAS_BODY = true
+      end
+
       # Wraps +request+ of every request class, so that a malformed response raises a
       # DeepL::Exceptions::Error instead of a raw JSON or type error.
       module ResponseFormatGuard
@@ -269,6 +277,10 @@ module DeepL
       # GET and DELETE send no body, so no Content-Type either.
       def get_request # rubocop:disable Naming/AccessorMethodName
         Net::HTTP::Get.new(uri.path, headers)
+      end
+
+      def bodiless_post_request
+        BodilessPost.new(uri.path, headers.merge('Content-Length' => '0'))
       end
 
       def patch_request(payload)

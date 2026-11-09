@@ -338,14 +338,23 @@ describe 'DeepL::Client translation memory requests' do
   end
 
   describe '#create_export' do
-    it 'sends a POST with an empty body and parses a new export' do
+    it 'sends a POST without a body or Content-Type and parses a new export' do # rubocop:disable RSpec/ExampleLength
+      sent = []
+      allow(memories.send(:api).http_client)
+        .to receive(:request).and_wrap_original do |request, req, *args, &block|
+          sent << req
+          request.call(req, *args, &block)
+        end
       stub_request(:post, url('/v3/translation_memories/tm-1/export'))
-        .with(body: '{}', headers: json_headers)
+        .with(headers: auth_headers.merge('Content-Length' => '0')) { bodyless?(_1) }
         .to_return(reply({ job_id: 'j-1', parameters: { translation_memory_id: 'tm-1' } }, 202))
 
       export = memories.create_translation_memory_export('tm-1')
 
       expect([export.translation_memory_id, export.reused_existing?]).to eq(['tm-1', false])
+      # Net::HTTP sends no body, and so no default Content-Type, for such a request on every
+      # net-http.
+      expect(sent.map(&:request_body_permitted?)).to eq([false])
     end
 
     it 'reports an export that the API reused' do

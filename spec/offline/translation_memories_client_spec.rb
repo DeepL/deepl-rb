@@ -206,7 +206,7 @@ describe 'DeepL::Client translation memories' do
 
     it 'creates the export, gets the job and downloads the file' do
       stub_request(:post, url('/v3/translation_memories/tm-1/export'))
-        .with(body: '{}', headers: json_headers)
+        .with(headers: { 'Authorization' => 'DeepL-Auth-Key client-key' }) { bodyless?(_1) }
         .to_return(reply({ job_id: 'j-1', parameters: { translation_memory_id: 'tm-1' } }, 202))
       stub_job(reply(job_json('completed', download_url: download_url)))
       stub_request(:get, download_url).to_return(status: 200, body: 'tmx')

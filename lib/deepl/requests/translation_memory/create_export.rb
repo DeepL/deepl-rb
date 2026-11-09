@@ -15,7 +15,7 @@ module DeepL
         end
 
         def request
-          build_translation_memory_export(*execute_request_with_retries(post_request({})))
+          build_translation_memory_export(*execute_request_with_retries(bodiless_post_request))
         end
 
         def to_s
