@@ -58,27 +58,25 @@ module DeepL
 
       def proxy_url_arguments(proxy, uri)
         proxy_uri = parse_proxy_url(proxy)
+        # The messages name the problem only: the proxy URL may hold credentials.
         unless PROXY_SCHEMES.include?(proxy_uri.scheme)
-          raise ArgumentError, 'Invalid proxy URL scheme: expected http or https, got ' \
-                               "#{HTTPClientOptions.redact_proxy(proxy)}", cause: nil
+          raise ArgumentError, 'Invalid proxy URL scheme: expected http or https', cause: nil
         end
 
         arguments = [proxy_uri.host, proxy_uri.port, decode(proxy_uri.user),
                      decode(proxy_uri.password)]
-        proxy_uri.scheme == 'https' ? https_proxy_arguments(arguments, proxy, uri) : arguments
+        proxy_uri.scheme == 'https' ? https_proxy_arguments(arguments, uri) : arguments
       end
 
       # Net::HTTP connects to the proxy over TLS (+p_use_ssl+) from net-http 0.5.0, and only for an
       # https server; it does not verify the proxy's certificate.
-      def https_proxy_arguments(arguments, proxy, uri)
+      def https_proxy_arguments(arguments, uri)
         unless Net::HTTP.method_defined?(:proxy_use_ssl=)
           raise ArgumentError, 'An https proxy needs net-http 0.5.0 or later (installed: ' \
-                               "#{Net::HTTP::VERSION}): #{HTTPClientOptions.redact_proxy(proxy)}",
-                cause: nil
+                               "#{Net::HTTP::VERSION})", cause: nil
         end
         unless uri.scheme == 'https'
-          raise ArgumentError, 'An https proxy can only be used for an https server URL: ' \
-                               "#{HTTPClientOptions.redact_proxy(proxy)}", cause: nil
+          raise ArgumentError, 'An https proxy can only be used for an https server URL', cause: nil
         end
 
         arguments + [nil, true]

@@ -211,12 +211,14 @@ describe DeepL::Client do
 
     it 'rejects a proxy URL whose scheme is not http or https' do
       ['socks5://u:secret@proxy.example.test:1080', 'ftp://proxy.example.test:21',
-       '//proxy.example.test:3128', URI('socks5://proxy.example.test:1080')].each do |proxy|
+       '//proxy.example.test:3128', '//u:secret@proxy.example.test:3128',
+       URI('socks5://proxy.example.test:1080')].each do |proxy|
         expect { described_class.new('abc', proxy: proxy) }
           .to(raise_error(ArgumentError, /proxy/) do |e|
             expect(e.full_message).not_to include('secret')
           end)
       end
+      expect(DeepL::HTTPClientOptions.redact_proxy('//u:secret@host:1')).not_to include('secret')
     end
 
     it 'connects to an https proxy over TLS where Net::HTTP supports it, else rejects it' do # rubocop:disable RSpec/ExampleLength
@@ -236,8 +238,12 @@ describe DeepL::Client do
     end
 
     it 'rejects an https proxy for an http server URL' do
-      expect { described_class.new('abc', server_url: 'http://localhost:3000', proxy: 'https://proxy.example.test:3128') }
-        .to raise_error(ArgumentError, /https/)
+      # Below net-http 0.5.0 (Ruby 3.0-3.3) the net-http version check raises first.
+      message = Net::HTTP.method_defined?(:proxy_use_ssl=) ? /https server URL/ : /net-http/
+      expect do
+        described_class.new('abc', server_url: 'http://localhost:3000',
+                                   proxy: 'https://proxy.example.test:3128')
+      end.to raise_error(ArgumentError, message)
     end
   end
 
