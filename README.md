@@ -27,6 +27,11 @@ Or add it to your Gemfile:
 gem 'deepl-rb', require: 'deepl'
 ```
 
+### Upgrading
+
+Upgrading from version 3? Read [Upgrading to 4.0.0](upgrading_to_v4.md) for the removed
+module-level API, the stricter argument checks and the other breaking changes.
+
 ## Usage
 
 ### Creating a client

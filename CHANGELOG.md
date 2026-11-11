@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `nil`. Please refer to the README for usage instructions.
 
 ### Changed
+- Added the migration guide [Upgrading to 4.0.0](upgrading_to_v4.md), which lists every breaking
+  change of this release with before and after code.
+- **Breaking:** `DeepL::Client#create_translation_memory_import` and
+  `#import_translation_memory_from_filepath` take the keyword `extra_body_parameters:` instead
+  of `**options`. Migration: send fields the library does not model with `extra_body_parameters:`;
+  any other option raises `ArgumentError`.
 - Every `DeepL::Client` method that takes options accepts only the options it documents. Any
   other option, also a misspelled one, raises `ArgumentError` naming it before a request is sent.
   Previously, text translation, rephrasing, correction and the glossary, spoken terms, style rule
