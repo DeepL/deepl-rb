@@ -233,7 +233,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `document_*` and `team_document_*` fields in a usage response are ignored.
 - `DeepL::Resources::DocumentHandle#wait_until_document_translation_finished`, deprecated in
   3.10.0. Use `DeepL::Client#translate_document_wait_until_done`, which raises
-  `DeepL::Exceptions::DocumentTranslationError` if the translation fails.
+  `DeepL::Exceptions::Error` with the API's message if the translation fails or `timeout_s`
+  expires.
 - `DeepL::Resources::DocumentTranslationStatus#successful?`, deprecated in 3.10.0. Use `#done?`
   instead.
 - The module-level API, deprecated in 3.10.0: `DeepL.configure`, `DeepL.configuration`,

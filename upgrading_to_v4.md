@@ -29,7 +29,8 @@ warning.
 4. Fix misspelled options; unknown options now raise `ArgumentError`:
    [Text translation](#text-translation).
 5. Move document, glossary, style rule and translation memory calls to the `Client` methods:
-   [Documents](#documents), [Glossaries](#glossaries).
+   [Documents](#documents), [Glossaries](#glossaries), [Style rules](#style-rules),
+   [Translation memories](#translation-memories).
 6. Read usage through `usage.character`: [Usage](#usage).
 7. Rescue `DeepL::Exceptions::ConnectionError` for network failures, and `ArgumentError` for
    invalid arguments: [Errors, validation and retries](#errors-validation-and-retries).
@@ -142,15 +143,17 @@ client.translate_document_download(handle, 'out.docx')
 - `translate_document_download` returns `nil`.
 - `DocumentHandle#wait_until_document_translation_finished` is removed; use
   `Client#translate_document_wait_until_done`, which raises
-  `DeepL::Exceptions::DocumentTranslationError` if the translation fails.
+  `DeepL::Exceptions::Error` with the API's message if the translation fails or `timeout_s`
+  expires.
 - `DocumentTranslationStatus#successful?` is removed; use `#done?`.
-- `translate_document_download` and `translate_document` no longer overwrite a file. Before the
-  request they raise `Errno::EEXIST` if `output_path` exists, and `Errno::ENOENT` or
-  `Errno::EACCES` if its directory is missing or not writable. Delete the old file first.
-- `translate_document` checks the output directory before uploading, so a bad path fails at
-  once instead of after the translation. An invalid upload argument, such as an unknown option,
-  raises `DeepL::Exceptions::DocumentTranslationError` (`document_handle` is `nil`, the
-  `ArgumentError` is its `cause`). A missing input file still raises `ArgumentError`.
+- `translate_document_download` no longer overwrites a file. Before the request it raises
+  `Errno::EEXIST` if `output_path` exists, and `Errno::ENOENT` or `Errno::EACCES` if its
+  directory is missing or not writable. Delete the old file first.
+- `translate_document` checks the output path before uploading, so a bad path fails at once
+  instead of after the translation. It raises `DeepL::Exceptions::DocumentTranslationError`
+  (`document_handle` is `nil`) for an existing output file and for a directory that is missing
+  or not writable (the `SystemCallError` is its `cause`), and for an invalid upload argument,
+  such as an unknown option (the `ArgumentError` is its `cause`). A missing input file still raises `ArgumentError`.
 - The `glossary` option of document translation requires `source_lang`.
 - A `nil` value in `extra_body_parameters` now removes that form field; before, it was sent
   empty.
