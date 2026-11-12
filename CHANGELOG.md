@@ -43,18 +43,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Migration: none for jobs the API returns; code that built a job with status `downloaded` itself
   should use `completed`.
 - Requests that create a resource are retried only when the request was not processed: after
-  HTTP 429, DNS resolution errors, refused connections and connection timeouts, as
-  `create_developer_key` already was. This covers `create_glossary`,
-  `create_glossary_from_csv`, `create_multilingual_glossary`,
-  `create_multilingual_glossary_from_csv`, `create_spoken_terms`, `create_style_rule`,
-  `create_style_rule_custom_instruction`, `create_style_profile`, the document upload of
-  `translate_document` and `translate_document_upload`, and the job creation of
-  `create_translation_memory_import`, `create_translation_memory_export`,
-  `import_translation_memory_from_filepath` and `export_translation_memory_to_filepath`.
-  Previously they were also retried after any 5xx reply and every other transient network
-  failure, so a retry could create a second resource. A 5xx reply now raises
-  `DeepL::Exceptions::ServerError` with `should_retry?` false at once. Migration: if you retry
-  these calls yourself, check first whether the resource was created.
+  HTTP 429, DNS resolution errors, refused connections, unreachable hosts or networks and
+  connection timeouts. `create_developer_key` already was, except for unreachable hosts and
+  networks. This covers `create_glossary`, `create_glossary_from_csv`,
+  `create_multilingual_glossary`, `create_multilingual_glossary_from_csv`,
+  `create_spoken_terms`, `create_style_rule`, `create_style_rule_custom_instruction`,
+  `create_style_profile`, the document upload of `translate_document` and
+  `translate_document_upload`, and the job creation of `create_translation_memory_import`,
+  `create_translation_memory_export`, `import_translation_memory_from_filepath` and
+  `export_translation_memory_to_filepath`. Previously they were also retried after any 5xx reply
+  and every other transient network failure, so a retry could create a second resource. A 5xx
+  reply now raises `DeepL::Exceptions::ServerError` with `should_retry?` false at once.
+  Migration: if you retry these calls yourself, check first whether the resource was created.
 - A response body cut off before its `Content-Length` on a request that creates a resource,
   `create_developer_key` included, is still not retried, but now raises
   `DeepL::Exceptions::ConnectionError` with `should_retry?` true; previously `false`. A
@@ -156,6 +156,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `proxy_addr` also raise `ArgumentError`; they were accepted, and an empty host connected to the
   local machine on some platforms. Migration: use `http://` for a plain HTTP proxy; for an
   `https` proxy on Ruby 3.0-3.3, add `gem 'net-http', '>= 0.5'`; give the proxy a host.
+- **Breaking:** `DeepL::AdminClient#create_developer_key` is now also retried after an unreachable
+  host or network (`Errno::EHOSTUNREACH`, `Errno::ENETUNREACH`, `Errno::ENETDOWN`) raised while
+  connecting, before the request is sent; one raised on an established connection is not
+  retried. It raised `DeepL::Exceptions::ConnectionError` with `should_retry?` false at once
+  before. The other requests that create a resource retry them from this release on, like the
+  failures listed above. Migration: none needed; code that retries `create_developer_key` itself
+  after such an error now sees the library's retries first.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

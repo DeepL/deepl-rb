@@ -20,6 +20,13 @@ module DeepL
       NETWORK_ERRORS = [*RETRYABLE_NETWORK_ERRORS, Net::HTTPBadResponse,
                         OpenSSL::SSL::SSLError, Net::ProtocolError].freeze
 
+      # Failures that can only happen while connecting: DNS, refused connection, connect timeout.
+      UNPROCESSED_ERRORS = [SocketError, Net::OpenTimeout, Errno::ECONNREFUSED].freeze
+
+      # Failures that are unprocessed only if raised while connecting; on an established
+      # connection they may follow a written request.
+      CONNECT_PHASE_ERRORS = [Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ENETDOWN].freeze
+
       # Errors raised while building the result from a received response: the response has an
       # unexpected format.
       RESPONSE_FORMAT_ERRORS = [JSON::ParserError, NoMethodError, TypeError, KeyError].freeze
@@ -162,10 +169,15 @@ module DeepL
           response_started = false
           client = http_client
           apply_request_timeout(client)
-          resp = client.request(req) do |response|
-            response_started = true
-            read_complete_body(response)
+          connected = client.started?
+          exchange = lambda do |http|
+            connected = true
+            http.request(req) do |response|
+              response_started = true
+              read_complete_body(response)
+            end
           end
+          resp = connected ? exchange.call(client) : client.start(&exchange)
           validate_response!(resp, req)
           @response_received = true
           return [req, resp]
@@ -175,7 +187,8 @@ module DeepL
           wait_before_retry(e, files_to_reset)
           next
         rescue *NETWORK_ERRORS => e
-          raise_network_error(e, response_started) unless retry_network_error?(e)
+          retry_error = retry_network_error?(e, connected)
+          raise_network_error(e, response_started, connected) unless retry_error
 
           wait_before_retry(e, files_to_reset)
           next
@@ -185,8 +198,8 @@ module DeepL
       # A create does not retry an EOFError; it has +should_retry?+ true only once the response
       # headers arrived (a body cut off mid-read), false for a connection closed before the
       # response.
-      def raise_network_error(error, response_started)
-        should_retry = !retry_only_unprocessed? || unprocessed_error?(error) ||
+      def raise_network_error(error, response_started, connected)
+        should_retry = !retry_only_unprocessed? || unprocessed_error?(error, connected) ||
                        (response_started && error.is_a?(EOFError))
         raise Exceptions::ConnectionError.from_network_error(error, should_retry: should_retry)
       end
@@ -231,10 +244,10 @@ module DeepL
         @backoff_timer.sleep_until_deadline
       end
 
-      def retry_network_error?(error)
+      def retry_network_error?(error, connected)
         Exceptions::ConnectionError.transient?(error) &&
           @backoff_timer.num_retries < api.configuration.max_network_retries &&
-          (!retry_only_unprocessed? || unprocessed_error?(error))
+          (!retry_only_unprocessed? || unprocessed_error?(error, connected))
       end
 
       def should_retry?(response, exception, num_retries)
@@ -247,15 +260,17 @@ module DeepL
       end
 
       # Requests that are unsafe to repeat return true to retry only failures that show the
-      # request was not processed: HTTP 429, DNS resolution errors (SocketError), refused
-      # connections and connection timeouts (Net::OpenTimeout).
+      # request was not processed: HTTP 429, and failures while connecting: DNS resolution errors
+      # (SocketError), refused connections, connection timeouts (Net::OpenTimeout), and
+      # unreachable hosts or networks raised before the connection is made.
       def retry_only_unprocessed?
         false
       end
 
-      def unprocessed_error?(error)
-        error.is_a?(SocketError) || error.is_a?(Net::OpenTimeout) ||
-          error.is_a?(Errno::ECONNREFUSED)
+      def unprocessed_error?(error, connected)
+        return true if UNPROCESSED_ERRORS.any? { |type| error.is_a?(type) }
+
+        !connected && CONNECT_PHASE_ERRORS.any? { |type| error.is_a?(type) }
       end
 
       # The request body: the SDK's payload, then the remaining declared options, then

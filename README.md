@@ -45,7 +45,7 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 | ------ | ------- | ----------- |
 | `server_url:` | `https://api-free.deepl.com` for Free keys (ending in `:fx`), else `https://api.deepl.com` | Base URL of the DeepL API: an absolute `http` or `https` URL with a host. A port and a path prefix are kept, trailing slashes are removed. Any other value raises `ArgumentError`. |
 | `headers:` | `{}` | HTTP headers sent with every DeepL API request. A header of the same name, in any casing, replaces the library's, `Authorization` and `User-Agent` included, except `Content-Type`, `Content-Length`, `Transfer-Encoding` and `Host`. Pre-signed storage URLs get only the `User-Agent`. |
-| `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and transient network failures. Requests that create a resource (glossaries, spoken terms, style rule lists and custom instructions, style profiles, document uploads, translation memory import and export jobs) are retried only after HTTP 429, DNS resolution errors, refused connections and connection timeouts, when the API cannot have processed them, so that a retry cannot create a second resource. |
+| `max_retries:` | `5` | Retries after the first attempt, for HTTP 429, any 5xx and transient network failures. Requests that create a resource (glossaries, spoken terms, style rule lists and custom instructions, style profiles, document uploads, translation memory import and export jobs) are retried only after HTTP 429, DNS resolution errors, refused connections, unreachable hosts or networks and connection timeouts, when the API cannot have processed them, so that a retry cannot create a second resource. |
 | `timeout:` | `10` | Timeout of each attempt in seconds. A longer backoff interval takes precedence. |
 | `proxy:` | none | Proxy URL (`http://` or `https://`) as a String or `URI`, e.g. `http://user:password@proxy.example:8080`, or a hash with `proxy_addr` and `proxy_port`. Any other value raises `ArgumentError`. |
 | `send_platform_info:` | `true` | Adds the OS and Ruby versions to the `User-Agent`. |
@@ -1356,7 +1356,7 @@ admin_client.deactivate_developer_key(key)
 
 `rename_developer_key`, `set_developer_key_usage_limits` and `deactivate_developer_key` accept either a key ID or a `DeepL::Resources::DeveloperKey` object and return the updated `DeepL::Resources::DeveloperKey`. `set_developer_key_usage_limits` accepts `characters:`, `speech_to_text_milliseconds:` and `speech_to_speech_milliseconds:`; any other keyword raises `ArgumentError` before a request is sent (send fields the library does not model with `extra_body_parameters:`). `create_developer_key` takes the label as the `label:` keyword argument; without it the API labels the key "DeepL API Key". Label and limit values are sent as given and validated by the API. `create_developer_key`, `deactivate_developer_key`, `rename_developer_key` and `set_developer_key_usage_limits` also accept `extra_body_parameters:`, a hash added to the request body last that replaces fields of the same name. A response without a `key_id` raises `DeepL::Exceptions::Error`. `label` and `usage_limits` are `nil` when the response does not contain them.
 
-A failed `create_developer_key` request is retried only after HTTP 429, a DNS resolution error, a refused connection or a connection timeout, when the API cannot have created the key, like the other requests of the library that create a resource. Other requests are retried like all other requests of the library.
+A failed `create_developer_key` request is retried only after HTTP 429, a DNS resolution error, a refused connection, an unreachable host or network or a connection timeout, when the API cannot have created the key, like the other requests of the library that create a resource. Other requests are retried like all other requests of the library.
 
 #### Retrieving usage analytics
 
@@ -1467,16 +1467,16 @@ Each attempt has a timeout of `timeout:` seconds (default 10). After the last re
 failures raise `DeepL::Exceptions::ConnectionError`. TLS failures (including certificate
 verification), proxy failures (the proxy refuses `CONNECT`, e.g. with 407) and malformed
 responses are not retried and are raised the same way at once.
-Requests that create a resource are only retried when the request was not sent (HTTP 429,
-DNS failure, refused connection or connection timeout), so that a retry cannot create a second
-resource: `create_glossary`, `create_glossary_from_csv`, `create_multilingual_glossary`,
-`create_multilingual_glossary_from_csv`, `create_spoken_terms`, `create_style_rule`,
-`create_style_rule_custom_instruction`, `create_style_profile`, the document upload of
-`translate_document` and `translate_document_upload`, the translation memory import and export
-job creation, and `AdminClient#create_developer_key`. Their other failures are raised at once:
-a 5xx reply as `DeepL::Exceptions::ServerError` and a network failure as
-`DeepL::Exceptions::ConnectionError`, both with `should_retry?` false, except a response body cut
-off before its `Content-Length`, which has `should_retry?` true.
+Requests that create a resource are only retried when the request was not sent (HTTP 429, DNS
+failure, refused connection, unreachable host or network or connection timeout), so that a retry
+cannot create a second resource: `create_glossary`, `create_glossary_from_csv`,
+`create_multilingual_glossary`, `create_multilingual_glossary_from_csv`, `create_spoken_terms`,
+`create_style_rule`, `create_style_rule_custom_instruction`, `create_style_profile`, the
+document upload of `translate_document` and `translate_document_upload`, the translation memory
+import and export job creation, and `AdminClient#create_developer_key`. Their other failures are
+raised at once: a 5xx reply as `DeepL::Exceptions::ServerError` and a network failure as
+`DeepL::Exceptions::ConnectionError`, both with `should_retry?` false, except a response body
+cut off before its `Content-Length`, which has `should_retry?` true.
 
 ### Proxy configuration
 

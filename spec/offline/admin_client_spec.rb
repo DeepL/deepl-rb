@@ -414,6 +414,32 @@ describe DeepL::AdminClient do
       expect(stub).to have_been_requested.twice
     end
 
+    it 'retries an unreachable host or network raised while connecting' do
+      [Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ENETDOWN].each do |error|
+        retrying = described_class.new(admin_key, max_retries: 2)
+        expect(retrying.send(:api).http_client)
+          .to receive(:start).exactly(3).times.and_raise(error)
+
+        expect { retrying.create_developer_key }
+          .to(raise_error(DeepL::Exceptions::ConnectionError) do |e|
+            expect(e.should_retry?).to be(true)
+          end)
+      end
+    end
+
+    it 'does not retry an unreachable host or network after the connection was made' do
+      [Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ENETDOWN].each do |error|
+        WebMock.reset!
+        stub = stub_create.to_raise(error)
+
+        expect { client.create_developer_key }
+          .to(raise_error(DeepL::Exceptions::ConnectionError) do |e|
+            expect(e.should_retry?).to be(false)
+          end)
+        expect(stub).to have_been_requested.once
+      end
+    end
+
     it 'does not retry a 500 or 503 reply' do
       [500, 503].each do |status|
         WebMock.reset!

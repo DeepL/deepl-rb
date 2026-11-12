@@ -6,14 +6,14 @@
 module DeepL
   module Exceptions
     ##
-    # Raised by DeepL::Client and DeepL::AdminClient for a network failure without a complete
-    # HTTP response from the API (DNS, connection, TLS, proxy, timeout or a body cut off
-    # mid-read), after the retries are used up. Transient failures (DNS, connection, timeout,
-    # cut-off body) are retried and have +should_retry?+ true; TLS failures, proxy failures and
-    # malformed responses are raised at once and have +should_retry?+ false. Requests that
-    # create a resource retry only DNS failures, refused connections and connection timeouts;
-    # of their other failures, only a cut-off body has +should_retry?+ true. The original
-    # exception is available as +cause+.
+    # Raised by DeepL::Client and DeepL::AdminClient for a network failure without a complete HTTP
+    # response from the API (DNS, connection, TLS, proxy, timeout or a body cut off mid-read), after
+    # the retries are used up. Transient failures (DNS, connection, timeout, cut-off body) are
+    # retried and have +should_retry?+ true; TLS failures, proxy failures and malformed responses
+    # are raised at once and have +should_retry?+ false. Requests that create a resource retry only
+    # DNS failures, refused connections, unreachable hosts or networks and connection timeouts; of
+    # their other failures, only a cut-off body has +should_retry?+ true. The original exception is
+    # available as +cause+.
     class ConnectionError < Error
       # Raised from a +rescue+ block, so the original exception becomes +cause+.
       # +should_retry: false+ marks a failure after which the request may have been processed.
