@@ -14,6 +14,7 @@ module DeepL
         def initialize(api, id, lang)
           super(api)
           @id = spoken_terms_id(id)
+          validate_language!('lang', lang)
           @lang = lang
         end
 

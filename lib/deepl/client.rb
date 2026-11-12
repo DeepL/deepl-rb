@@ -429,8 +429,9 @@ module DeepL
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping surrounding whitespace or contains a control character, or a TSV line is not
     #   exactly two terms.
-    # @raise [ArgumentError] If +name+ or +dictionaries+ is empty, or a dictionary has no entries
-    #   (including empty or whitespace-only CSV entries), before any request.
+    # @raise [ArgumentError] If +name+ or +dictionaries+ is empty, a dictionary has no entries
+    #   (including empty or whitespace-only CSV entries), or a +source_lang+ or +target_lang+ of a
+    #   dictionary is nil or empty, before any request.
     def create_multilingual_glossary(name, dictionaries, **options)
       check_csv_entries!(dictionaries)
       Requests::MultilingualGlossary::Create.new(api, name, dictionaries, options).request
@@ -449,7 +450,8 @@ module DeepL
     # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The created glossary.
-    # @raise [ArgumentError] If +name+ is empty, before any request.
+    # @raise [ArgumentError] If +name+ is empty, or +source_lang+ or +target_lang+ is nil or empty,
+    #   before any request.
     def create_multilingual_glossary_from_csv(name, source_lang, target_lang, csv, **options)
       dictionary = csv_dictionary(source_lang, target_lang, csv)
       Requests::MultilingualGlossary::Create.new(api, name, [dictionary], options).request
@@ -489,7 +491,8 @@ module DeepL
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
     # @raise [ArgumentError] If the glossary ID or the entries of a dictionary are empty (CSV
-    #   entries also if whitespace only), or the glossary has no ID, before any request.
+    #   entries also if whitespace only), a +source_lang+ or +target_lang+ of a dictionary is nil or
+    #   empty, or the glossary has no ID, before any request.
     def update_multilingual_glossary(glossary, name: nil, dictionaries: nil, **options)
       check_csv_entries!(dictionaries) unless dictionaries.nil?
       Requests::MultilingualGlossary::Update.new(api, glossary, name, dictionaries,
@@ -523,7 +526,8 @@ module DeepL
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
     # @raise [ArgumentError] If the glossary ID or the entries are empty (CSV entries also if
-    #   whitespace only), or the glossary has no ID, before any request.
+    #   whitespace only), a +source_lang+ or +target_lang+ of a dictionary is nil or empty, or the
+    #   glossary has no ID, before any request.
     def update_multilingual_glossary_dictionary(glossary, dictionary, **options)
       check_csv_entries!([dictionary])
       Requests::MultilingualGlossary::Update.new(api, glossary, nil, [dictionary],
@@ -541,8 +545,9 @@ module DeepL
     #   whitespace only; otherwise sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossary] The updated glossary.
-    # @raise [ArgumentError] If the CSV content is empty or whitespace only, the glossary ID is
-    #   empty or the glossary has no ID, before any request.
+    # @raise [ArgumentError] If the CSV content is empty or whitespace only, +source_lang+ or
+    #   +target_lang+ is nil or empty, the glossary ID is empty or the glossary has no ID, before
+    #   any request.
     def update_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
                                                          **options)
       dictionary = non_empty_csv_dictionary(source_lang, target_lang, csv)
@@ -562,7 +567,8 @@ module DeepL
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
     # @raise [ArgumentError] If the glossary ID or the entries are empty (CSV entries also if
-    #   whitespace only), or the glossary has no ID, before any request.
+    #   whitespace only), a +source_lang+ or +target_lang+ of a dictionary is nil or empty, or the
+    #   glossary has no ID, before any request.
     def replace_multilingual_glossary_dictionary(glossary, dictionary, **options)
       check_csv_entries!([dictionary])
       Requests::MultilingualGlossary::ReplaceDictionary.new(api, glossary, dictionary,
@@ -579,8 +585,9 @@ module DeepL
     #   whitespace only; otherwise sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::MultilingualGlossaryDictionary] The replaced dictionary.
-    # @raise [ArgumentError] If the CSV content is empty or whitespace only, the glossary ID is
-    #   empty or the glossary has no ID, before any request.
+    # @raise [ArgumentError] If the CSV content is empty or whitespace only, +source_lang+ or
+    #   +target_lang+ is nil or empty, the glossary ID is empty or the glossary has no ID, before
+    #   any request.
     def replace_multilingual_glossary_dictionary_from_csv(glossary, source_lang, target_lang, csv,
                                                           **options)
       dictionary = non_empty_csv_dictionary(source_lang, target_lang, csv)
@@ -598,8 +605,8 @@ module DeepL
     #   of source term to target term.
     # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist or has no dictionary
     #   for the language pair.
-    # @raise [ArgumentError] If the glossary ID is empty or the glossary has no ID, before any
-    #   request.
+    # @raise [ArgumentError] If the glossary ID is empty, the glossary has no ID, or +source_lang+
+    #   or +target_lang+ is nil or empty, before any request.
     def get_multilingual_glossary_dictionary_entries(glossary, source_lang, target_lang)
       Requests::MultilingualGlossary::Entries.new(api, glossary, source_lang, target_lang).request
     end
@@ -643,8 +650,8 @@ module DeepL
     # @return [DeepL::Resources::SpokenTerms] The created collection.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping surrounding whitespace or contains a control character.
-    # @raise [ArgumentError] If the entries of a term list are missing or not an array, before
-    #   any request.
+    # @raise [ArgumentError] If the entries of a term list are missing or not an array, or the
+    #   +lang+ of a term list is nil or empty, before any request.
     def create_spoken_terms(name, term_lists, **options)
       Requests::SpokenTerms::Create.new(api, name, term_lists, options).request
     end
@@ -680,8 +687,9 @@ module DeepL
     # @return [DeepL::Resources::SpokenTerms] The updated collection.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or the entries of a
-    #   term list are missing or not an array, before any request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, the entries of a term
+    #   list are missing or not an array, or the +lang+ of a term list is nil or empty, before any
+    #   request.
     def update_spoken_terms(spoken_terms, name: nil, term_lists: nil, **options)
       Requests::SpokenTerms::Update.new(api, spoken_terms, name, term_lists, options).request
     end
@@ -702,7 +710,8 @@ module DeepL
     # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
     # @param [String] lang Language code, for example +'en'+.
     # @return [DeepL::Resources::SpokenTermsEntries]
-    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or +lang+ is nil or
+    #   empty, before any request.
     def get_spoken_terms_entries(spoken_terms, lang)
       Requests::SpokenTerms::Entries.new(api, spoken_terms, lang).request
     end
@@ -717,8 +726,8 @@ module DeepL
     # @return [DeepL::Resources::SpokenTermsList]
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or the entries are
-    #   missing or not an array, before any request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, the entries are missing
+    #   or not an array, or the +lang+ of the term list is nil or empty, before any request.
     def replace_spoken_terms_list(spoken_terms, entries, **options)
       Requests::SpokenTerms::ReplaceTermList.new(api, spoken_terms, entries, options).request
     end
@@ -729,7 +738,8 @@ module DeepL
     # @param [String, DeepL::Resources::SpokenTerms] spoken_terms ID or collection.
     # @param [String] lang Language code, for example +'en'+.
     # @return [nil]
-    # @raise [ArgumentError] If the ID is empty or the collection has no ID, before any request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or +lang+ is nil or
+    #   empty, before any request.
     def delete_spoken_terms_list(spoken_terms, lang)
       Requests::SpokenTerms::DestroyTermList.new(api, spoken_terms, lang).request
     end
@@ -761,7 +771,8 @@ module DeepL
     #   (+label+, +prompt+ and optionally +source_language+), sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::StyleRule] The created style rule list.
-    # @raise [ArgumentError] If +name+ or +language+ is empty, before any request.
+    # @raise [ArgumentError] If +name+ or +language+ is empty, or a custom instruction's
+    #   +source_language+ is empty, before any request.
     def create_style_rule(name, language, configured_rules: nil, custom_instructions: nil,
                           **options)
       options = options.merge(configured_rules: configured_rules,
@@ -833,8 +844,8 @@ module DeepL
     # @param [String, nil] source_language Source language the instruction applies to.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::CustomInstruction] The created instruction.
-    # @raise [ArgumentError] If the style rule ID, +label+ or +prompt+ is empty, or the list has no
-    #   ID, before any request.
+    # @raise [ArgumentError] If the style rule ID, +label+ or +prompt+ is empty, +source_language+
+    #   is empty (+nil+ leaves it unset), or the list has no ID, before any request.
     def create_style_rule_custom_instruction(style_rule, label, prompt, source_language: nil,
                                              **options)
       Requests::StyleRule::CreateCustomInstruction.new(api, style_rule, label, prompt,
@@ -865,8 +876,8 @@ module DeepL
     # @param [String, nil] source_language Source language the instruction applies to.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::CustomInstruction] The updated instruction.
-    # @raise [ArgumentError] If an ID, +label+ or +prompt+ is empty, or an object has no ID, before
-    #   any request.
+    # @raise [ArgumentError] If an ID, +label+ or +prompt+ is empty, +source_language+ is empty
+    #   (+nil+ leaves it unset), or an object has no ID, before any request.
     def update_style_rule_custom_instruction(style_rule, instruction_id, label, prompt,
                                              source_language: nil, **options)
       Requests::StyleRule::UpdateCustomInstruction.new(api, style_rule, instruction_id, label,

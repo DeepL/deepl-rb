@@ -15,6 +15,7 @@ module DeepL
           check_non_empty!(label: label, prompt: prompt)
           @label = label
           @prompt = prompt
+          validate_language!('source_language', source_language, optional: true)
           @source_language = source_language
         end
 

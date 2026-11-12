@@ -163,6 +163,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before. The other requests that create a resource retry them from this release on, like the
   failures listed above. Migration: none needed; code that retries `create_developer_key` itself
   after such an error now sees the library's retries first.
+- **Breaking:** the multilingual glossary methods that take a dictionary
+  (`create_multilingual_glossary`, `..._from_csv`, `update_multilingual_glossary`,
+  `update_multilingual_glossary_dictionary`, `replace_multilingual_glossary_dictionary`) and
+  `get_multilingual_glossary_dictionary_entries` raise `ArgumentError` before any request for a
+  `nil` or empty `source_lang` or `target_lang`; `create_spoken_terms`, `update_spoken_terms`,
+  `replace_spoken_terms_list`, `get_spoken_terms_entries` and `delete_spoken_terms_list` for a `nil`
+  or empty `lang`; and `create_style_rule_custom_instruction`,
+  `update_style_rule_custom_instruction` and the `custom_instructions` of `create_style_rule` for an
+  empty `source_language` (`nil` still leaves it out). They sent the request with the empty or
+  `null` language and the API rejected it. Migration: pass the language, or `nil` where it is
+  optional; rescue `ArgumentError` instead of the API error.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

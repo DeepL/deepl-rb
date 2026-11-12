@@ -370,8 +370,8 @@ with a name, the source and target languages and the entries, a hash of source t
 term (source/target pairs or a TSV string work too). Glossaries are not regional: `EN-GB` is
 sent as `EN`. The entries are sent as TSV; each term is stripped of surrounding whitespace, and
 an empty term, one with a control character or a source term that appears twice raises
-`DeepL::Exceptions::ValidationError`, an `ArgumentError`, before anything is sent. An empty name
-or no entries raise `ArgumentError`:
+`DeepL::Exceptions::ValidationError`, an `ArgumentError`, before anything is sent. An empty name,
+no entries, or a `nil` or empty `source_lang` or `target_lang` raise `ArgumentError`:
 
 ```rb
 glossary = client.create_glossary('My Glossary', 'EN', 'ES',
@@ -558,8 +558,8 @@ Spoken terms collections improve the transcription of terms such as product
 names. A collection holds one list of terms per language and is managed through
 `DeepL::Client`. Every method that takes a collection accepts its ID or a
 `DeepL::Resources::SpokenTerms` object; an empty ID, or an object without one,
-raises `ArgumentError` before anything is sent. Terms are passed and returned as
-arrays of strings.
+raises `ArgumentError` before anything is sent. A `nil` or empty language does too.
+Terms are passed and returned as arrays of strings.
 
 To create a collection, pass a name and one `DeepL::Resources::SpokenTermsEntries`
 (or a hash with `:lang` and `:entries`) per language. Terms are checked like
@@ -649,7 +649,7 @@ takes a style rule list accepts its ID string or a `DeepL::Resources::StyleRule`
 object, and every method that takes a custom instruction its ID or a
 `DeepL::Resources::CustomInstruction`. An empty ID (or an object without one), and
 an empty name, language, label or prompt, raise `ArgumentError` before anything is
-sent.
+sent; so does an empty `source_language` of a custom instruction (`nil` leaves it unset).
 
 #### Creating a style rule
 

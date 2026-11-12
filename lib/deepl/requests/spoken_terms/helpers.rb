@@ -40,13 +40,14 @@ module DeepL
         end
 
         # Accepts a SpokenTermsEntries object or a hash with +:lang+ and +:entries+.
-        def term_list_payload(term_list)
+        def term_list_payload(term_list) # rubocop:disable Metrics/MethodLength
           lang, entries = if term_list.is_a?(DeepL::Resources::SpokenTermsEntries)
                             [term_list.lang, term_list.entries]
                           else
                             [term_list[:lang] || term_list['lang'],
                              term_list[:entries] || term_list['entries']]
                           end
+          validate_language!('lang', lang)
           unless entries.is_a?(Array)
             raise ArgumentError, 'Spoken terms entries must be an array of terms'
           end

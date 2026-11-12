@@ -218,6 +218,26 @@ describe 'DeepL::Client spoken terms' do
     end
   end
 
+  describe 'nil or empty languages' do
+    ['', nil].each do |lang|
+      it "raise ArgumentError for #{lang.inspect} without sending a request" do # rubocop:disable RSpec/ExampleLength
+        [{ lang: lang, entries: ['a'] },
+         DeepL::Resources::SpokenTermsEntries.new(lang, ['a'])].each do |list|
+          expect { client.create_spoken_terms('terms', [list]) }
+            .to raise_error(ArgumentError, /lang/)
+          expect { client.update_spoken_terms('st-1', term_lists: [list]) }
+            .to raise_error(ArgumentError, /lang/)
+          expect { client.replace_spoken_terms_list('st-1', list) }
+            .to raise_error(ArgumentError, /lang/)
+        end
+        expect { client.get_spoken_terms_entries('st-1', lang) }
+          .to raise_error(ArgumentError, /lang/)
+        expect { client.delete_spoken_terms_list('st-1', lang) }
+          .to raise_error(ArgumentError, /lang/)
+      end
+    end
+  end
+
   describe 'empty collection IDs' do
     let(:no_id) { DeepL::Resources::SpokenTerms.new({ 'name' => 'terms' }, nil, nil) }
 

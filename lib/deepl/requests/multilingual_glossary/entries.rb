@@ -14,6 +14,7 @@ module DeepL
         def initialize(api, id, source_lang, target_lang, options = {})
           super(api, options)
           @id = glossary_id(id)
+          validate_dictionary_languages!(source_lang, target_lang)
           @source_lang = source_lang
           @target_lang = target_lang
         end

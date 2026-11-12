@@ -381,6 +381,32 @@ describe 'multilingual glossaries' do
           .to raise_error(ArgumentError, /source_lang/)
       end
 
+      it 'raise ArgumentError for a nil or empty language of a dictionary without a request' do # rubocop:disable RSpec/ExampleLength
+        [['', 'DE'], [nil, 'DE'], ['EN', ''], ['EN', nil]].each do |src, tgt|
+          c = client
+          pairs = [%w[Apple Apfel]]
+          hash = { source_lang: src, target_lang: tgt, entries: pairs }
+          object = DeepL::Resources::MultilingualGlossaryDictionaryEntries.new(src, tgt, pairs)
+          calls = [hash, object].flat_map do |d|
+            [-> { c.create_multilingual_glossary('g', [d]) },
+             -> { c.update_multilingual_glossary('g-1', dictionaries: [d]) },
+             -> { c.update_multilingual_glossary_dictionary('g-1', d) },
+             -> { c.replace_multilingual_glossary_dictionary('g-1', d) }]
+          end
+          calls << -> { c.create_multilingual_glossary_from_csv('g', src, tgt, 'a,b') }
+          calls << -> { c.update_multilingual_glossary_dictionary_from_csv('g', src, tgt, 'a') }
+          calls << -> { c.replace_multilingual_glossary_dictionary_from_csv('g', src, tgt, 'a') }
+          calls.each { |call| expect(&call).to raise_error(ArgumentError, /_lang/) }
+        end
+      end
+
+      it 'raise ArgumentError for a nil or empty language of the entries to get' do
+        [['', 'DE'], [nil, 'DE'], ['EN', ''], ['EN', nil]].each do |source, target|
+          expect { client.get_multilingual_glossary_dictionary_entries('g-1', source, target) }
+            .to raise_error(ArgumentError, /_lang/)
+        end
+      end
+
       [[], {}, '', " \n"].each do |entries|
         it "raise ArgumentError for the entries #{entries.inspect} without sending a request" do
           dictionary = { source_lang: 'EN', target_lang: 'DE', entries: entries }

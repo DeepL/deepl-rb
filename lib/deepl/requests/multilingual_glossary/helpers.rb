@@ -27,17 +27,28 @@ module DeepL
         # string is sent as CSV; all other entries are converted and sent as TSV.
         def dictionary_payload(dictionary)
           if dictionary.is_a?(DeepL::Resources::MultilingualGlossaryDictionaryEntries)
-            return { source_lang: dictionary.source_lang, target_lang: dictionary.target_lang,
-                     entries: non_empty_tsv(dictionary.entries), entries_format: 'tsv' }
+            return entries_object_payload(dictionary)
           end
 
           value = ->(key) { dictionary[key] || dictionary[key.to_s] }
+          validate_dictionary_languages!(value.call(:source_lang), value.call(:target_lang))
           entries = value.call(:entries)
           # CSV content is sent as given; TSV content is parsed so its terms are checked too.
           csv = value.call(:entries_format) == 'csv' && entries.is_a?(String)
           { source_lang: value.call(:source_lang), target_lang: value.call(:target_lang),
             entries: csv ? entries : non_empty_tsv(entries),
             entries_format: csv ? 'csv' : 'tsv' }
+        end
+
+        def entries_object_payload(dictionary)
+          validate_dictionary_languages!(dictionary.source_lang, dictionary.target_lang)
+          { source_lang: dictionary.source_lang, target_lang: dictionary.target_lang,
+            entries: non_empty_tsv(dictionary.entries), entries_format: 'tsv' }
+        end
+
+        def validate_dictionary_languages!(source_lang, target_lang)
+          validate_language!('source_lang', source_lang)
+          validate_language!('target_lang', target_lang)
         end
 
         def non_empty_tsv(entries)

@@ -341,6 +341,20 @@ describe 'style rules' do
           .to raise_error(ArgumentError, /ID/)
       end
 
+      it 'raises ArgumentError for an empty source_language without sending a request' do # rubocop:disable RSpec/ExampleLength
+        expect do
+          api_client.create_style_rule_custom_instruction('r-1', 'l', 'p', source_language: '')
+        end.to raise_error(ArgumentError, /source_language/)
+        expect do
+          api_client.update_style_rule_custom_instruction('r', 'i', 'l', 'p', source_language: '')
+        end.to raise_error(ArgumentError, /source_language/)
+        [{ label: 'l', prompt: 'p', source_language: '' },
+         { 'label' => 'l', 'prompt' => 'p', 'source_language' => '' }].each do |instruction|
+          expect { api_client.create_style_rule('r', 'en', custom_instructions: [instruction]) }
+            .to raise_error(ArgumentError, /source_language/)
+        end
+      end
+
       it 'raises ArgumentError for an empty name, language, label or prompt' do
         expect { api_client.create_style_rule('', 'en') }.to raise_error(ArgumentError, /name/)
         expect { api_client.create_style_rule('r', '') }.to raise_error(ArgumentError, /language/)

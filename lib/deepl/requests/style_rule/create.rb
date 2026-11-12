@@ -18,6 +18,7 @@ module DeepL
           @language = language
           @configured_rules = delete_option(:configured_rules)
           @custom_instructions = delete_option(:custom_instructions)
+          validate_instruction_languages!(@custom_instructions)
         end
 
         def request
@@ -36,6 +37,19 @@ module DeepL
         # A repeated creation request could create a second resource.
         def retry_only_unprocessed?
           true
+        end
+
+        # +custom_instructions+ is sent as given; only an empty +source_language+ is rejected.
+        def validate_instruction_languages!(instructions)
+          return unless instructions.is_a?(Array)
+
+          instructions.each do |instruction|
+            next unless instruction.is_a?(Hash)
+
+            validate_language!('source_language',
+                               instruction[:source_language] || instruction['source_language'],
+                               optional: true)
+          end
         end
 
         def build_style_rule(request, response)

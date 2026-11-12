@@ -410,6 +410,16 @@ module DeepL
         raise ArgumentError, '`source_lang` must not be empty; pass nil to detect it'
       end
 
+      # @raise [ArgumentError] If the language is empty, or nil unless +optional+. An optional
+      #   language that is nil is not sent.
+      def validate_language!(name, language, optional: false)
+        return unless language.to_s.empty?
+        return if optional && language.nil?
+
+        raise ArgumentError,
+              "`#{name}` must not be empty#{'; pass nil to leave it unset' if optional}"
+      end
+
       # @raise [ArgumentError] If the +translation_memory_threshold+ option is set without the
       #   +translation_memory+ option or is not an Integer from 0 to 100.
       def validate_translation_memory_threshold!
