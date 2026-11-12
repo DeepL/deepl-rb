@@ -152,8 +152,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from Ruby 3.4) and an `https` server URL, and raises `ArgumentError` otherwise. Previously any
   scheme was accepted and the proxy, an `https` one included, was used as a plain HTTP proxy, so
   its credentials were sent unencrypted. Net::HTTP does not verify the certificate of an `https`
-  proxy. Migration: use `http://` for a plain HTTP proxy; for an `https` proxy on Ruby 3.0-3.3,
-  add `gem 'net-http', '>= 0.5'`.
+  proxy. A proxy URL with an empty host (`http://`, `http://:8080`) and a proxy hash with a blank
+  `proxy_addr` also raise `ArgumentError`; they were accepted, and an empty host connected to the
+  local machine on some platforms. Migration: use `http://` for a plain HTTP proxy; for an
+  `https` proxy on Ruby 3.0-3.3, add `gem 'net-http', '>= 0.5'`; give the proxy a host.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

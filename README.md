@@ -1495,8 +1495,8 @@ The URL scheme must be `http` or `https`; any other scheme raises `ArgumentError
 URL; otherwise `ArgumentError` is raised. Net::HTTP does not verify the proxy's certificate. The
 hash form is always a plain HTTP proxy.
 
-Any other value, such as a hash with only one of the two keys, a URL without a host or a URL with
-another scheme, raises `ArgumentError`. `DeepL::HTTPClientOptions` takes the proxy in the same forms, together with
+Any other value, such as a hash with only one of the two keys or a blank `proxy_addr`, a URL with an
+empty host (`http://`, `http://:8080`) or a URL with another scheme, raises `ArgumentError`. `DeepL::HTTPClientOptions` takes the proxy in the same forms, together with
 certificate, SSL verification and timeout options, given as `http_client_options:`:
 
 ```rb

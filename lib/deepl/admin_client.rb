@@ -38,9 +38,9 @@ module DeepL
     # @param [DeepL::HTTPClientOptions, nil] http_client_options Proxy, SSL and timeout options.
     # @param [Logger, nil] logger Logger for requests and retries.
     # @raise [ArgumentError] If +admin_key+ is empty, +server_url+ is not an absolute +http+ or
-    #   +https+ URL with a host, or +proxy+ is not a valid proxy URL, +URI+ or proxy hash, has a
-    #   proxy URL scheme other than +http+ or +https+, or is an +https+ proxy that cannot be used
-    #   (see +proxy+).
+    #   +https+ URL with a host, or +proxy+ is not a valid proxy URL, +URI+ or proxy hash (an empty
+    #   host or blank +proxy_addr+ is not valid), has a proxy URL scheme other than +http+ or
+    #   +https+, or is an +https+ proxy that cannot be used (see +proxy+).
     def initialize(admin_key, server_url: nil, headers: {}, max_retries: 5, timeout: 10, # rubocop:disable Metrics/ParameterLists
                    proxy: nil, send_platform_info: true, app_info: nil, http_client_options: nil,
                    logger: nil)

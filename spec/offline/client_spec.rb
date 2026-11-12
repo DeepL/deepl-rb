@@ -179,6 +179,17 @@ describe DeepL::Client do
         .to raise_error(ArgumentError, /proxy/)
     end
 
+    it 'rejects a proxy URL or hash with an empty host' do
+      ['http://', 'http://:8080', 'http://u:secret@:8080', URI('http://:8080'),
+       { proxy_addr: '', proxy_port: 3128 },
+       { 'proxy_addr' => ' ', 'proxy_port' => 3128 }].each do |proxy|
+        expect { described_class.new('abc', proxy: proxy) }
+          .to(raise_error(ArgumentError, /proxy/) do |e|
+            expect(e.full_message).not_to include('secret')
+          end)
+      end
+    end
+
     it 'combines the proxy URL with the other HTTP client options' do
       options = DeepL::HTTPClientOptions.new({}, nil, enable_ssl_verification: false)
 

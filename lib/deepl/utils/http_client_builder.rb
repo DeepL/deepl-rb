@@ -86,7 +86,7 @@ module DeepL
         if proxy.is_a?(Hash)
           address = proxy.fetch('proxy_addr') { proxy[:proxy_addr] }
           port = proxy.fetch('proxy_port') { proxy[:proxy_port] }
-          return [address, port] unless address.nil? || port.nil?
+          return [address, port] unless address.nil? || port.nil? || address.to_s.strip.empty?
         end
 
         raise ArgumentError,
@@ -102,7 +102,7 @@ module DeepL
         rescue URI::InvalidURIError
           nil
         end
-        return proxy_uri unless proxy_uri&.host.nil?
+        return proxy_uri unless proxy_uri.nil? || proxy_uri.host.to_s.empty?
 
         raise ArgumentError, "Invalid proxy URL: #{HTTPClientOptions.redact_proxy(proxy)}",
               cause: nil
