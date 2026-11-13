@@ -58,12 +58,12 @@ module DeepL
       end
 
       # @api private
-      # Raises ValidationError unless each pair is two strings and no source term, stripped as
+      # Raises ValidationError unless each pair is two terms and no source term, stripped as
       # the term check strips it, appears twice. Returns +pairs+.
       def self.check_pairs!(pairs)
         seen = {}
         pairs.each do |pair|
-          unless pair.is_a?(Array) && pair.size == 2 && pair.all?(String)
+          unless pair.size == 2
             raise Exceptions::ValidationError, "Entry #{pair.inspect} must be two terms"
           end
 

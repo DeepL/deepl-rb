@@ -391,13 +391,11 @@ describe 'DeepL::Client translation memory requests' do
       expect(File.read(output)).to eq('tmx')
     end
 
-    it 'raises Error for a job without a download URL and ArgumentError for a URL string' do
+    it 'raises Error for a job without a download URL' do
       expect { memories.download_translation_memory_export(job_resource('processing'), output) }
         .to raise_error(DeepL::Exceptions::Error, /no download URL/) { |e|
           expect(e).not_to be_a(ArgumentError)
         }
-      expect { memories.download_translation_memory_export(download_url, output) }
-        .to raise_error(ArgumentError, /TranslationMemoryJob/)
     end
 
     it 'retries a storage reply of 503 and raises Error with the status' do

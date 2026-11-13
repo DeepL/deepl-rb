@@ -50,11 +50,6 @@ describe 'DeepL::Client spoken terms' do
                                  extra_body_parameters: { beta: true })
     end
 
-    it 'raises ArgumentError for a term list without entries before sending a request' do
-      expect { client.create_spoken_terms('terms', [{ lang: 'en', terms: ['a'] }]) }
-        .to raise_error(ArgumentError, /entries/)
-    end
-
     it 'parses the collection, including a creation time with microseconds' do
       stub_request(:post, url('/v3/spoken-terms')).to_return(reply(collection_json, 201))
 

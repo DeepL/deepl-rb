@@ -422,7 +422,7 @@ module DeepL
       end
 
       # @raise [ArgumentError] If the +translation_memory_threshold+ option is set without the
-      #   +translation_memory+ option or is not an Integer from 0 to 100.
+      #   +translation_memory+ option or is not from 0 to 100.
       def validate_translation_memory_threshold!
         threshold = option(:translation_memory_threshold)
         return if threshold.nil?
@@ -430,9 +430,9 @@ module DeepL
         unless option?(:translation_memory)
           raise ArgumentError, '`translation_memory_threshold` requires `translation_memory`'
         end
-        return if threshold.is_a?(Integer) && threshold.between?(0, 100)
+        return if threshold.between?(0, 100)
 
-        raise ArgumentError, '`translation_memory_threshold` must be an Integer from 0 to 100'
+        raise ArgumentError, '`translation_memory_threshold` must be from 0 to 100'
       end
 
       def path

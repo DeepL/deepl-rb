@@ -282,8 +282,8 @@ describe 'DeepL::Client#translate_text' do
       expect { api_client.translate_text('a', '', 'DE') }.to raise_error(ArgumentError, /source/)
     end
 
-    [[{}, 80, /requires/], [{ translation_memory: 'tm-1' }, 101, /0 to 100/],
-     [{ translation_memory: 'tm-1' }, '80', /0 to 100/]].each do |tm, threshold, message|
+    [[{}, 80, /requires/],
+     [{ translation_memory: 'tm-1' }, 101, /0 to 100/]].each do |tm, threshold, message|
       it "raise ArgumentError for the threshold #{threshold.inspect} with #{tm.inspect}" do
         expect do
           api_client.translate_text('a', nil, 'DE', translation_memory_threshold: threshold, **tm)

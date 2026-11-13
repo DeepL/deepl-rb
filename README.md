@@ -921,8 +921,8 @@ and `delete_translation_memory`, plus the single steps of an import or export
 described below. Every method that takes a translation memory accepts either a
 string containing the translation memory ID or a `TranslationMemory` object, and
 every method that takes a job accepts its ID or a `TranslationMemoryJob`. An empty
-ID, upload URL or download URL, or an object without one, raises `ArgumentError`
-before any request is sent; an export job without a download URL raises
+ID or upload URL, or an object without one, raises `ArgumentError` before any
+request is sent; an export job without a download URL raises
 `DeepL::Exceptions::Error`.
 
 #### Listing translation memories
@@ -1045,8 +1045,8 @@ The three steps can also be performed separately with
 `wait_until_translation_memory_job_done`, for example to upload a file that is
 not available on the local file system. `create_translation_memory_import`
 accepts `content_type`, `display_name` and `extra_body_parameters`; keywords left
-`nil` are not sent. An empty file name or a `content_length` that is not a positive
-Integer raises `ArgumentError` before any request. The upload URL is a pre-signed storage URL outside of the
+`nil` are not sent. An empty file name or a `content_length` that is not
+positive raises `ArgumentError` before any request. The upload URL is a pre-signed storage URL outside of the
 DeepL API, so no authorization header and, of the configured `headers`, only a
 `User-Agent` is sent with the upload; the proxy, SSL and timeout settings of the client apply. A non-2xx
 reply of a storage URL (for example 403 for an expired URL) raises a plain
@@ -1161,8 +1161,8 @@ Pass the `translation_memory` option to `translate_text` to use a translation
 memory. You can pass either a string containing the translation memory ID, or a
 `TranslationMemory` object. Use `translation_memory_threshold` to control the
 minimum matching percentage for fuzzy matches (0-100, recommended minimum of
-75%). It requires `translation_memory`; without it, or with a value that is not an
-Integer from 0 to 100, it raises `ArgumentError` before anything is sent.
+75%). It requires `translation_memory`; without it, or with a value outside 0 to
+100, it raises `ArgumentError` before anything is sent.
 
 ```rb
 # Using a translation memory ID

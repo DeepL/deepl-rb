@@ -11,7 +11,6 @@ module DeepL
     def self.from(value)
       return nil if value.nil?
       return value if value.is_a?(AppInfo)
-      raise ArgumentError, 'app_info must be a DeepL::AppInfo or a Hash' unless value.is_a?(Hash)
 
       new(app_name: value[:app_name] || value['app_name'],
           app_version: value[:app_version] || value['app_version'])

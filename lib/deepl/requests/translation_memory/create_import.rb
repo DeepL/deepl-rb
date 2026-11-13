@@ -14,9 +14,7 @@ module DeepL
         def initialize(api, file_name, content_length, options = {}, additional_headers = {})
           super(api, options, additional_headers)
           raise ArgumentError, '`file_name` must not be empty' if file_name.to_s.empty?
-          unless content_length.is_a?(Integer) && content_length.positive?
-            raise ArgumentError, '`content_length` must be a positive Integer'
-          end
+          raise ArgumentError, '`content_length` must be positive' unless content_length.positive?
 
           @file_name = file_name
           @content_length = content_length

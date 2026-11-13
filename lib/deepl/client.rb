@@ -105,8 +105,8 @@ module DeepL
     #   given +source_lang+ is empty, an option is unknown, the glossary options are combined or
     #   more than 5 are given, +:glossary+, +:style_rule+, +:style_profile+, +:translation_memory+
     #   or an entry of +:glossary_ids+ is an empty ID or a resource object without its ID, or
-    #   +:translation_memory_threshold+ is set without +:translation_memory+ or is not an Integer
-    #   from 0 to 100; nothing is sent.
+    #   +:translation_memory_threshold+ is set without +:translation_memory+ or is not from 0 to
+    #   100; nothing is sent.
     def translate_text(text, source_lang, target_lang, **options)
       Requests::Translate.new(api, text, source_lang, target_lang, options).request
     end
@@ -187,7 +187,7 @@ module DeepL
     #   the glossary options are combined or more than 5 are given, +:glossary+, +:style_rule+,
     #   +:style_profile+, +:translation_memory+ or an entry of +:glossary_ids+ is an empty ID or a
     #   resource object without its ID, or +:translation_memory_threshold+ is set without
-    #   +:translation_memory+ or is not an Integer from 0 to 100; nothing is uploaded.
+    #   +:translation_memory+ or is not from 0 to 100; nothing is uploaded.
     def translate_document_upload(input_path, source_lang, target_lang, **options)
       raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
 
@@ -366,10 +366,9 @@ module DeepL
     # @param [String, IO] csv CSV content, or an IO to read it from. Sent as given.
     # @param [Hash] options +:extra_body_parameters+, a hash added to the request body last.
     # @return [DeepL::Resources::Glossary] The created glossary.
-    # @raise [ArgumentError] If +name+ is empty or +csv+ is neither a string nor readable.
+    # @raise [ArgumentError] If +name+ is empty.
     def create_glossary_from_csv(name, source_lang, target_lang, csv, **options)
       csv = csv.read if csv.respond_to?(:read)
-      raise ArgumentError, 'CSV content must be a String or an IO' unless csv.is_a?(String)
 
       Requests::Glossary::Create.new(api, name, source_lang, target_lang, csv, 'csv',
                                      options).request
@@ -664,8 +663,7 @@ module DeepL
     # @return [DeepL::Resources::SpokenTerms] The created collection.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping surrounding whitespace or contains a control character.
-    # @raise [ArgumentError] If the entries of a term list are missing or not an array, or the
-    #   +lang+ of a term list is nil or empty, before any request.
+    # @raise [ArgumentError] If the +lang+ of a term list is nil or empty, before any request.
     def create_spoken_terms(name, term_lists, **options)
       Requests::SpokenTerms::Create.new(api, name, term_lists, options).request
     end
@@ -701,9 +699,8 @@ module DeepL
     # @return [DeepL::Resources::SpokenTerms] The updated collection.
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the ID is empty, the collection has no ID, the entries of a term
-    #   list are missing or not an array, or the +lang+ of a term list is nil or empty, before any
-    #   request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or the +lang+ of a term
+    #   list is nil or empty, before any request.
     def update_spoken_terms(spoken_terms, name: nil, term_lists: nil, **options)
       Requests::SpokenTerms::Update.new(api, spoken_terms, name, term_lists, options).request
     end
@@ -740,8 +737,8 @@ module DeepL
     # @return [DeepL::Resources::SpokenTermsList]
     # @raise [DeepL::Exceptions::ValidationError] (an ArgumentError) If a term is empty after
     #   stripping or contains a control character.
-    # @raise [ArgumentError] If the ID is empty, the collection has no ID, the entries are missing
-    #   or not an array, or the +lang+ of the term list is nil or empty, before any request.
+    # @raise [ArgumentError] If the ID is empty, the collection has no ID, or the +lang+ of the
+    #   term list is nil or empty, before any request.
     def replace_spoken_terms_list(spoken_terms, entries, **options)
       Requests::SpokenTerms::ReplaceTermList.new(api, spoken_terms, entries, options).request
     end
@@ -1072,8 +1069,8 @@ module DeepL
     #   name).
     # @param [Hash, nil] extra_body_parameters A hash added to the request body last.
     # @return [DeepL::Resources::TranslationMemoryImport] The job ID and the upload URL.
-    # @raise [ArgumentError] If +file_name+ is empty or +content_length+ is not a positive Integer,
-    #   before any request.
+    # @raise [ArgumentError] If +file_name+ is empty or +content_length+ is not positive, before
+    #   any request.
     def create_translation_memory_import(file_name, content_length, content_type: nil,
                                          display_name: nil, extra_body_parameters: nil)
       translation_memories.create_import(file_name, content_length,
@@ -1163,8 +1160,6 @@ module DeepL
     #   by #wait_until_translation_memory_job_done.
     # @param [String] output_path Path to write the file to. Must not exist.
     # @return [nil]
-    # @raise [ArgumentError] If +job+ is not a +DeepL::Resources::TranslationMemoryJob+, before
-    #   any request.
     # @raise [DeepL::Exceptions::Error] If the job has no download URL, for example because it is
     #   not completed yet, before any request.
     # @raise [SystemCallError] +Errno::EEXIST+ if +output_path+ exists, +Errno::ENOENT+ or

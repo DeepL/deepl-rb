@@ -185,7 +185,7 @@ describe 'DeepL::Client translation memories' do
     it 'raises ArgumentError for an empty file name or a length below 1 without a request' do
       expect { client.create_translation_memory_import('', 10) }
         .to raise_error(ArgumentError, /file_name/)
-      [0, -1, '10'].each do |length|
+      [0, -1].each do |length|
         expect { client.create_translation_memory_import('tm.tmx', length) }
           .to raise_error(ArgumentError, /content_length/)
       end

@@ -94,8 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   already did. Migration: drop empty texts before the call.
 - `translate_text`, `translate_document` and `translate_document_upload` raise `ArgumentError`
   before any request for an empty or `nil` `target_lang`, an empty `source_lang` (pass `nil` to
-  detect it), and a `translation_memory_threshold` set without `translation_memory` or not an
-  Integer from 0 to 100. Document translation with the `glossary` option now requires
+  detect it), and a `translation_memory_threshold` set without `translation_memory` or outside
+  0 to 100. Document translation with the `glossary` option now requires
   `source_lang` like `glossary_ids`. Migration: pass valid values; these calls previously sent
   the value and failed at the API, or ignored the threshold.
 - **Breaking:** `translate_text`, `translate_document` and `translate_document_upload` raise
@@ -125,7 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   directory. Migration: delete the
   file first or pass a new path.
 - `create_translation_memory_import` raises `ArgumentError` before any request for an empty
-  `file_name` or a `content_length` that is not a positive Integer, and
+  `file_name` or a `content_length` that is not positive, and
   `import_translation_memory_from_filepath` rejects an empty input file before any request
   (`DeepL::Exceptions::TranslationMemoryJobError`, see below); previously the import job was
   created. Migration: pass a non-empty file.
@@ -149,10 +149,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `speech_to_speech_milliseconds:` (also `key_id:`), before a request is sent. Previously any
   keyword was sent as a body field, so a misspelled limit such as `character: 0` changed
   nothing. Migration: fix misspelled limits; send other fields with `extra_body_parameters:`.
-- **Breaking:** `DeepL::Client#download_translation_memory_export` accepts only a
-  `DeepL::Resources::TranslationMemoryJob` and raises `ArgumentError` for any other argument,
-  a download URL string included, before a request is sent. A job without a download URL still
-  raises `DeepL::Exceptions::Error`. Migration: pass the job returned by
+- **Breaking:** `DeepL::Client#download_translation_memory_export` takes the
+  `DeepL::Resources::TranslationMemoryJob` instead of a download URL string. A job without a
+  download URL still raises `DeepL::Exceptions::Error`. Migration: pass the job returned by
   `wait_until_translation_memory_job_done` instead of `job.result.download_url`.
 - **Breaking:** `DeepL::Client.new`, `DeepL::AdminClient.new` and the proxy of
   `DeepL::HTTPClientOptions` accept a proxy URL only with the `http` or `https` scheme and raise
@@ -190,6 +189,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keyword. Previously `timeout: nil` used Net::HTTP's 60-second timeouts and
   `send_platform_info: nil` left the OS and Ruby versions out of the `User-Agent`. Migration:
   pass `send_platform_info: false` to leave them out.
+- **Breaking:** the library no longer checks argument types by hand. `app_info:` of a type other
+  than `DeepL::AppInfo` or a hash no longer raises `ArgumentError`, and a glossary entry whose
+  terms are not strings (for example `{ 'a' => 1 }`) no longer raises
+  `DeepL::Exceptions::ValidationError`; such a value fails as Ruby fails or is sent as its string
+  form. Value checks are unchanged: an entry that is not two terms, an empty or invalid term and
+  a duplicate source term still raise `DeepL::Exceptions::ValidationError`. Migration: pass the
+  documented types.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job
@@ -268,9 +274,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Client#translate_document_upload` (and `#translate_document`): a `nil` value in
   `extra_body_parameters` removes the form field of that name, the library's own field included.
   Previously it was sent as an empty field. JSON request bodies still send `nil` as `null`.
-- `DeepL::Client#create_spoken_terms`, `#update_spoken_terms` and `#replace_spoken_terms_list`
-  raise `ArgumentError` before a request when the entries of a term list are missing or not an
-  array. Previously they raised `NoMethodError`.
 - `DeepL::Client#rephrase_text` and `#correct_text` raise `ArgumentError` before a request when
   `target_lang` is an empty string. Previously `''` was sent. `nil` still keeps the language of
   the text.
