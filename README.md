@@ -53,6 +53,7 @@ client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'))
 | `http_client_options:` | none | A `DeepL::HTTPClientOptions` with proxy, certificate, SSL verification and per-phase timeouts. Its timeouts take precedence over `timeout:`. |
 | `logger:` | none | Logger for requests and retries, see [Logging](#logging). |
 
+A keyword argument given as `nil` takes its default, like an omitted one.
 The authentication key is trimmed; an empty key raises `ArgumentError`.
 `DeepL::Client.free_account_auth_key?(key)` returns whether a key is a DeepL API Free key.
 

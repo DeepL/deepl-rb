@@ -18,6 +18,7 @@ module DeepL
     private_constant :USAGE_LIMITS
 
     ##
+    # A keyword argument given as +nil+ takes its default, like an omitted one.
     # @param [String] admin_key Admin API key, surrounding whitespace is removed.
     # @param [String, nil] server_url Base URL of the DeepL API, an absolute +http+ or +https+
     #   URL with a host; trailing slashes are removed. Defaults to
@@ -25,14 +26,14 @@ module DeepL
     # @param [Hash] headers HTTP headers sent with every request. A header of the same name in
     #   any casing replaces the library's, +Authorization+ and +User-Agent+ included, except the
     #   technical headers +Content-Type+, +Content-Length+, +Transfer-Encoding+ and +Host+.
-    # @param [Integer] max_retries Number of retries after the first attempt.
-    # @param [Numeric] timeout Timeout of each attempt in seconds.
+    # @param [Integer, nil] max_retries Number of retries after the first attempt.
+    # @param [Numeric, nil] timeout Timeout of each attempt in seconds.
     # @param [String, URI, Hash, nil] proxy Proxy URL (+http+ or +https+ scheme) as a String or
     #   +URI+, e.g. +http://user:password@proxy.example:8080+, or a hash with +proxy_addr+ and
     #   +proxy_port+ (string or symbol keys, both required), which is a plain HTTP proxy. An
     #   +https+ proxy is connected to over TLS and needs net-http 0.5.0 or later (bundled from
     #   Ruby 3.4) and an +https+ server URL.
-    # @param [Boolean] send_platform_info Whether to send basic platform information.
+    # @param [Boolean, nil] send_platform_info Whether to send basic platform information.
     # @param [DeepL::AppInfo, Hash, nil] app_info Your application's +app_name+ and
     #   +app_version+, added to the +User-Agent+.
     # @param [DeepL::HTTPClientOptions, nil] http_client_options Proxy, SSL and timeout options.

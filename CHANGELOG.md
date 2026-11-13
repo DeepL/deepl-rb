@@ -185,6 +185,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   empty `source_language` (`nil` still leaves it out). They sent the request with the empty or
   `null` language and the API rejected it. Migration: pass the language, or `nil` where it is
   optional; rescue `ArgumentError` instead of the API error.
+- **Breaking:** `DeepL::Client.new` and `DeepL::AdminClient.new` treat `nil` for `max_retries:`,
+  `timeout:` and `send_platform_info:` as the default (5, 10 seconds, `true`), like an omitted
+  keyword. Previously `timeout: nil` used Net::HTTP's 60-second timeouts and
+  `send_platform_info: nil` left the OS and Ruby versions out of the `User-Agent`. Migration:
+  pass `send_platform_info: false` to leave them out.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

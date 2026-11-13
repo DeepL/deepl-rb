@@ -27,6 +27,7 @@ module DeepL
     end
 
     ##
+    # A keyword argument given as +nil+ takes its default, like an omitted one.
     # @param [String] auth_key Authentication key, surrounding whitespace is removed.
     # @param [String, nil] server_url Base URL of the DeepL API, an absolute +http+ or +https+
     #   URL with a host; a port and a path prefix are kept, trailing slashes are removed.
@@ -36,21 +37,21 @@ module DeepL
     #   URLs get only a +User-Agent+). A header of the same name in any casing replaces the
     #   library's, +Authorization+ and +User-Agent+ included, except the technical headers
     #   +Content-Type+, +Content-Length+, +Transfer-Encoding+ and +Host+.
-    # @param [Integer] max_retries Number of retries after the first attempt, for HTTP 429, any 5xx
-    #   and transient network failures (not TLS failures or malformed responses). Requests that
+    # @param [Integer, nil] max_retries Number of retries after the first attempt, for HTTP 429, any
+    #   5xx and transient network failures (not TLS failures or malformed responses). Requests that
     #   create a resource (glossaries, spoken terms, style rule lists and custom instructions, style
     #   profiles, document uploads, translation memory import and export jobs) are retried only
     #   after HTTP 429 and transient network failures while connecting, such as DNS resolution
     #   errors, refused connections, unreachable hosts or networks, connection timeouts and resets
     #   during the TLS or proxy handshake, when the request was not processed.
-    # @param [Numeric] timeout Timeout of each attempt in seconds, applied to opening the
+    # @param [Numeric, nil] timeout Timeout of each attempt in seconds, applied to opening the
     #   connection, reading and writing. A longer backoff interval takes precedence.
     # @param [String, URI, Hash, nil] proxy Proxy URL (+http+ or +https+ scheme) as a String or
     #   +URI+, e.g. +http://user:password@proxy.example:8080+, or a hash with +proxy_addr+ and
     #   +proxy_port+ (string or symbol keys, both required), which is a plain HTTP proxy. An
     #   +https+ proxy is connected to over TLS and needs net-http 0.5.0 or later (bundled from
     #   Ruby 3.4) and an +https+ server URL.
-    # @param [Boolean] send_platform_info Whether to add the OS and Ruby versions to the
+    # @param [Boolean, nil] send_platform_info Whether to add the OS and Ruby versions to the
     #   +User-Agent+.
     # @param [DeepL::AppInfo, Hash, nil] app_info Your application's +app_name+ and
     #   +app_version+, added to the +User-Agent+.

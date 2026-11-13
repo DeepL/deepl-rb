@@ -12,23 +12,28 @@ module DeepL
       extend self
 
       def build_api(key, key_name:, server_url:, default_server_url:, headers:, max_retries:,
-                    timeout:, proxy:, send_platform_info:, app_info:, http_client_options:, logger:) # rubocop:disable Metrics/MethodLength,Metrics/ParameterLists
+                    timeout:, proxy:, send_platform_info:, app_info:, http_client_options:, logger:) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength,Metrics/ParameterLists
         key = key.to_s.strip
         raise ArgumentError, "#{key_name} must not be empty" if key.empty?
 
         host = host(server_url, default_server_url)
         headers = (headers || {}).to_h
         configuration = Configuration.new(
-          auth_key: key, host: host, max_network_retries: max_retries,
-          timeout: timeout, logger: logger,
+          auth_key: key, host: host, max_network_retries: or_default(max_retries, 5),
+          timeout: or_default(timeout, 10), logger: logger,
           headers: headers.reject { |name, _| user_agent_header?(name) },
           user_agent: headers.find { |name, _| user_agent_header?(name) }&.last,
-          send_platform_info: send_platform_info, app_info: AppInfo.from(app_info)
+          send_platform_info: or_default(send_platform_info, true), app_info: AppInfo.from(app_info)
         )
         API.new(configuration, merge_proxy(http_client_options, proxy))
       end
 
       private
+
+      # nil means the option was not given, so it takes the constructor default.
+      def or_default(value, default)
+        value.nil? ? default : value
+      end
 
       # Validates the server URL and removes its trailing slashes: requests append /v2/... or
       # /v3/... to the host, so a trailing slash would give //v2/...

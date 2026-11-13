@@ -105,6 +105,12 @@ describe DeepL::Client do
                                        app_info: { app_name: 'my-app', app_version: '1.2' }))
     end
 
+    it 'adds the platform info to the User-Agent with send_platform_info nil' do
+      stub_usage(headers: { 'User-Agent' => %r{\Adeepl-ruby/[^ ]+ \(.+\) ruby/} })
+
+      usage(described_class.new('abc', send_platform_info: nil))
+    end
+
     it 'never mixes the options of two clients' do
       stub_usage(headers: { 'Authorization' => 'DeepL-Auth-Key one', 'X-Client' => '1' })
       stub_usage('http://localhost:3000',
@@ -131,6 +137,13 @@ describe DeepL::Client do
       expect { usage(client) }.to raise_error(DeepL::Exceptions::ServerError)
       expect(stub).to have_been_requested.once
     end
+
+    it 'retries with max_retries nil as with the default' do
+      stub = stub_request(:get, url('/v2/usage')).to_return(reply({}, 429), usage_reply)
+
+      usage(described_class.new('abc', max_retries: nil))
+      expect(stub).to have_been_requested.twice
+    end
   end
 
   describe 'timeout' do
@@ -153,6 +166,16 @@ describe DeepL::Client do
 
       http = client.send(:api).http_client
       expect([http.open_timeout, http.read_timeout, http.write_timeout]).to eq([10.0, 7, 10.0])
+    end
+
+    it 'uses the 10-second default for timeout nil' do
+      stub_usage
+      client = described_class.new('abc', timeout: nil)
+
+      usage(client)
+
+      http = client.send(:api).http_client
+      expect([http.open_timeout, http.read_timeout, http.write_timeout]).to eq([10.0, 10.0, 10.0])
     end
   end
 
