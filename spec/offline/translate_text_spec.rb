@@ -290,5 +290,23 @@ describe 'DeepL::Client#translate_text' do
         end.to raise_error(ArgumentError, message)
       end
     end
+
+    { glossary: DeepL::Resources::Glossary, style_rule: DeepL::Resources::StyleRule,
+      style_profile: DeepL::Resources::StyleProfile,
+      translation_memory: DeepL::Resources::TranslationMemory }.each do |option, type|
+      it "raise ArgumentError for an empty #{option} ID or a #{type} without its ID" do
+        ['', type.new({}, nil, nil)].each do |value|
+          expect { api_client.translate_text('a', 'EN', 'DE', option => value) }
+            .to raise_error(ArgumentError, /`#{option}` must be a non-empty ID/)
+        end
+      end
+    end
+
+    it 'raise ArgumentError for an empty glossary_ids entry or one without its ID' do
+      ['', DeepL::Resources::MultilingualGlossary.new({}, nil, nil)].each do |entry|
+        expect { api_client.translate_text('a', 'EN', 'DE', glossary_ids: ['g-1', entry]) }
+          .to raise_error(ArgumentError, /entry of `glossary_ids` must be a non-empty ID/)
+      end
+    end
   end
 end

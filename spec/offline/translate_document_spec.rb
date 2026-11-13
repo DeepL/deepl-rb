@@ -193,6 +193,17 @@ describe 'document translation' do
       end.to raise_error(ArgumentError, /requires `translation_memory`/)
     end
 
+    it 'raises ArgumentError for an empty resource ID or a resource without its ID' do
+      input, = create_text_document(temp_dir)
+      resources = DeepL::Resources
+      [{ glossary: '' }, { glossary: resources::Glossary.new({}, nil, nil) },
+       { glossary_ids: ['g-1', ''] }, { style_rule: resources::StyleRule.new({}, nil, nil) },
+       { style_profile: '' }, { translation_memory: '' }].each do |options|
+        expect { api_client.translate_document_upload(input, 'EN', 'DE', **options) }
+          .to raise_error(ArgumentError, /must be a non-empty ID/)
+      end
+    end
+
     it 'retries after a 429 reply' do
       input, = create_text_document(temp_dir)
       stub = stub_upload.to_return(reply({}, 429), upload_reply)

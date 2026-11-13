@@ -5,7 +5,7 @@
 
 module DeepL
   module Requests
-    class Translate < Base # rubocop:disable Metrics/ClassLength
+    class Translate < Base
       STRING_TO_BOOLEAN_MAP = { '1' => true, '0' => false }.freeze
       BOOLEAN_TO_STRING_MAP = { true => '1', false => '0' }.freeze
       STRING_TO_BOOLEAN_CONVERSION = ->(value) { STRING_TO_BOOLEAN_MAP[value] }
@@ -57,38 +57,14 @@ module DeepL
         payload = { text: text_arrayified, target_lang: target_lang, show_billed_characters: true }
         payload[:source_lang] = source_lang unless source_lang.nil?
 
-        if option?(:style_rule)
-          style_rule = delete_option(:style_rule)
-          unless style_rule.nil?
-            payload[:style_id] = if style_rule.is_a?(DeepL::Resources::StyleRule)
-                                   style_rule.style_id
-                                 else
-                                   style_rule.to_s
-                                 end
-          end
-        end
-
-        if option?(:style_profile)
-          profile = delete_option(:style_profile)
-          unless profile.nil?
-            payload[:style_profile_id] = if profile.is_a?(DeepL::Resources::StyleProfile)
-                                           profile.style_profile_id
-                                         else
-                                           profile.to_s
-                                         end
-          end
-        end
-
-        if option?(:translation_memory)
-          tm = delete_option(:translation_memory)
-          unless tm.nil?
-            payload[:translation_memory_id] = if tm.is_a?(DeepL::Resources::TranslationMemory)
-                                                tm.translation_memory_id
-                                              else
-                                                tm.to_s
-                                              end
-          end
-        end
+        style_id = take_resource_option(:style_rule, [DeepL::Resources::StyleRule], :style_id)
+        payload[:style_id] = style_id unless style_id.nil?
+        profile_id = take_resource_option(:style_profile, [DeepL::Resources::StyleProfile],
+                                          :style_profile_id)
+        payload[:style_profile_id] = profile_id unless profile_id.nil?
+        tm_id = take_resource_option(:translation_memory, [DeepL::Resources::TranslationMemory],
+                                     :translation_memory_id)
+        payload[:translation_memory_id] = tm_id unless tm_id.nil?
 
         if option?(:translation_memory_threshold)
           threshold = delete_option(:translation_memory_threshold)

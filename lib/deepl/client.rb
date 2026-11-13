@@ -89,6 +89,7 @@ module DeepL
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Cannot be combined with
     #     +:glossary+. Without +source_lang+, the API detects it.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
+    #     +nil+ leaves it unset.
     #   * +:split_sentences+ - +true+/+false+ are sent as +'1'+/+'0'+.
     #   * +:custom_instructions+ - An array of instructions; a string is one instruction.
     #   * +:extra_body_parameters+ - A hash added to the request body last; replaces fields of
@@ -101,8 +102,10 @@ module DeepL
     #   an array for an array (also for a one-element array).
     # @raise [ArgumentError] If +text+ is empty or contains an empty string, +target_lang+ or a
     #   given +source_lang+ is empty, an option is unknown, the glossary options are combined or
-    #   more than 5 are given, or +:translation_memory_threshold+ is set without
-    #   +:translation_memory+ or is not an Integer from 0 to 100; nothing is sent.
+    #   more than 5 are given, +:glossary+, +:style_rule+, +:style_profile+, +:translation_memory+
+    #   or an entry of +:glossary_ids+ is an empty ID or a resource object without its ID, or
+    #   +:translation_memory_threshold+ is set without +:translation_memory+ or is not an Integer
+    #   from 0 to 100; nothing is sent.
     def translate_text(text, source_lang, target_lang, **options)
       Requests::Translate.new(api, text, source_lang, target_lang, options).request
     end
@@ -173,15 +176,17 @@ module DeepL
     #   * +:glossary_ids+ - Up to 5 glossaries (IDs or objects). Requires +source_lang+ and
     #     cannot be combined with +:glossary+.
     #   * +:style_rule+, +:style_profile+, +:translation_memory+ - An ID or the resource object.
+    #     +nil+ leaves it unset.
     #   * +:translation_memory_threshold+ - Integer 0-100. Requires +:translation_memory+.
     #   * +:extra_body_parameters+ - A hash added to the form last; replaces fields of the same
     #     name. A +nil+ value removes the field, the library's own field of that name included.
     # @return [DeepL::Resources::DocumentHandle] Handle of the uploaded document.
-    # @raise [ArgumentError] If +input_path+ does not exist, +target_lang+ or a given
-    #   +source_lang+ is empty, an option is unknown, +:glossary+ or +:glossary_ids+ is set
-    #   without +source_lang+, the glossary options are combined or more than 5 are given, or
-    #   +:translation_memory_threshold+ is set without +:translation_memory+ or is not an Integer
-    #   from 0 to 100; nothing is uploaded.
+    # @raise [ArgumentError] If +input_path+ does not exist, +target_lang+ or a given +source_lang+
+    #   is empty, an option is unknown, +:glossary+ or +:glossary_ids+ is set without +source_lang+,
+    #   the glossary options are combined or more than 5 are given, +:glossary+, +:style_rule+,
+    #   +:style_profile+, +:translation_memory+ or an entry of +:glossary_ids+ is an empty ID or a
+    #   resource object without its ID, or +:translation_memory_threshold+ is set without
+    #   +:translation_memory+ or is not an Integer from 0 to 100; nothing is uploaded.
     def translate_document_upload(input_path, source_lang, target_lang, **options)
       raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
 

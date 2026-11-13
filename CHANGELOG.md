@@ -98,6 +98,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Integer from 0 to 100. Document translation with the `glossary` option now requires
   `source_lang` like `glossary_ids`. Migration: pass valid values; these calls previously sent
   the value and failed at the API, or ignored the threshold.
+- **Breaking:** `translate_text`, `translate_document` and `translate_document_upload` raise
+  `ArgumentError` before any request when `glossary`, `style_rule`, `style_profile` or
+  `translation_memory` is an empty ID or a resource object without its ID, or when `glossary_ids`
+  has an empty entry or a glossary without its ID (`translate_document` wraps it in
+  `DeepL::Exceptions::DocumentTranslationError`). They were sent as an empty or `null` field and
+  failed at the API or were ignored. `nil` for one of the four options still leaves it unset.
+  Migration: pass a non-empty ID or a resource object returned by the API.
 - `translate_document` raises `DeepL::Exceptions::DocumentTranslationError` (with
   `document_handle` `nil` and the `ArgumentError` as `cause`) for an invalid argument of the
   upload, such as an unknown option; previously an unknown option raised a bare `ArgumentError`.

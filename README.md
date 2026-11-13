@@ -284,10 +284,10 @@ The following parameters will be automatically converted:
 | `non_splitting_tags`  | Converts arrays to strings joining by commas
 | `ignore_tags`         | Converts arrays to strings joining by commas
 | `formality`           | No conversion applied
-| `glossary`            | A glossary ID string, a `Glossary` or a `MultilingualGlossary` object, sent as `glossary_id` (see [Glossaries](#glossaries))
-| `style_rule`          | No conversion applied (can be a string ID or a StyleRule object)
-| `style_profile`       | No conversion applied (can be a string ID or a StyleProfile object, see [Style profiles](#style-profiles))
-| `translation_memory`  | No conversion applied (can be a string ID or a TranslationMemory object)
+| `glossary`            | A glossary ID string, a `Glossary` or a `MultilingualGlossary` object, sent as `glossary_id` (see [Glossaries](#glossaries)); an empty ID or an object without its ID raises `ArgumentError`
+| `style_rule`          | No conversion applied (can be a string ID or a StyleRule object); an empty ID or an object without its ID raises `ArgumentError`
+| `style_profile`       | No conversion applied (can be a string ID or a StyleProfile object, see [Style profiles](#style-profiles)); an empty ID or an object without its ID raises `ArgumentError`
+| `translation_memory`  | No conversion applied (can be a string ID or a TranslationMemory object); an empty ID or an object without its ID raises `ArgumentError`
 | `translation_memory_threshold` | No conversion applied (integer 0-100, recommended minimum 75); requires `translation_memory`, otherwise `ArgumentError`
 | `context`             | No conversion applied
 | `custom_instructions` | An array of strings; a string is sent as a one-element array
@@ -432,9 +432,10 @@ To use more than one glossary at once, specify the `glossary_ids` option with an
 array of up to 5 glossary IDs (as strings, `DeepL::Resources::Glossary` or
 `DeepL::Resources::MultilingualGlossary` objects) instead of `glossary`. This works for both text and document
 translation. `glossary_ids` cannot be combined with `glossary`,
-and raises `ArgumentError` if this rule is violated or more than 5 IDs are
-provided. For text translation, a glossary (`glossary` or `glossary_ids`) can be
-used without `source_lang`: the API detects the source language and uses the
+and raises `ArgumentError` if this rule is violated, more than 5 IDs are
+provided, or an entry is an empty ID or a glossary without its ID. For text
+translation, a glossary (`glossary` or `glossary_ids`) can be used without
+`source_lang`: the API detects the source language and uses the
 glossary's dictionary for the detected language pair. Document translation with
 `glossary` or `glossary_ids` requires `source_lang` and raises `ArgumentError` without it:
 

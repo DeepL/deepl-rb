@@ -341,7 +341,7 @@ module DeepL
         return nil if ids.empty?
 
         validate_glossary_ids!(ids)
-        ids.map { |glossary| glossary_id_string(glossary) }
+        ids.map { |glossary| glossary_id_string('An entry of `glossary_ids`', glossary) }
       end
 
       # Resolves the +glossary+ option (a glossary ID string, a `DeepL::Resources::Glossary` or
@@ -354,14 +354,28 @@ module DeepL
         glossary = delete_option(:glossary)
         return nil if glossary.nil?
 
-        glossary_id_string(glossary)
+        glossary_id_string('`glossary`', glossary)
       end
 
-      def glossary_id_string(glossary)
-        return glossary.id if glossary.is_a?(DeepL::Resources::Glossary)
-        return glossary.id if glossary.is_a?(DeepL::Resources::MultilingualGlossary)
+      def glossary_id_string(name, glossary)
+        resource_id!(name, glossary,
+                     [DeepL::Resources::Glossary, DeepL::Resources::MultilingualGlossary], :id)
+      end
 
-        glossary.to_s
+      # Removes the resource option +name+ and returns its ID, nil if the option is unset or nil.
+      def take_resource_option(name, types, id_method)
+        value = delete_option(name)
+        resource_id!("`#{name}`", value, types, id_method) unless value.nil?
+      end
+
+      # Resolves +value+, an ID or a resource object of one of +types+, to the ID.
+      #
+      # @raise [ArgumentError] If the ID is nil or empty.
+      def resource_id!(name, value, types, id_method)
+        id = types.any? { |type| value.is_a?(type) } ? value.public_send(id_method) : value
+        return id.to_s unless id.to_s.empty?
+
+        raise ArgumentError, "#{name} must be a non-empty ID or a resource object with its ID"
       end
 
       def validate_glossary_ids!(ids)
