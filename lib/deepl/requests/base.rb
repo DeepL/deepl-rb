@@ -20,13 +20,6 @@ module DeepL
       NETWORK_ERRORS = [*RETRYABLE_NETWORK_ERRORS, Net::HTTPBadResponse,
                         OpenSSL::SSL::SSLError, Net::ProtocolError].freeze
 
-      # Failures that can only happen while connecting: DNS, refused connection, connect timeout.
-      UNPROCESSED_ERRORS = [SocketError, Net::OpenTimeout, Errno::ECONNREFUSED].freeze
-
-      # Failures that are unprocessed only if raised while connecting; on an established
-      # connection they may follow a written request.
-      CONNECT_PHASE_ERRORS = [Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ENETDOWN].freeze
-
       # Errors raised while building the result from a received response: the response has an
       # unexpected format.
       RESPONSE_FORMAT_ERRORS = [JSON::ParserError, NoMethodError, TypeError, KeyError].freeze
@@ -199,7 +192,7 @@ module DeepL
       # headers arrived (a body cut off mid-read), false for a connection closed before the
       # response.
       def raise_network_error(error, response_started, connected)
-        should_retry = !retry_only_unprocessed? || unprocessed_error?(error, connected) ||
+        should_retry = !retry_only_unprocessed? || !connected ||
                        (response_started && error.is_a?(EOFError))
         raise Exceptions::ConnectionError.from_network_error(error, should_retry: should_retry)
       end
@@ -247,7 +240,7 @@ module DeepL
       def retry_network_error?(error, connected)
         Exceptions::ConnectionError.transient?(error) &&
           @backoff_timer.num_retries < api.configuration.max_network_retries &&
-          (!retry_only_unprocessed? || unprocessed_error?(error, connected))
+          (!retry_only_unprocessed? || !connected)
       end
 
       def should_retry?(response, exception, num_retries)
@@ -260,17 +253,11 @@ module DeepL
       end
 
       # Requests that are unsafe to repeat return true to retry only failures that show the
-      # request was not processed: HTTP 429, and failures while connecting: DNS resolution errors
-      # (SocketError), refused connections, connection timeouts (Net::OpenTimeout), and
-      # unreachable hosts or networks raised before the connection is made.
+      # request was not processed: HTTP 429, and every transient network failure raised before
+      # the connection is up (TCP connect, proxy CONNECT, TLS handshake), when no request byte was
+      # written.
       def retry_only_unprocessed?
         false
-      end
-
-      def unprocessed_error?(error, connected)
-        return true if UNPROCESSED_ERRORS.any? { |type| error.is_a?(type) }
-
-        !connected && CONNECT_PHASE_ERRORS.any? { |type| error.is_a?(type) }
       end
 
       # The request body: the SDK's payload, then the remaining declared options, then

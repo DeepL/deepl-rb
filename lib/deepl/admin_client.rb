@@ -102,10 +102,11 @@ module DeepL
     ##
     # Creates a developer key. The API uses "DeepL API Key" as label if none is given.
     #
-    # Creation is retried only after failures that show the request was not processed (HTTP 429, DNS
-    # resolution errors, refused connections, unreachable hosts or networks and connection
-    # timeouts), so that a retry cannot create a second key. The raised error has +should_retry?+
-    # true for these and for a response body cut off mid-read, which is not retried.
+    # Creation is retried only after failures that show the request was not processed (HTTP 429 and
+    # transient network failures while connecting, such as DNS resolution errors, refused
+    # connections, unreachable hosts or networks, connection timeouts and resets during the TLS or
+    # proxy handshake), so that a retry cannot create a second key. The raised error has
+    # +should_retry?+ true for these and for a response body cut off mid-read, which is not retried.
     #
     # @param [String, nil] label Label for the new key, not sent if +nil+.
     # @param [Hash, nil] extra_body_parameters Added to the request body last; replaces fields

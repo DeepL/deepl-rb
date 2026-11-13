@@ -369,60 +369,15 @@ describe DeepL::AdminClient do
       expect(stub).to have_been_requested.twice
     end
 
-    it 'reports should_retry? after a DNS resolution error when the retries are used up' do
-      stub_create.to_raise(SocketError)
+    [SocketError, Net::OpenTimeout, Errno::ECONNREFUSED, Errno::EHOSTUNREACH,
+     Errno::ENETUNREACH, Errno::ENETDOWN, Errno::ETIMEDOUT, Errno::ECONNRESET,
+     Errno::ECONNABORTED, EOFError].each do |error|
+      it "retries #{error} raised while connecting" do
+        expect(client.send(:api).http_client).to receive(:start).exactly(3).times.and_raise(error)
 
-      expect { described_class.new(admin_key, max_retries: 0).create_developer_key }
-        .to raise_error(DeepL::Exceptions::Error) { |e| expect(e.should_retry?).to be(true) }
-    end
-
-    it 'retries after a DNS resolution error' do
-      stub = stub_create.to_raise(SocketError).then.to_return(reply(developer_key_json))
-
-      client.create_developer_key
-
-      expect(stub).to have_been_requested.twice
-    end
-
-    it 'reports should_retry? after a connection timeout when the retries are used up' do
-      stub_create.to_raise(Net::OpenTimeout)
-
-      expect { described_class.new(admin_key, max_retries: 0).create_developer_key }
-        .to raise_error(DeepL::Exceptions::Error) { |e| expect(e.should_retry?).to be(true) }
-    end
-
-    it 'retries after a connection timeout' do
-      stub = stub_create.to_raise(Net::OpenTimeout).then.to_return(reply(developer_key_json))
-
-      client.create_developer_key
-
-      expect(stub).to have_been_requested.twice
-    end
-
-    it 'reports should_retry? after a refused connection when the retries are used up' do
-      stub_create.to_raise(Errno::ECONNREFUSED)
-
-      expect { described_class.new(admin_key, max_retries: 0).create_developer_key }
-        .to raise_error(DeepL::Exceptions::Error) { |e| expect(e.should_retry?).to be(true) }
-    end
-
-    it 'retries after a refused connection' do
-      stub = stub_create.to_raise(Errno::ECONNREFUSED).then.to_return(reply(developer_key_json))
-
-      client.create_developer_key
-
-      expect(stub).to have_been_requested.twice
-    end
-
-    it 'retries an unreachable host or network raised while connecting' do
-      [Errno::EHOSTUNREACH, Errno::ENETUNREACH, Errno::ENETDOWN].each do |error|
-        retrying = described_class.new(admin_key, max_retries: 2)
-        expect(retrying.send(:api).http_client)
-          .to receive(:start).exactly(3).times.and_raise(error)
-
-        expect { retrying.create_developer_key }
+        expect { client.create_developer_key }
           .to(raise_error(DeepL::Exceptions::ConnectionError) do |e|
-            expect(e.should_retry?).to be(true)
+            expect([e.cause, e.should_retry?]).to match([be_a(error), true])
           end)
       end
     end
