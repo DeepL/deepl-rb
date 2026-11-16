@@ -188,12 +188,12 @@ module DeepL
         end
       end
 
-      # A create does not retry an EOFError; it has +should_retry?+ true only once the response
-      # headers arrived (a body cut off mid-read), false for a connection closed before the
-      # response.
+      # A create is not retried once the request was written. Its error has +should_retry?+
+      # true only for a body cut off after the response headers arrived (any transient
+      # failure then, the test is the phase) and false for a failure before the response.
       def raise_network_error(error, response_started, connected)
         should_retry = !retry_only_unprocessed? || !connected ||
-                       (response_started && error.is_a?(EOFError))
+                       (response_started && RETRYABLE_NETWORK_ERRORS.any? { error.is_a?(_1) })
         raise Exceptions::ConnectionError.from_network_error(error, should_retry: should_retry)
       end
 

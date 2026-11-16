@@ -202,6 +202,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   an empty list, and the error carried that response and status 200 before. The message is
   unchanged. Migration: code that read `http_status_code` or `response` of this error checks the
   error class instead.
+- **Breaking:** A `DeepL::Exceptions::ConnectionError` of a request that creates a resource has
+  `should_retry?` `true` when the response body was cut off after the headers arrived, whatever
+  the network failure; it was `true` only for a closed connection (`EOFError`) and `false` for a
+  reset or read timeout before. Such a request is still not retried.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

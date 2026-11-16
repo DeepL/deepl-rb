@@ -1478,8 +1478,9 @@ handshake), so that a retry cannot create a second resource: `create_glossary`,
 `create_style_profile`, the document upload of `translate_document` and `translate_document_upload`,
 the translation memory import and export job creation, and `AdminClient#create_developer_key`. Their
 other failures are raised at once: a 5xx reply as `DeepL::Exceptions::ServerError` and a network
-failure as `DeepL::Exceptions::ConnectionError`, both with `should_retry?` false, except a response
-body cut off before its `Content-Length`, which has `should_retry?` true.
+failure as `DeepL::Exceptions::ConnectionError`, both with `should_retry?` false for a failure before
+the response. A response cut off mid-body, after its headers arrived, is not retried either, but its
+`DeepL::Exceptions::ConnectionError` has `should_retry?` true, whatever the network failure.
 
 ### Proxy configuration
 

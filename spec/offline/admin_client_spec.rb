@@ -313,6 +313,17 @@ describe DeepL::AdminClient do
       stub_request(:post, url('/v2/admin/developer-keys'))
     end
 
+    # The body read raises +error+ after the response headers arrived.
+    def fail_body_read_with(error)
+      allow(client.send(:api).http_client)
+        .to receive(:request).and_wrap_original do |request, req, &block|
+          request.call(req) do |response|
+            allow(response).to receive(:read_body).and_raise(error)
+            block.call(response)
+          end
+        end
+    end
+
     it 'posts the label and parses the key' do
       stub_create.with(body: { label: 'developer key prod' }.to_json, headers: admin_headers)
                  .to_return(reply(developer_key_json))
@@ -428,6 +439,20 @@ describe DeepL::AdminClient do
           expect([e.cause, e.should_retry?]).to match([be_a(EOFError), true])
         end)
       expect(stub).to have_been_requested.once
+    end
+
+    it 'reports should_retry? true for a body cut off by a reset or a read timeout' do
+      [Errno::ECONNRESET, Net::ReadTimeout].each do |error|
+        WebMock.reset!
+        stub = stub_create.to_return(status: 200, body: '{"api')
+        fail_body_read_with(error)
+
+        expect { client.create_developer_key }
+          .to(raise_error(DeepL::Exceptions::ConnectionError) do |e|
+            expect([e.cause, e.should_retry?]).to match([be_a(error), true])
+          end)
+        expect(stub).to have_been_requested.once
+      end
     end
 
     it 'reports should_retry? false for a connection closed before the response' do
