@@ -615,8 +615,9 @@ module DeepL
     # @param [String] target_lang Target language of the dictionary.
     # @return [DeepL::Resources::MultilingualGlossaryDictionaryEntries] The entries as a hash
     #   of source term to target term.
-    # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist or has no dictionary
-    #   for the language pair.
+    # @raise [DeepL::Exceptions::NotFound] If the glossary does not exist, or if it has no
+    #   dictionary for the language pair (then without +response+ and with +http_status_code+
+    #   +nil+).
     # @raise [ArgumentError] If the glossary ID is empty, the glossary has no ID, or +source_lang+
     #   or +target_lang+ is nil or empty, before any request.
     def get_multilingual_glossary_dictionary_entries(glossary, source_lang, target_lang)

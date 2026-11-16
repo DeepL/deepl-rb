@@ -35,12 +35,13 @@ module DeepL
         end
 
         # The API wraps the dictionary in a list, which is empty if the glossary has no
-        # dictionary for the language pair.
+        # dictionary for the language pair. That 200 response is no failed response, so the
+        # NotFound carries none and has no HTTP status.
         def build_entries(request, response)
           dictionary = (JSON.parse(response.body)['dictionaries'] || []).first
           if dictionary.nil?
             raise Exceptions::NotFound.new(
-              response, request,
+              nil, request,
               "Glossary #{id} has no dictionary for #{source_lang} -> #{target_lang}"
             )
           end

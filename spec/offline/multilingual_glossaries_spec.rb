@@ -302,7 +302,9 @@ describe 'multilingual glossaries' do
           .to_return(reply(dictionaries: []))
 
         expect { client.get_multilingual_glossary_dictionary_entries('g-1', 'EN', 'JA') }
-          .to raise_error(DeepL::Exceptions::NotFound, /no dictionary for EN -> JA/)
+          .to raise_error(DeepL::Exceptions::NotFound, /no dictionary for EN -> JA/) { |error|
+            expect([error.http_status_code, error.response]).to eq([nil, nil])
+          }
       end
 
       it 'returns entries that can be sent to another glossary' do

@@ -196,6 +196,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   form. Value checks are unchanged: an entry that is not two terms, an empty or invalid term and
   a duplicate source term still raise `DeepL::Exceptions::ValidationError`. Migration: pass the
   documented types.
+- **Breaking:** `DeepL::Client#get_multilingual_glossary_dictionary_entries` raises
+  `DeepL::Exceptions::NotFound` with `http_status_code` `nil` and `response` `nil` when the
+  glossary has no dictionary for the language pair. The API answers that case with HTTP 200 and
+  an empty list, and the error carried that response and status 200 before. The message is
+  unchanged. Migration: code that read `http_status_code` or `response` of this error checks the
+  error class instead.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job
