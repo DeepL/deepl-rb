@@ -206,6 +206,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `should_retry?` `true` when the response body was cut off after the headers arrived, whatever
   the network failure; it was `true` only for a closed connection (`EOFError`) and `false` for a
   reset or read timeout before. Such a request is still not retried.
+- **Breaking:** `DeepL::Client#translate_document_upload` raises `Errno::EISDIR` before any
+  request when `input_path` is a directory; it raised `DeepL::Exceptions::ConnectionError` after
+  connecting before. Migration: rescue `SystemCallError` for unreadable input paths.
 
 ### Removed
 - `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job

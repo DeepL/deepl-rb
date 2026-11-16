@@ -443,6 +443,12 @@ describe 'document translation' do
           .to raise_error(ArgumentError, /Input file does not exist/)
         expect(a_request(:any, /.*/)).not_to have_been_made
       end
+
+      it 'raises Errno::EISDIR for a directory as input before any request' do
+        expect { client.translate_document_upload(temp_dir, nil, 'DE') }
+          .to raise_error(Errno::EISDIR)
+        expect(a_request(:any, /.*/)).not_to have_been_made
+      end
     end
 
     describe '#translate_document_get_status' do

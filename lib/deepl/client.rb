@@ -188,8 +188,11 @@ module DeepL
     #   +:style_profile+, +:translation_memory+ or an entry of +:glossary_ids+ is an empty ID or a
     #   resource object without its ID, or +:translation_memory_threshold+ is set without
     #   +:translation_memory+ or is not from 0 to 100; nothing is uploaded.
+    # @raise [SystemCallError] If +input_path+ cannot be read, e.g. +Errno::EISDIR+ for a directory
+    #   or +Errno::EACCES+; nothing is uploaded.
     def translate_document_upload(input_path, source_lang, target_lang, **options)
       raise ArgumentError, "Input file does not exist: #{input_path}" unless File.exist?(input_path)
+      raise Errno::EISDIR, input_path if File.directory?(input_path)
 
       filename = options.delete(:filename)
       Requests::Document::Upload.new(api, input_path, source_lang, target_lang, filename,
