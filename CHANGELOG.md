@@ -203,11 +203,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a duplicate source term still raise `DeepL::Exceptions::ValidationError`. Migration: pass the
   documented types.
 - **Breaking:** `DeepL::Client#get_multilingual_glossary_dictionary_entries` raises
-  `DeepL::Exceptions::NotFound` with `http_status_code` `nil` and `response` `nil` when the
-  glossary has no dictionary for the language pair. The API answers that case with HTTP 200 and
-  an empty list, and the error carried that response and status 200 before. The message is
-  unchanged. Migration: code that read `http_status_code` or `response` of this error checks the
-  error class instead.
+  `DeepL::Exceptions::NotFound` with `http_status_code` `nil` and `response` `nil` if the API
+  answers HTTP 200 with no entries for the language pair; the error carried that response and
+  status 200 before. The message is unchanged. The API answers a missing dictionary with HTTP
+  404, which raises `DeepL::Exceptions::NotFound` with status 404 and the response, as before.
+  Migration: code that read `http_status_code` or `response` of this error checks the error
+  class instead.
 - **Breaking:** A `DeepL::Exceptions::ConnectionError` of a request that creates a resource has
   `should_retry?` `true` when the response body was cut off after the headers arrived, whatever
   the network failure; it was `true` only for a closed connection (`EOFError`) and `false` for a

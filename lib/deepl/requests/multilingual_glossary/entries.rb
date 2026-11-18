@@ -34,9 +34,9 @@ module DeepL
           Net::HTTP::Get.new(uri.request_uri, http_headers)
         end
 
-        # The API wraps the dictionary in a list, which is empty if the glossary has no
-        # dictionary for the language pair. That 200 response is no failed response, so the
-        # NotFound carries none and has no HTTP status.
+        # The API wraps the dictionary in a list and answers a missing dictionary with 404. If it
+        # answers 200 with an empty list instead, that is no failed response, so the NotFound
+        # carries none and has no HTTP status.
         def build_entries(request, response)
           dictionary = (JSON.parse(response.body)['dictionaries'] || []).first
           if dictionary.nil?

@@ -517,7 +517,8 @@ List or fetch multilingual glossaries with `list_multilingual_glossaries` and
 `get_multilingual_glossary`. The glossary does not include the entries; fetch the
 entries of one language pair with `get_multilingual_glossary_dictionary_entries`,
 which raises `DeepL::Exceptions::NotFound` if the glossary has no dictionary for
-that pair (its `http_status_code` is `nil`: the API answered 200). The returned
+that pair (the API answers 404; if it answers 200 with no entries instead, the
+error's `http_status_code` is `nil`). The returned
 object can be passed to the create, update and replace methods:
 
 ```rb
