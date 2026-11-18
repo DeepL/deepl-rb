@@ -311,6 +311,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `#export_translation_memory_to_filepath`) sends the export request without a body or
   `Content-Type` (`Content-Length: 0`), as the API defines it. Previously it sent `{}` as a JSON
   body.
+- The gem no longer contains the specs (`spec/`), `.gitlab-ci.yml` and `license_checker.sh`.
 
 ## [3.10.0] - 2026-11-02
 TL;DR: new `DeepL::Client`, an instance-based client, and `DeepL::AdminClient` for the Admin API.

@@ -15,6 +15,21 @@ require 'rake'
 require 'juwelier'
 require_relative 'lib/version'
 
+# Repository files that are not shipped in the gem.
+GEM_FILES_EXCLUDE = %w[
+  .bumpversion.toml
+  .github/**/*
+  .circleci/**/*
+  catalog-info.yaml
+  .auto-approve.yaml
+  .gitar/**/*
+  .releaserc.mjs
+  renovate.json5
+  .gitlab-ci.yml
+  license_checker.sh
+  spec/**/*
+].freeze
+
 Juwelier::Tasks.new do |gem|
   gem.name = 'deepl-rb'
   gem.homepage = 'https://github.com/DeepLcom/deepl-rb'
@@ -34,14 +49,7 @@ Juwelier::Tasks.new do |gem|
     'documentation_uri' => 'https://github.com/DeepLcom/deepl-rb/blob/main/README.md',
     'homepage_uri' => 'https://github.com/DeepLcom/deepl-rb'
   }
-  gem.files.exclude '.bumpversion.toml'
-  gem.files.exclude '.github/**/*'
-  gem.files.exclude '.circleci/**/*'
-  gem.files.exclude 'catalog-info.yaml'
-  gem.files.exclude '.auto-approve.yaml'
-  gem.files.exclude '.gitar/**/*'
-  gem.files.exclude '.releaserc.mjs'
-  gem.files.exclude 'renovate.json5'
+  gem.files.exclude(*GEM_FILES_EXCLUDE)
 end
 
 Juwelier::RubygemsDotOrgTasks.new
