@@ -98,11 +98,11 @@ Changes in behaviour:
 ```ruby
 # Before (3.x)
 DeepL.translate('Hello', 'EN', 'DE', formality: 'more')
-DeepL.rephrase('Hello there', 'EN-US', 'business', 'confident')
+DeepL.rephrase('Hello there', 'EN-US', 'business')
 
 # After
 client.translate_text('Hello', 'EN', 'DE', formality: 'more')
-client.rephrase_text('Hello there', 'EN-US', writing_style: 'business', tone: 'confident')
+client.rephrase_text('Hello there', 'EN-US', writing_style: 'business')
 ```
 
 - `translate_text` returns an array when you pass an array, also an array with one element.
