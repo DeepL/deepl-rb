@@ -641,7 +641,7 @@ puts term_list.entry_count
 To delete the list of one language or the entire collection (both return `nil`):
 
 ```rb
-client.delete_spoken_terms_list(spoken_terms, 'de')
+client.delete_spoken_terms_list(spoken_terms, 'en')
 client.delete_spoken_terms(spoken_terms)
 ```
 
@@ -1442,7 +1442,7 @@ reached: <API message>`.
 An exampling of handling a generic exception:
 
 ```rb
-def my_method
+def my_method(client)
   item = client.translate_text 'This is my text', nil, 'ES'
 rescue DeepL::Exceptions::RequestError => e
   puts 'Oops!'
