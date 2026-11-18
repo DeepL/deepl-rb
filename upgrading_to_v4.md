@@ -82,8 +82,13 @@ Changes in behaviour:
 - **Proxy** must be an `http://` or `https://` URL (String or `URI`) or a hash with `proxy_addr`
   and `proxy_port`. Any other scheme (for example `socks5://`) or value raises `ArgumentError`.
   An `https` proxy is now connected to over TLS, which needs net-http 0.5.0 or later and an
-  `https` server URL. Before, it was used as a plain HTTP proxy. This applies to `Client.new`,
-  `AdminClient.new` and `DeepL::HTTPClientOptions`.
+  `https` server URL. Before, it was used as a plain HTTP proxy. A proxy URL with an empty host
+  (`http://`, `http://:8080`) and a proxy hash with a blank `proxy_addr` raise `ArgumentError`
+  too. This applies to `Client.new`, `AdminClient.new` and `DeepL::HTTPClientOptions`.
+- **`nil` means the default** for `max_retries:`, `timeout:` and `send_platform_info:` (5, 10
+  seconds, `true`), like an omitted keyword. Before, `timeout: nil` used Net::HTTP's 60-second
+  timeouts and `send_platform_info: nil` left the OS and Ruby versions out of the `User-Agent`.
+  Pass `send_platform_info: false` to leave them out.
 
 ## Text translation
 
@@ -120,7 +125,12 @@ client.rephrase_text('Hello there', 'EN-US', writing_style: 'business', tone: 'c
   raise it for `target_lang: ''`; `nil` still keeps the language of the text.
 - `translate_text`, `translate_document` and `translate_document_upload` raise `ArgumentError`
   for an empty or `nil` `target_lang`, an empty `source_lang` (pass `nil` to detect it), and a
-  `translation_memory_threshold` without `translation_memory` or outside the Integers 0 to 100.
+  `translation_memory_threshold` without `translation_memory` or outside 0 to 100.
+- The same three methods raise `ArgumentError` when `glossary`, `style_rule`, `style_profile` or
+  `translation_memory` is an empty ID or a resource object without its ID, or when
+  `glossary_ids` has an empty entry or a glossary without its ID (`translate_document` wraps it
+  in `DeepL::Exceptions::DocumentTranslationError`). Before, they were sent empty or as `null`.
+  `nil` for one of the four options still leaves it unset.
 
 ## Documents
 
@@ -154,6 +164,10 @@ client.translate_document_download(handle, 'out.docx')
   (`document_handle` is `nil`) for an existing output file and for a directory that is missing
   or not writable (the `SystemCallError` is its `cause`), and for an invalid upload argument,
   such as an unknown option (the `ArgumentError` is its `cause`). A missing input file still raises `ArgumentError`.
+- `translate_document_upload` raises `Errno::EISDIR` before any request if `input_path` is a
+  directory (`translate_document` wraps it in `DeepL::Exceptions::DocumentTranslationError`);
+  before, it raised `DeepL::Exceptions::ConnectionError`. Rescue `SystemCallError` for unreadable
+  input paths.
 - The `glossary` option of document translation requires `source_lang`.
 - A `nil` value in `extra_body_parameters` now removes that form field; before, it was sent
   empty.
@@ -186,8 +200,16 @@ client.delete_glossary(glossary)        # returns nil
 The multilingual glossary and spoken terms methods raise `ArgumentError` before any request for
 an empty ID, a glossary or spoken terms object without an ID, an empty name, an empty
 `source_lang` or `target_lang` of `delete_multilingual_glossary_dictionary`, an empty
-`dictionaries` array, and dictionary entries or CSV content that are empty. Spoken terms with
-missing entries raise `ArgumentError`, not `NoMethodError`.
+`dictionaries` array, and dictionary entries or CSV content that are empty. The multilingual
+glossary methods that take a dictionary and `get_multilingual_glossary_dictionary_entries` raise
+it for a `nil` or empty `source_lang` or `target_lang`, and the spoken terms methods that take a
+language for a `nil` or empty `lang`; before, the request was sent and the API rejected it.
+
+`get_multilingual_glossary_dictionary_entries` raises `DeepL::Exceptions::NotFound` if the
+glossary has no dictionary for the language pair. The API answers that with HTTP 404, and the
+error has status 404 and the response. If the API answers 200 with no entries instead, the error
+now has `http_status_code` `nil` and `response` `nil`; before, it carried status 200 and that
+response. Check the error class, not the status.
 
 ## Style rules
 
@@ -210,7 +232,10 @@ rule.configured_rules.fetch('numbers', {})
   sends it, not a `ConfiguredRules` object. `DeepL::Resources::ConfiguredRules` is removed.
   Absent categories are no longer filled with `{}`.
 - The style rule methods raise `ArgumentError` before any request for an empty ID, a style rule
-  or custom instruction without an ID, and an empty name, language, label or prompt.
+  or custom instruction without an ID, and an empty name, language, label or prompt. An empty
+  `source_language` of `create_style_rule_custom_instruction`,
+  `update_style_rule_custom_instruction` or the `custom_instructions` of `create_style_rule`
+  raises it too; `nil` still leaves it out.
 
 ## Translation memories
 
@@ -222,8 +247,8 @@ memory methods of `DeepL::Client` (`list_translation_memories`, ...).
   ```ruby
   client.import_translation_memory_from_filepath('tm.tmx', extra_body_parameters: { key: 'value' })
   ```
-- `download_translation_memory_export(job, output_path)` accepts only a
-  `DeepL::Resources::TranslationMemoryJob`, no longer a download URL string. Pass the job
+- `download_translation_memory_export(job, output_path)` takes a
+  `DeepL::Resources::TranslationMemoryJob` instead of a download URL string. Pass the job
   returned by `wait_until_translation_memory_job_done`.
   ```ruby
   # Before
@@ -242,7 +267,7 @@ memory methods of `DeepL::Client` (`list_translation_memories`, ...).
   it raised `ArgumentError`.
 - Methods raise `ArgumentError` instead of `DeepL::Exceptions::Error` for an empty translation
   memory ID or job ID and an empty upload or download URL. `create_translation_memory_import`
-  also rejects an empty `file_name` and a `content_length` that is not a positive Integer.
+  also rejects an empty `file_name` and a `content_length` that is not positive.
 - `TranslationMemoryJobResult::STATUS_DOWNLOADED` is removed (the API never sends it); use
   `STATUS_COMPLETED` or `done?`. `TranslationMemoryJob#finished?` is `false` for `downloaded`.
 - `create_translation_memory_export` sends no request body (`Content-Length: 0`).
@@ -292,13 +317,20 @@ usage.any_character_limit_reached?
   `create_multilingual_glossary`, `create_multilingual_glossary_from_csv`, `create_spoken_terms`,
   `create_style_rule`, `create_style_rule_custom_instruction`, `create_style_profile`, the
   document upload, and the translation memory import and export job creation are retried only
-  when the request cannot have been processed: after HTTP 429, DNS resolution errors, refused
-  connections and connection timeouts. A 5xx reply raises `DeepL::Exceptions::ServerError` with
-  `should_retry?` `false` at once. If you retry these calls yourself, check first whether the
-  resource was created.
-- A response body cut off before its `Content-Length` on such a request raises
-  `ConnectionError` with `should_retry?` `true`; it was `false`. A connection closed before the
-  response (`EOFError`) is still `false`. Check first whether the resource was created.
+  when the request cannot have been processed: after HTTP 429 and transient network failures
+  while connecting, before the request is sent, such as DNS resolution errors, refused
+  connections, unreachable hosts or networks, connection timeouts and resets during the TLS or
+  proxy handshake. A 5xx reply raises `DeepL::Exceptions::ServerError` with `should_retry?`
+  `false` at once. If you retry these calls yourself, check first whether the resource was
+  created.
+- `AdminClient#create_developer_key` is retried after the same connect failures. Before, it was
+  retried only after DNS resolution errors, refused connections and connection timeouts, and
+  raised `ConnectionError` at once for the others. Code that retries it itself now sees the
+  library's retries first.
+- A response body cut off after the headers arrived on such a request, `create_developer_key`
+  included, is not retried and raises `ConnectionError` with `should_retry?` `true`, whatever the
+  network failure; before, it was `false`. A connection closed before
+  the response is still `false`. Check first whether the resource was created.
 - **Messages** of `AuthorizationFailed`, `RequestEntityTooLarge`, `LimitExceeded`,
   `QuotaExceeded` and `ServerError` now end with `: <API message>`. Match the start of the
   message or the class, not the exact text.
@@ -310,6 +342,11 @@ usage.any_character_limit_reached?
 - `AdminClient#set_developer_key_usage_limits` accepts only `characters:`,
   `speech_to_text_milliseconds:` and `speech_to_speech_milliseconds:`; any other keyword raises
   `ArgumentError`. Send other fields with `extra_body_parameters:`.
+- Argument types are no longer checked by hand. `app_info:` of a type other than
+  `DeepL::AppInfo` or a Hash no longer raises `ArgumentError`, and a glossary entry whose terms
+  are not strings (for example `{ 'a' => 1 }`) no longer raises
+  `DeepL::Exceptions::ValidationError`; such a value fails as Ruby fails or is sent as its string
+  form. Value checks are unchanged. Pass the documented types.
 - `Client#translate_document_download`, `#delete_glossary` and the style rule delete methods
   return `nil`.
 
