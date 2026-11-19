@@ -342,9 +342,9 @@ usage.any_character_limit_reached?
 - **Messages** of `AuthorizationFailed`, `RequestEntityTooLarge`, `LimitExceeded`,
   `QuotaExceeded` and `ServerError` now end with `: <API message>`, which replaces the final
   period of the fixed text. Check the error class, not the message.
-- `Language#supports_formality?` returns `nil` for a source language, where it raised
-  `NotSupported`. `DeepL.languages` is removed; use `client.get_source_languages` or
-  `client.get_target_languages`.
+- `Language#supports_formality?` returns `nil` for a source language; for a source language of
+  the removed `DeepL.languages` it raised `NotSupported`. `DeepL.languages` is removed; use
+  `client.get_source_languages` or `client.get_target_languages`.
 
 ## Types and signatures
 
