@@ -12,10 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `delete_glossary(glossary)` and `get_glossary_languages`. A glossary argument is an ID or a
   `DeepL::Resources::Glossary`; the entries are returned as a hash and `delete_glossary` returns
   `nil`. Please refer to the README for usage instructions.
-
-### Changed
 - Added the migration guide [Upgrading to 4.0.0](upgrading_to_v4.md), which lists every breaking
   change of this release with before and after code.
+
+### Changed
 - **Breaking:** `DeepL::Client#create_translation_memory_import` and
   `#import_translation_memory_from_filepath` take the keyword `extra_body_parameters:` instead
   of `**options`. Migration: send fields the library does not model with `extra_body_parameters:`;
@@ -63,21 +63,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   could create a second resource. A 5xx reply now raises `DeepL::Exceptions::ServerError` with
   `should_retry?` false at once. Migration: if you retry these calls yourself, check first whether
   the resource was created.
-- **Breaking:** A response body cut off before its `Content-Length` on a request that creates a resource,
-  `create_developer_key` included, is still not retried, but now raises
-  `DeepL::Exceptions::ConnectionError` with `should_retry?` true; previously `false`. A
-  connection closed before the response, which Net::HTTP also reports as `EOFError`, still has
-  `should_retry?` false. Migration:
-  if you retry on `should_retry?`, check first whether the resource was created.
+- **Breaking:** A `DeepL::Exceptions::ConnectionError` of a request that creates a resource,
+  `create_developer_key` included, has `should_retry?` `true` when the response failed after its
+  headers arrived (body cut off before its `Content-Length`, reset or read timeout), and the
+  library does not retry it; in 3.10.0 `create_developer_key` raised it with `should_retry?`
+  `false` and the other create requests retried it, and a connection closed before the response
+  now has `should_retry?` `false`. Migration: if you retry on `should_retry?`, check first
+  whether the resource was created.
 - **Breaking:** `DeepL::Exceptions::ValidationError` is now an `ArgumentError` instead of a
   `DeepL::Exceptions::Error`, so `rescue ArgumentError` catches every invalid argument, also an
   invalid glossary or spoken terms term or a malformed glossary entry. Migration: rescue
   `ArgumentError` (or `DeepL::Exceptions::ValidationError`) instead of `DeepL::Exceptions::Error`
-  for these.
+  for these. It no longer has `http_status_code` or `should_retry?`, and its constructor takes
+  only a message.
 - **Breaking:** The translation memory methods raise `ArgumentError` instead of `DeepL::Exceptions::Error`
   for an empty translation memory ID or job ID (or a `TranslationMemory` or
-  `TranslationMemoryJob` without one) and an empty upload or download URL. An export job without
-  a download URL still raises `DeepL::Exceptions::Error`. Migration: rescue `ArgumentError` for
+  `TranslationMemoryJob` without one) and an empty upload URL. An export job with an empty or no
+  download URL still raises `DeepL::Exceptions::Error`. Migration: rescue `ArgumentError` for
   these.
 - **Breaking:** The multilingual glossary methods raise `ArgumentError` before any request for an empty
   glossary ID or a `MultilingualGlossary` without one (previously sent to `/v3/glossaries/`), an
@@ -108,15 +110,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ArgumentError` before any request when `glossary`, `style_rule`, `style_profile` or
   `translation_memory` is an empty ID or a resource object without its ID, or when `glossary_ids`
   has an empty entry or a glossary without its ID (`translate_document` wraps it in
-  `DeepL::Exceptions::DocumentTranslationError`). They were sent as an empty or `null` field and
-  failed at the API or were ignored. `nil` for one of the four options still leaves it unset.
+  `DeepL::Exceptions::DocumentTranslationError`). They were sent as an empty or `null` field, or
+  left out (a glossary object without its ID), and failed at the API or were ignored. `nil` for
+  one of the four options still leaves it unset.
   Migration: pass a non-empty ID or a resource object returned by the API.
 - **Breaking:** `translate_document` raises `DeepL::Exceptions::DocumentTranslationError` (with
-  `document_handle` `nil` and the `ArgumentError` as `cause`) for an invalid argument of the
-  upload, such as an unknown option; previously an unknown option raised a bare `ArgumentError`.
-  It also checks before the upload that the directory of `output_path` exists and is writable;
-  previously the document was uploaded and translated and the download failed. A missing input
-  file still raises `ArgumentError`. Migration: rescue `DeepL::Exceptions::DocumentTranslationError`.
+  `document_handle` `nil` and the `ArgumentError` as `cause`) for an unknown option, which
+  3.10.0 dropped, and checks before the upload that the directory of `output_path` exists and is
+  writable; previously the document was uploaded and translated and the download failed. A
+  missing input file still raises `ArgumentError`. Migration: rescue
+  `DeepL::Exceptions::DocumentTranslationError`.
 - **Breaking:** `translate_document_download` no longer overwrites an existing file. Before the request it
   raises `Errno::EEXIST` if `output_path` exists and `Errno::ENOENT` or `Errno::EACCES` if its
   directory is missing or not writable. Migration: delete the file first or pass a new path.
@@ -139,15 +142,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `QuotaExceeded` and `ServerError` now end with the API's error message from the response
   body (`<fixed text>: <API message>`), as the other HTTP errors already did; without one the
   fixed text stays. The `RequestEntityTooLarge` message no longer claims a limit of 50 text
-  parts. Migration: code that compares these messages exactly should match their start or
-  check the error class.
+  parts. Migration: code that compares these messages should check the error class instead.
 - **Breaking:** `import_translation_memory_from_filepath` and `export_translation_memory_to_filepath` wrap
   every failure except a missing input file in the new
   `DeepL::Exceptions::TranslationMemoryJobError` (a `DeepL::Exceptions::Error`), with the
   original error as `cause`. Its `job_id` is the ID of the job, set as soon as the job was
   created; its `job` is the last `TranslationMemoryJob` status fetched, `nil` before the first
-  status check. `http_status_code` and `should_retry?` are copied from a DeepL error cause. Previously the underlying error was raised: `DeepL::Exceptions::Error` or one of
-  its subclasses, and for an empty input file `ArgumentError`. Migration: rescue
+  status check. `http_status_code` and `should_retry?` are copied from a DeepL error cause.
+  Previously the underlying error was raised (`DeepL::Exceptions::Error` or one of its
+  subclasses). Migration: rescue
   `DeepL::Exceptions::TranslationMemoryJobError` (or `DeepL::Exceptions::Error`) and inspect
   `cause`, `job_id` and `job`.
 - **Breaking:** `DeepL::AdminClient#set_developer_key_usage_limits` raises `ArgumentError` naming the keyword
@@ -155,9 +158,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `speech_to_speech_milliseconds:` (also `key_id:`), before a request is sent. Previously any
   keyword was sent as a body field, so a misspelled limit such as `character: 0` changed
   nothing. Migration: fix misspelled limits; send other fields with `extra_body_parameters:`.
-- **Breaking:** `DeepL::Client#download_translation_memory_export` takes the
-  `DeepL::Resources::TranslationMemoryJob` instead of a download URL string. A job without a
-  download URL still raises `DeepL::Exceptions::Error`. Migration: pass the job returned by
+- **Breaking:** `DeepL::Client#download_translation_memory_export` no longer accepts a download URL
+  string, only the `DeepL::Resources::TranslationMemoryJob`; a string raises `NoMethodError`.
+  Migration: pass the job returned by
   `wait_until_translation_memory_job_done` instead of `job.result.download_url`.
 - **Breaking:** `DeepL::Client.new`, `DeepL::AdminClient.new` and the proxy of
   `DeepL::HTTPClientOptions` accept a proxy URL only with the `http` or `https` scheme and raise
@@ -176,7 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Errno::ETIMEDOUT`, `Errno::ECONNRESET` or `Errno::ECONNABORTED` from connect, and a reset during
   the TLS or proxy handshake. The same errors on an established connection are not retried. It
   raised `DeepL::Exceptions::ConnectionError` with `should_retry?` false at once before. The other
-  requests that create a resource retry them from this release on, like the failures listed above.
+  requests that create a resource already retried these failures in 3.10.0 and still do.
   Migration: none needed; code that retries `create_developer_key` itself after such an error now
   sees the library's retries first.
 - **Breaking:** the multilingual glossary methods that take a dictionary
@@ -209,14 +212,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   404, which raises `DeepL::Exceptions::NotFound` with status 404 and the response, as before.
   Migration: code that read `http_status_code` or `response` of this error checks the error
   class instead.
-- **Breaking:** A `DeepL::Exceptions::ConnectionError` of a request that creates a resource has
-  `should_retry?` `true` when the response body was cut off after the headers arrived, whatever
-  the network failure; it was `true` only for a closed connection (`EOFError`) and `false` for a
-  reset or read timeout before. Such a request is still not retried. Migration: if you retry on
-  `should_retry?`, check first whether the resource was created.
 - **Breaking:** `DeepL::Client#translate_document_upload` raises `Errno::EISDIR` before any
   request when `input_path` is a directory; it raised `DeepL::Exceptions::ConnectionError` after
   connecting before. Migration: rescue `SystemCallError` for unreadable input paths.
+- **Breaking:** `DeepL::Client#create_multilingual_glossary`, `#update_multilingual_glossary`,
+  `#update_multilingual_glossary_dictionary` and `#replace_multilingual_glossary_dictionary` raise
+  `ArgumentError` before any request when a dictionary hash gives its entries as an empty or
+  whitespace-only CSV string (`entries_format: 'csv'`). Previously the request was sent and the
+  API rejected it. `#create_multilingual_glossary_from_csv` is unchanged.
+  Migration: pass a non-empty value; rescue `ArgumentError` instead of the API error.
+- **Breaking:** `DeepL::Client#rephrase_text` and `#correct_text` raise `ArgumentError` before a request when
+  `target_lang` is an empty string. Previously `''` was sent. `nil` still keeps the language of
+  the text.
+  Migration: pass a non-empty value; rescue `ArgumentError` instead of the API error.
+- **Breaking:** `DeepL::Client#update_multilingual_glossary_dictionary_from_csv` and
+  `#replace_multilingual_glossary_dictionary_from_csv` raise `ArgumentError` before a request
+  when the CSV content (after reading an IO) is empty or whitespace only. Previously it was sent.
+  Migration: pass a non-empty value; rescue `ArgumentError` instead of the API error.
 
 ### Removed
 - **Breaking:** `DeepL::Resources::TranslationMemoryJobResult::STATUS_DOWNLOADED`. `downloaded` is not a job
@@ -228,7 +240,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a glossary object. `glossary_id` now raises `ArgumentError` like any other unknown option.
 - **Breaking:** The `glossary_id` option of document translation (`DeepL::Client#translate_document`,
   `#translate_document_upload`, `DeepL.document.upload`), deprecated in 3.10.0. Use `glossary`
-  instead. `glossary_id` is no longer sent.
+  instead. `glossary_id` now raises `ArgumentError` like any other unknown option.
 - **Breaking:** `DeepL::Resources::Usage#character_count`, `#character_limit` and `#quota_exceeded?`,
   deprecated in 3.10.0. Use `character.count`, `character.limit` and
   `character.limit_reached?` (or `any_character_limit_reached?`) instead.
@@ -279,11 +291,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Migration: drop the `rescue`; `Language#supports_formality?` returns `nil` instead (see Changed).
 
 ### Fixed
-- `DeepL::Client#create_multilingual_glossary`, `#update_multilingual_glossary`,
-  `#update_multilingual_glossary_dictionary` and `#replace_multilingual_glossary_dictionary` raise
-  `ArgumentError` before any request when a dictionary hash gives its entries as an empty or
-  whitespace-only CSV string (`entries_format: 'csv'`). Previously the request was sent and the
-  API rejected it. `#create_multilingual_glossary_from_csv` is unchanged.
 - `DeepL::Client.new` and `DeepL::AdminClient.new` remove trailing slashes from `server_url`, so a
   URL ending in `/` no longer makes every request go to a `//v2/...` or `//v3/...` path, which the
   API does not serve (HTTP 301 or 404), and `inspect` shows the URL without the slash.
@@ -301,12 +308,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeepL::Client#translate_document_upload` (and `#translate_document`): a `nil` value in
   `extra_body_parameters` removes the form field of that name, the library's own field included.
   Previously it was sent as an empty field. JSON request bodies still send `nil` as `null`.
-- `DeepL::Client#rephrase_text` and `#correct_text` raise `ArgumentError` before a request when
-  `target_lang` is an empty string. Previously `''` was sent. `nil` still keeps the language of
-  the text.
-- `DeepL::Client#update_multilingual_glossary_dictionary_from_csv` and
-  `#replace_multilingual_glossary_dictionary_from_csv` raise `ArgumentError` before a request
-  when the CSV content (after reading an IO) is empty or whitespace only. Previously it was sent.
 - `DeepL::Client#create_translation_memory_export` (also used by
   `#export_translation_memory_to_filepath`) sends the export request without a body or
   `Content-Type` (`Content-Length: 0`), as the API defines it. Previously it sent `{}` as a JSON
