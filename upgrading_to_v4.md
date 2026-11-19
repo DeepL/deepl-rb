@@ -76,7 +76,8 @@ Changes in behaviour:
   client = DeepL::Client.new(ENV.fetch('DEEPL_AUTH_KEY'),
                              server_url: ENV.fetch('DEEPL_SERVER_URL', nil))
   ```
-- **Default timeout** is 10 seconds per attempt, was 60. Pass `timeout: 60` to keep the old value.
+- **Default timeout** is 10 seconds per attempt; the module-level API used 60 (`DeepL::Client`
+  already used 10). Pass `timeout: 60` to keep the old value.
 - **`server_url`** must be an absolute `http` or `https` URL with a host, otherwise
   `ArgumentError` is raised when the client is built. Trailing slashes are removed.
 - **Proxy** must be an `http://` or `https://` URL (String or `URI`) or a hash with `proxy_addr`
@@ -140,6 +141,7 @@ client.rephrase_text('Hello there', 'EN-US', writing_style: 'business')
 # Before (3.x)
 handle = DeepL.document.upload('in.docx', 'EN', 'DE', 'in.docx')
 DeepL.document.get_status(handle)
+handle.wait_until_document_translation_finished
 DeepL.document.download(handle, 'out.docx')
 
 # After
@@ -163,7 +165,9 @@ client.translate_document_download(handle, 'out.docx')
   instead of after the translation. It raises `DeepL::Exceptions::DocumentTranslationError`
   (`document_handle` is `nil`) for an existing output file and for a directory that is missing
   or not writable (the `SystemCallError` is its `cause`), and for an invalid upload argument,
-  such as an unknown option (the `ArgumentError` is its `cause`). A missing input file still raises `ArgumentError`.
+  such as an unknown option (the `ArgumentError` is its `cause`). A missing input file raises
+  `ArgumentError`, as `Client#translate_document` did in 3.10.0;
+  `DeepL.document.translate_document` raised `DeepL::Exceptions::DocumentTranslationError`.
 - `translate_document_upload` raises `Errno::EISDIR` before any request if `input_path` is a
   directory (`translate_document` wraps it in `DeepL::Exceptions::DocumentTranslationError`);
   before, it raised `DeepL::Exceptions::ConnectionError`. Rescue `SystemCallError` for unreadable
@@ -241,6 +245,8 @@ rule.configured_rules.fetch('numbers', {})
 
 `DeepL.translation_memories` and `DeepL::TranslationMemoryApi` are removed. Use the translation
 memory methods of `DeepL::Client` (`list_translation_memories`, ...).
+A non-2xx reply of the upload or download URL raises `DeepL::Exceptions::Error` with
+`http_status_code`.
 
 - `create_translation_memory_import` and `import_translation_memory_from_filepath` take
   `extra_body_parameters:` instead of `**options`; any other option raises `ArgumentError`.
@@ -327,15 +333,18 @@ usage.any_character_limit_reached?
   retried only after DNS resolution errors, refused connections and connection timeouts, and
   raised `ConnectionError` at once for the others. Code that retries it itself now sees the
   library's retries first.
-- A response body cut off after the headers arrived on such a request, `create_developer_key`
-  included, is not retried and raises `ConnectionError` with `should_retry?` `true`, whatever the
-  network failure; before, it was `false`. A connection closed before
-  the response is still `false`. Check first whether the resource was created.
+- A response that fails after its headers arrived on such a request, `create_developer_key`
+  included, is not retried and raises `ConnectionError` with `should_retry?` `true` (body cut off
+  before its `Content-Length`, reset or read timeout). In 3.10.0 `create_developer_key` raised it
+  with `should_retry?` `false` and the other create requests retried it. A connection closed
+  before the response now has `should_retry?` `false`. Check first whether the resource was
+  created.
 - **Messages** of `AuthorizationFailed`, `RequestEntityTooLarge`, `LimitExceeded`,
-  `QuotaExceeded` and `ServerError` now end with `: <API message>`. Match the start of the
-  message or the class, not the exact text.
-- `Language#supports_formality?` returns `nil` for a source language; the removed
-  `DeepL.languages` raised `NotSupported`.
+  `QuotaExceeded` and `ServerError` now end with `: <API message>`, which replaces the final
+  period of the fixed text. Check the error class, not the message.
+- `Language#supports_formality?` returns `nil` for a source language, where it raised
+  `NotSupported`. `DeepL.languages` is removed; use `client.get_source_languages` or
+  `client.get_target_languages`.
 
 ## Types and signatures
 
