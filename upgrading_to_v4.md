@@ -126,7 +126,8 @@ client.rephrase_text('Hello there', 'EN-US', writing_style: 'business')
   raise it for `target_lang: ''`; `nil` still keeps the language of the text.
 - `translate_text`, `translate_document` and `translate_document_upload` raise `ArgumentError`
   for an empty or `nil` `target_lang`, an empty `source_lang` (pass `nil` to detect it), and a
-  `translation_memory_threshold` without `translation_memory` or outside 0 to 100.
+  `translation_memory_threshold` without `translation_memory` or outside 0 to 100
+  (`translate_document` wraps it in `DeepL::Exceptions::DocumentTranslationError`).
 - The same three methods raise `ArgumentError` when `glossary`, `style_rule`, `style_profile` or
   `translation_memory` is an empty ID or a resource object without its ID, or when
   `glossary_ids` has an empty entry or a glossary without its ID (`translate_document` wraps it
@@ -272,8 +273,9 @@ A non-2xx reply of the upload or download URL raises `DeepL::Exceptions::Error` 
   original error as `cause`, plus `job_id` and `job`. An empty input file raises it too; before,
   it raised `ArgumentError`.
 - Methods raise `ArgumentError` instead of `DeepL::Exceptions::Error` for an empty translation
-  memory ID or job ID and an empty upload or download URL. `create_translation_memory_import`
-  also rejects an empty `file_name` and a `content_length` that is not positive.
+  memory ID or job ID and an empty upload URL. An export job with an empty or no download URL
+  still raises `DeepL::Exceptions::Error`. `create_translation_memory_import` also rejects an
+  empty `file_name` and a `content_length` that is not positive.
 - `TranslationMemoryJobResult::STATUS_DOWNLOADED` is removed (the API never sends it); use
   `STATUS_COMPLETED` or `done?`. `TranslationMemoryJob#finished?` is `false` for `downloaded`.
 - `create_translation_memory_export` sends no request body (`Content-Length: 0`).

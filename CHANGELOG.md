@@ -103,8 +103,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `translate_text`, `translate_document` and `translate_document_upload` raise `ArgumentError`
   before any request for an empty or `nil` `target_lang`, an empty `source_lang` (pass `nil` to
   detect it), and a `translation_memory_threshold` set without `translation_memory` or outside
-  0 to 100. Document translation with the `glossary` option now requires
-  `source_lang` like `glossary_ids`. Migration: pass valid values; these calls previously sent
+  0 to 100 (`translate_document` wraps it in `DeepL::Exceptions::DocumentTranslationError`).
+  Document translation with the `glossary` option now requires `source_lang` like
+  `glossary_ids`. Migration: pass valid values; these calls previously sent
   the value and failed at the API, or ignored the threshold.
 - **Breaking:** `translate_text`, `translate_document` and `translate_document_upload` raise
   `ArgumentError` before any request when `glossary`, `style_rule`, `style_profile` or
