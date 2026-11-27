@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.version = "4.0.0".freeze
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
-  s.metadata = { "bug_tracker_uri" => "https://github.com/DeepLcom/deepl-rb/issues", "changelog_uri" => "https://github.com/DeepLcom/deepl-rb/blob/main/CHANGELOG.md", "documentation_uri" => "https://github.com/DeepLcom/deepl-rb/blob/main/README.md", "homepage_uri" => "https://github.com/DeepLcom/deepl-rb" } if s.respond_to? :metadata=
+  s.metadata = { "bug_tracker_uri" => "https://github.com/DeepL/deepl-rb/issues", "changelog_uri" => "https://github.com/DeepL/deepl-rb/blob/main/CHANGELOG.md", "documentation_uri" => "https://github.com/DeepL/deepl-rb/blob/main/README.md", "homepage_uri" => "https://github.com/DeepL/deepl-rb" } if s.respond_to? :metadata=
   s.require_paths = ["lib".freeze]
   s.authors = ["DeepL SE".freeze]
   s.date = "2026-11-18"
@@ -172,7 +172,7 @@ Gem::Specification.new do |s|
     "lib/version.rb",
     "upgrading_to_v4.md"
   ]
-  s.homepage = "https://github.com/DeepLcom/deepl-rb".freeze
+  s.homepage = "https://github.com/DeepL/deepl-rb".freeze
   s.licenses = ["MIT".freeze]
   s.required_ruby_version = Gem::Requirement.new(">= 3.0".freeze)
   s.rubygems_version = "3.5.22".freeze

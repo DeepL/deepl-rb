@@ -1578,7 +1578,7 @@ backend services to translate content.
 Clone the repository, and install its dependencies:
 
 ```sh
-git clone https://github.com/DeepLcom/deepl-rb
+git clone https://github.com/DeepL/deepl-rb
 cd deepl-rb
 bundle install
 ```

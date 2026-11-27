@@ -32,7 +32,7 @@ GEM_FILES_EXCLUDE = %w[
 
 Juwelier::Tasks.new do |gem|
   gem.name = 'deepl-rb'
-  gem.homepage = 'https://github.com/DeepLcom/deepl-rb'
+  gem.homepage = 'https://github.com/DeepL/deepl-rb'
   gem.license = 'MIT'
   gem.summary = 'Official Ruby library for the DeepL language translation API.'
   gem.description =
@@ -44,10 +44,10 @@ Juwelier::Tasks.new do |gem|
   gem.email = 'open-source@deepl.com'
   gem.authors = ['DeepL SE']
   gem.metadata = {
-    'bug_tracker_uri' => 'https://github.com/DeepLcom/deepl-rb/issues',
-    'changelog_uri' => 'https://github.com/DeepLcom/deepl-rb/blob/main/CHANGELOG.md',
-    'documentation_uri' => 'https://github.com/DeepLcom/deepl-rb/blob/main/README.md',
-    'homepage_uri' => 'https://github.com/DeepLcom/deepl-rb'
+    'bug_tracker_uri' => 'https://github.com/DeepL/deepl-rb/issues',
+    'changelog_uri' => 'https://github.com/DeepL/deepl-rb/blob/main/CHANGELOG.md',
+    'documentation_uri' => 'https://github.com/DeepL/deepl-rb/blob/main/README.md',
+    'homepage_uri' => 'https://github.com/DeepL/deepl-rb'
   }
   gem.files.exclude(*GEM_FILES_EXCLUDE)
 end
